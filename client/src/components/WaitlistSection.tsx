@@ -60,7 +60,6 @@ export default function WaitlistSection() {
       toast({
         title: "Success!",
         description: "You've been added to our waitlist.",
-        variant: "success",
       });
     } catch (error) {
       toast({
@@ -77,7 +76,7 @@ export default function WaitlistSection() {
   };
 
   return (
-    <section id="waitlist" className="py-20 bg-gray-50">
+    <section id="waitlist" className="py-20 bg-[#F1F8E9]">
       <div className="container mx-auto px-4">
         <div className="max-w-3xl mx-auto">
           <motion.div 
@@ -87,11 +86,11 @@ export default function WaitlistSection() {
             viewport={{ once: true, margin: "-100px" }}
             transition={{ duration: 0.5 }}
           >
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">Join the AgroBuizz Waitlist</h2>
-            <p className="text-xl text-gray-600">Be among the first to access our agricultural marketplace platform when we launch.</p>
+            <h2 className="text-3xl md:text-4xl font-bold mb-4 text-[#2E7D32]">Join the AgroBuizz Waitlist</h2>
+            <p className="text-xl text-gray-700">Be among the first to access our agricultural marketplace platform when we launch.</p>
           </motion.div>
 
-          <Card className="shadow-xl border border-gray-100 rounded-xl">
+          <Card className="shadow-xl border border-[#8BC34A]/30 rounded-xl">
             <CardContent className="p-8">
               <AnimatePresence mode="wait">
                 {!formSubmitted ? (
@@ -232,7 +231,7 @@ export default function WaitlistSection() {
                         
                         <Button 
                           type="submit" 
-                          className="w-full bg-primary-600 hover:bg-primary-700 text-white font-medium py-3 px-6 rounded-lg shadow-md hover:shadow-lg transition transform hover:-translate-y-0.5"
+                          className="w-full bg-[#FFEB3B] hover:bg-[#FDD835] text-[#33691E] font-bold py-3 px-6 rounded-lg shadow-md hover:shadow-lg transition transform hover:-translate-y-0.5"
                         >
                           Join Waitlist
                         </Button>
@@ -248,15 +247,15 @@ export default function WaitlistSection() {
                     transition={{ duration: 0.3 }}
                     className="text-center py-8 space-y-4"
                   >
-                    <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto">
-                      <CheckCircle2 className="h-8 w-8 text-green-600" />
+                    <div className="w-16 h-16 bg-[#E8F5E9] rounded-full flex items-center justify-center mx-auto border-2 border-[#8BC34A]">
+                      <CheckCircle2 className="h-8 w-8 text-[#4CAF50]" />
                     </div>
-                    <h3 className="text-2xl font-bold text-gray-900">You're on the list!</h3>
-                    <p className="text-gray-600 text-lg">Thank you for joining the AgroBuizz waitlist. We'll notify you when we launch.</p>
+                    <h3 className="text-2xl font-bold text-[#2E7D32]">You're on the list!</h3>
+                    <p className="text-gray-700 text-lg">Thank you for joining the AgroBuizz waitlist. We'll notify you when we launch.</p>
                     <Button 
                       variant="link" 
                       onClick={resetForm}
-                      className="text-primary-600 hover:text-primary-700 font-medium mt-4"
+                      className="text-[#4CAF50] hover:text-[#2E7D32] font-medium mt-4"
                     >
                       Add another email
                     </Button>

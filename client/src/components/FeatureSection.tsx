@@ -66,8 +66,8 @@ export default function FeatureSection() {
     <section id="features" className="py-20 bg-white">
       <div className="container mx-auto px-4">
         <div className="text-center max-w-3xl mx-auto mb-16">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">Our Product Categories</h2>
-          <p className="text-xl text-gray-600">Everything you need for your agricultural business in one marketplace</p>
+          <h2 className="text-3xl md:text-4xl font-bold mb-4 text-[#2E7D32]">Our Product Categories</h2>
+          <p className="text-xl text-gray-700">Everything you need for your agricultural business in one marketplace</p>
         </div>
 
         <motion.div 
@@ -80,14 +80,16 @@ export default function FeatureSection() {
           {features.map((feature, index) => (
             <motion.div 
               key={index} 
-              className="feature-card bg-white rounded-xl p-6 shadow-lg border border-gray-100 transition duration-300 hover:shadow-xl hover:-translate-y-1"
+              className="feature-card bg-white rounded-xl p-6 shadow-lg border border-[#8BC34A]/30 transition duration-300 hover:shadow-xl hover:-translate-y-1 hover:border-[#8BC34A]"
               variants={featureVariants}
             >
-              <div className="w-12 h-12 bg-primary-100 rounded-lg flex items-center justify-center mb-4">
-                {feature.icon}
+              <div className="w-12 h-12 bg-[#E8F5E9] rounded-lg flex items-center justify-center mb-4">
+                <div className="h-6 w-6 text-[#4CAF50]">
+                  {feature.icon}
+                </div>
               </div>
-              <h3 className="text-xl font-semibold mb-2">{feature.title}</h3>
-              <p className="text-gray-600">{feature.description}</p>
+              <h3 className="text-xl font-semibold mb-2 text-[#33691E]">{feature.title}</h3>
+              <p className="text-gray-700">{feature.description}</p>
             </motion.div>
           ))}
         </motion.div>

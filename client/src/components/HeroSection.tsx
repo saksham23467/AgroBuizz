@@ -18,7 +18,7 @@ export default function HeroSection() {
 
   return (
     <section className="relative pt-32 pb-24 overflow-hidden">
-      <div className="absolute inset-0 -z-10 bg-[radial-gradient(45%_50%_at_50%_50%,rgba(22,163,74,0.08)_0%,rgba(255,255,255,0)_100%)]"></div>
+      <div className="absolute inset-0 -z-10 bg-[radial-gradient(45%_50%_at_50%_50%,rgba(76,175,80,0.12)_0%,rgba(241,248,233,0)_100%)]"></div>
       <div className="container mx-auto px-4">
         <motion.div 
           className="max-w-4xl mx-auto text-center"
@@ -26,19 +26,19 @@ export default function HeroSection() {
           animate={{ opacity: 1 }}
           transition={{ duration: 0.5 }}
         >
-          <span className="inline-block bg-primary-100 text-primary-800 rounded-full px-4 py-1 text-sm font-medium mb-6">
+          <span className="inline-block bg-[#E8F5E9] text-[#2E7D32] rounded-full px-4 py-1 text-sm font-medium mb-6">
             Coming Soon
           </span>
           <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight mb-6">
-            Connecting Farmers & <span className="text-primary-600">Buyers</span>
+            Connecting Farmers & <span className="text-[#4CAF50]">Buyers</span>
           </h1>
-          <p className="text-xl text-gray-600 mb-10 max-w-3xl mx-auto">
+          <p className="text-xl text-gray-700 mb-10 max-w-3xl mx-auto">
             AgroBuizz is revolutionizing agriculture with our marketplace platform that brings together farmers, merchants, and buyers. Access quality seeds, equipment, and fresh produce in one place.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button 
               size="lg" 
-              className="bg-primary-600 hover:bg-primary-700 text-white font-medium py-3 px-8 rounded-lg shadow-lg hover:shadow-xl transition transform hover:-translate-y-0.5"
+              className="bg-[#FFEB3B] hover:bg-[#FDD835] text-[#33691E] font-medium py-3 px-8 rounded-lg shadow-lg hover:shadow-xl transition transform hover:-translate-y-0.5"
               onClick={() => scrollToSection('waitlist')}
             >
               Join the Waitlist
@@ -46,7 +46,7 @@ export default function HeroSection() {
             <Button 
               variant="outline" 
               size="lg" 
-              className="bg-white hover:bg-gray-100 text-gray-800 font-medium py-3 px-8 rounded-lg shadow-lg hover:shadow-xl transition transform hover:-translate-y-0.5 border border-gray-200"
+              className="bg-white hover:bg-[#F1F8E9] text-[#4CAF50] font-medium py-3 px-8 rounded-lg shadow-lg hover:shadow-xl transition transform hover:-translate-y-0.5 border border-[#8BC34A]"
               onClick={() => scrollToSection('features')}
             >
               Explore Products

@@ -2,12 +2,20 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --color-primary: #4CAF50;
+  --color-secondary: #8BC34A;
+  --color-background: #F1F8E9;
+  --color-highlight: #FFEB3B;
+}
+
 @layer base {
   * {
     @apply border-border;
   }
 
   body {
-    @apply font-sans antialiased bg-background text-foreground;
+    @apply font-sans antialiased text-foreground;
+    background-color: var(--color-background);
   }
 }
