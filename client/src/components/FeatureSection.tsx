@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Zap, Shield, MessageSquare, Layout, BarChart3, Sparkles } from "lucide-react";
+import { Leaf, Tractor, Store, ShoppingBag, TrendingUp, Users } from "lucide-react";
 
 interface Feature {
   icon: React.ReactNode;
@@ -10,34 +10,34 @@ interface Feature {
 export default function FeatureSection() {
   const features: Feature[] = [
     {
-      icon: <Zap className="h-6 w-6 text-primary-600" />,
-      title: "Lightning Fast",
-      description: "Experience unparalleled speed with our optimized performance engine, designed for zero lag."
+      icon: <Leaf className="h-6 w-6 text-primary-600" />,
+      title: "Quality Seeds",
+      description: "Access a wide range of crop seeds, vegetable seeds, and more from trusted suppliers and certified merchants."
     },
     {
-      icon: <Shield className="h-6 w-6 text-primary-600" />,
-      title: "Bank-Level Security",
-      description: "Your data is protected with end-to-end encryption and advanced security protocols."
+      icon: <Tractor className="h-6 w-6 text-primary-600" />,
+      title: "Farming Equipment",
+      description: "Find all your agricultural equipment needs from traditional tools to modern machinery at competitive prices."
     },
     {
-      icon: <MessageSquare className="h-6 w-6 text-primary-600" />,
-      title: "Real-time Collaboration",
-      description: "Work together with your team simultaneously on projects with instant updates."
+      icon: <Store className="h-6 w-6 text-primary-600" />,
+      title: "Vegetable Market",
+      description: "Connect directly with farmers to purchase fresh, seasonal vegetables and fruits for your business or home."
     },
     {
-      icon: <Layout className="h-6 w-6 text-primary-600" />,
-      title: "Smart Templates",
-      description: "Start quickly with customizable templates designed for various workflows and projects."
+      icon: <ShoppingBag className="h-6 w-6 text-primary-600" />,
+      title: "One-Stop Shop",
+      description: "Everything you need for farming and agriculture in one platform, from planting to harvesting and selling."
     },
     {
-      icon: <BarChart3 className="h-6 w-6 text-primary-600" />,
-      title: "Advanced Analytics",
-      description: "Gain insights into your productivity patterns with detailed analytics and reporting."
+      icon: <TrendingUp className="h-6 w-6 text-primary-600" />,
+      title: "Market Insights",
+      description: "Get real-time pricing trends, demand forecasts, and agricultural market intelligence to maximize profits."
     },
     {
-      icon: <Sparkles className="h-6 w-6 text-primary-600" />,
-      title: "AI-Powered Assistance",
-      description: "Let our intelligent assistant help you optimize tasks and suggest improvements."
+      icon: <Users className="h-6 w-6 text-primary-600" />,
+      title: "Community Support",
+      description: "Join a thriving community of farmers, suppliers, and buyers who share knowledge and best practices."
     }
   ];
 
@@ -66,8 +66,8 @@ export default function FeatureSection() {
     <section id="features" className="py-20 bg-white">
       <div className="container mx-auto px-4">
         <div className="text-center max-w-3xl mx-auto mb-16">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">Powerful Features</h2>
-          <p className="text-xl text-gray-600">Designed to enhance your productivity and streamline your workflow</p>
+          <h2 className="text-3xl md:text-4xl font-bold mb-4">Our Product Categories</h2>
+          <p className="text-xl text-gray-600">Everything you need for your agricultural business in one marketplace</p>
         </div>
 
         <motion.div 

@@ -14,7 +14,7 @@ export default function AboutSection() {
           >
             <div className="bg-white p-2 rounded-xl shadow-xl">
               <div className="w-full h-[400px] bg-gray-200 rounded-lg flex items-center justify-center">
-                <p className="text-gray-500 text-lg">Our vision and team</p>
+                <p className="text-gray-500 text-lg">Farmers & Merchants in the Market</p>
               </div>
             </div>
           </motion.div>
@@ -26,23 +26,23 @@ export default function AboutSection() {
             viewport={{ once: true, margin: "-100px" }}
             transition={{ duration: 0.6 }}
           >
-            <h2 className="text-3xl md:text-4xl font-bold mb-6">Our Vision</h2>
+            <h2 className="text-3xl md:text-4xl font-bold mb-6">Our Mission</h2>
             <p className="text-gray-600 text-lg mb-6">
-              We believe productivity tools should work for you, not against you. Our mission is to create an intuitive platform that adapts to your unique workflow, eliminating friction and helping you achieve your goals faster.
+              AgroBuizz aims to revolutionize the agricultural marketplace by connecting farmers directly with buyers and merchants, eliminating middlemen, and ensuring fair prices for all participants.
             </p>
             <p className="text-gray-600 text-lg mb-6">
-              Founded by a team of productivity enthusiasts and technology experts, ProductName was born from our frustration with existing solutions that were either too rigid or too complex.
+              Founded by a team of agricultural experts and technology innovators, our platform addresses the challenges faced by small-scale farmers who struggle to access quality farming inputs and find reliable buyers for their produce.
             </p>
             <p className="text-gray-600 text-lg mb-8">
-              We're building a new kind of productivity tool—one that combines powerful features with elegant simplicity, allowing you to focus on what matters most.
+              We're building a comprehensive agricultural ecosystem that supports sustainable farming practices while making the buying and selling process more efficient, transparent, and profitable for everyone involved.
             </p>
             <div className="flex items-center gap-4">
               <div className="w-14 h-14 rounded-full bg-gray-300 flex items-center justify-center">
                 <span className="text-gray-600 text-xs">JD</span>
               </div>
               <div>
-                <p className="font-medium">John Smith</p>
-                <p className="text-gray-500 text-sm">Founder & CEO</p>
+                <p className="font-medium">John Doe</p>
+                <p className="text-gray-500 text-sm">Founder & Agricultural Expert</p>
               </div>
             </div>
           </motion.div>

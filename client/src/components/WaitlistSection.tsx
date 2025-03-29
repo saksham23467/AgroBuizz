@@ -26,11 +26,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 const waitlistFormSchema = z.object({
   name: z.string().min(2, { message: "Please enter your name" }),
   email: z.string().email({ message: "Please enter a valid email address" }),
   reason: z.string().min(1, { message: "Please select an option" }),
+  userType: z.string().min(1, { message: "Please select your role" }),
   notifications: z.boolean().optional(),
 });
 
@@ -46,6 +48,7 @@ export default function WaitlistSection() {
       name: "",
       email: "",
       reason: "",
+      userType: "",
       notifications: false,
     },
   });
@@ -74,7 +77,7 @@ export default function WaitlistSection() {
   };
 
   return (
-    <section id="waitlist" className="py-20 bg-white">
+    <section id="waitlist" className="py-20 bg-gray-50">
       <div className="container mx-auto px-4">
         <div className="max-w-3xl mx-auto">
           <motion.div 
@@ -84,8 +87,8 @@ export default function WaitlistSection() {
             viewport={{ once: true, margin: "-100px" }}
             transition={{ duration: 0.5 }}
           >
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">Join the Waitlist</h2>
-            <p className="text-xl text-gray-600">Be among the first to experience our revolutionary product when it launches.</p>
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">Join the AgroBuizz Waitlist</h2>
+            <p className="text-xl text-gray-600">Be among the first to access our agricultural marketplace platform when we launch.</p>
           </motion.div>
 
           <Card className="shadow-xl border border-gray-100 rounded-xl">
@@ -139,10 +142,53 @@ export default function WaitlistSection() {
                         
                         <FormField
                           control={form.control}
+                          name="userType"
+                          render={({ field }) => (
+                            <FormItem className="space-y-3">
+                              <FormLabel className="text-sm font-medium text-gray-700">I am a:</FormLabel>
+                              <FormControl>
+                                <RadioGroup
+                                  onValueChange={field.onChange}
+                                  defaultValue={field.value}
+                                  className="flex flex-col space-y-1"
+                                >
+                                  <FormItem className="flex items-center space-x-3 space-y-0">
+                                    <FormControl>
+                                      <RadioGroupItem value="farmer" />
+                                    </FormControl>
+                                    <FormLabel className="font-normal">Farmer</FormLabel>
+                                  </FormItem>
+                                  <FormItem className="flex items-center space-x-3 space-y-0">
+                                    <FormControl>
+                                      <RadioGroupItem value="merchant" />
+                                    </FormControl>
+                                    <FormLabel className="font-normal">Merchant/Buyer</FormLabel>
+                                  </FormItem>
+                                  <FormItem className="flex items-center space-x-3 space-y-0">
+                                    <FormControl>
+                                      <RadioGroupItem value="supplier" />
+                                    </FormControl>
+                                    <FormLabel className="font-normal">Agricultural Supplier</FormLabel>
+                                  </FormItem>
+                                  <FormItem className="flex items-center space-x-3 space-y-0">
+                                    <FormControl>
+                                      <RadioGroupItem value="other" />
+                                    </FormControl>
+                                    <FormLabel className="font-normal">Other</FormLabel>
+                                  </FormItem>
+                                </RadioGroup>
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        
+                        <FormField
+                          control={form.control}
                           name="reason"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel className="text-sm font-medium text-gray-700">What interests you most?</FormLabel>
+                              <FormLabel className="text-sm font-medium text-gray-700">What interests you most about AgroBuizz?</FormLabel>
                               <Select onValueChange={field.onChange} defaultValue={field.value}>
                                 <FormControl>
                                   <SelectTrigger className="px-4 py-3 rounded-lg">
@@ -150,9 +196,11 @@ export default function WaitlistSection() {
                                   </SelectTrigger>
                                 </FormControl>
                                 <SelectContent>
-                                  <SelectItem value="productivity">Improving productivity</SelectItem>
-                                  <SelectItem value="collaboration">Team collaboration</SelectItem>
-                                  <SelectItem value="integrations">Integrations with other tools</SelectItem>
+                                  <SelectItem value="buying">Buying agricultural products</SelectItem>
+                                  <SelectItem value="selling">Selling my farm produce</SelectItem>
+                                  <SelectItem value="equipment">Finding farming equipment</SelectItem>
+                                  <SelectItem value="insights">Market insights and data</SelectItem>
+                                  <SelectItem value="community">Connecting with other farmers/buyers</SelectItem>
                                   <SelectItem value="other">Other</SelectItem>
                                 </SelectContent>
                               </Select>
@@ -175,7 +223,7 @@ export default function WaitlistSection() {
                               </FormControl>
                               <div className="space-y-1 leading-none">
                                 <FormLabel className="text-sm text-gray-600">
-                                  I agree to receive product updates and announcements. You can unsubscribe at any time.
+                                  I agree to receive agricultural product updates and announcements. You can unsubscribe at any time.
                                 </FormLabel>
                               </div>
                             </FormItem>
@@ -204,7 +252,7 @@ export default function WaitlistSection() {
                       <CheckCircle2 className="h-8 w-8 text-green-600" />
                     </div>
                     <h3 className="text-2xl font-bold text-gray-900">You're on the list!</h3>
-                    <p className="text-gray-600 text-lg">Thank you for joining our waitlist. We'll notify you when we launch.</p>
+                    <p className="text-gray-600 text-lg">Thank you for joining the AgroBuizz waitlist. We'll notify you when we launch.</p>
                     <Button 
                       variant="link" 
                       onClick={resetForm}

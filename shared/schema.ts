@@ -18,6 +18,7 @@ export const waitlistEntries = pgTable("waitlist_entries", {
   name: text("name").notNull(),
   email: text("email").notNull().unique(),
   reason: text("reason").notNull(),
+  userType: text("user_type").notNull(),
   notifications: boolean("notifications").default(false),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
@@ -26,6 +27,7 @@ export const insertWaitlistSchema = createInsertSchema(waitlistEntries).pick({
   name: true,
   email: true,
   reason: true,
+  userType: true,
   notifications: true,
 });
 

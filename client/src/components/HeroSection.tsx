@@ -18,7 +18,7 @@ export default function HeroSection() {
 
   return (
     <section className="relative pt-32 pb-24 overflow-hidden">
-      <div className="absolute inset-0 -z-10 bg-[radial-gradient(45%_50%_at_50%_50%,rgba(59,130,246,0.08)_0%,rgba(255,255,255,0)_100%)]"></div>
+      <div className="absolute inset-0 -z-10 bg-[radial-gradient(45%_50%_at_50%_50%,rgba(22,163,74,0.08)_0%,rgba(255,255,255,0)_100%)]"></div>
       <div className="container mx-auto px-4">
         <motion.div 
           className="max-w-4xl mx-auto text-center"
@@ -30,10 +30,10 @@ export default function HeroSection() {
             Coming Soon
           </span>
           <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight mb-6">
-            Revolutionize Your <span className="text-primary-600">Workflow</span>
+            Connecting Farmers & <span className="text-primary-600">Buyers</span>
           </h1>
           <p className="text-xl text-gray-600 mb-10 max-w-3xl mx-auto">
-            Experience the next generation productivity tool that adapts to your needs. Streamline tasks, collaborate seamlessly, and achieve more with our intelligent platform.
+            AgroBuizz is revolutionizing agriculture with our marketplace platform that brings together farmers, merchants, and buyers. Access quality seeds, equipment, and fresh produce in one place.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button 
@@ -49,7 +49,7 @@ export default function HeroSection() {
               className="bg-white hover:bg-gray-100 text-gray-800 font-medium py-3 px-8 rounded-lg shadow-lg hover:shadow-xl transition transform hover:-translate-y-0.5 border border-gray-200"
               onClick={() => scrollToSection('features')}
             >
-              Learn More
+              Explore Products
             </Button>
           </div>
         </motion.div>
@@ -62,7 +62,7 @@ export default function HeroSection() {
         >
           <div className="bg-white rounded-xl shadow-2xl overflow-hidden border border-gray-100">
             <div className="w-full h-[400px] bg-gray-200 flex items-center justify-center">
-              <p className="text-gray-500 text-lg">Product Dashboard Preview</p>
+              <p className="text-gray-500 text-lg">Agricultural Marketplace Preview</p>
             </div>
           </div>
           <div className="absolute -bottom-3 -right-3 -left-3 h-20 bg-gradient-to-t from-gray-50 to-transparent z-10"></div>
