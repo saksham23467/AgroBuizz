@@ -1,17 +1,22 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
-import { Menu, X, Leaf, ShoppingCart, User } from "lucide-react";
+import { Menu, X, Leaf, ShoppingCart, User, LogOut, Settings } from "lucide-react";
 import { 
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
+import { Badge } from "@/components/ui/badge";
+import { useAuth } from "@/hooks/use-auth";
 
 export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [location] = useLocation();
+  const [cartItemCount, setCartItemCount] = useState(0);
+  const { user, logoutMutation } = useAuth();
 
   const toggleMobileMenu = () => {
     setMobileMenuOpen(!mobileMenuOpen);
@@ -19,6 +24,33 @@ export default function Header() {
 
   // Check if we're on the home page where we need to use scrolling
   const isHomePage = location === "/";
+  
+  // Handle logout
+  const handleLogout = () => {
+    logoutMutation.mutate();
+  };
+
+  // Get cart items from local storage
+  useEffect(() => {
+    const getCartItems = () => {
+      const cartItems = localStorage.getItem('cart') ? JSON.parse(localStorage.getItem('cart') || '[]') : [];
+      setCartItemCount(cartItems.length);
+    };
+
+    getCartItems();
+    
+    // Update cart count when storage changes
+    window.addEventListener('storage', getCartItems);
+    
+    // Custom event for cart updates from other components
+    const handleCartUpdate = () => getCartItems();
+    window.addEventListener('cartUpdated', handleCartUpdate);
+    
+    return () => {
+      window.removeEventListener('storage', getCartItems);
+      window.removeEventListener('cartUpdated', handleCartUpdate);
+    };
+  }, []);
 
   const scrollToSection = (id: string) => {
     if (!isHomePage) return;
@@ -95,15 +127,57 @@ export default function Header() {
             <Link href="/checkout" className="relative">
               <Button variant="ghost" size="icon" className="text-gray-600 hover:text-[#4CAF50]">
                 <ShoppingCart className="h-5 w-5" />
+                {cartItemCount > 0 && (
+                  <Badge 
+                    className="absolute -top-1 -right-1 text-xs px-1.5 py-0.5 bg-[#4CAF50] text-white rounded-full" 
+                    variant="default"
+                  >
+                    {cartItemCount}
+                  </Badge>
+                )}
               </Button>
             </Link>
             
-            <Link href="/login">
-              <Button className="bg-[#4CAF50] hover:bg-[#43A047]">
-                <User className="h-4 w-4 mr-2" />
-                Login
-              </Button>
-            </Link>
+            {user ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="flex items-center gap-2 text-gray-600 hover:text-[#4CAF50]">
+                    <div className="flex flex-col items-start">
+                      <span className="text-sm font-medium">{user.username}</span>
+                      <span className="text-xs text-gray-500 capitalize">{user.userType}</span>
+                    </div>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuItem asChild>
+                    <Link href="/settings" className="cursor-pointer flex items-center">
+                      <Settings className="mr-2 h-4 w-4" />
+                      <span>Settings</span>
+                    </Link>
+                  </DropdownMenuItem>
+                  {user.role === "admin" && (
+                    <DropdownMenuItem asChild>
+                      <Link href="/admin" className="cursor-pointer flex items-center">
+                        <User className="mr-2 h-4 w-4" />
+                        <span>Admin Dashboard</span>
+                      </Link>
+                    </DropdownMenuItem>
+                  )}
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-red-600">
+                    <LogOut className="mr-2 h-4 w-4" />
+                    <span>Log out</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <Link href="/login">
+                <Button className="bg-[#4CAF50] hover:bg-[#43A047]">
+                  <User className="h-4 w-4 mr-2" />
+                  Login
+                </Button>
+              </Link>
+            )}
           </div>
         </nav>
 
@@ -152,15 +226,46 @@ export default function Header() {
           )}
           
           <Link href="/checkout" onClick={() => handleNavAction('')}>
-            <span className="block py-2 text-gray-600 hover:text-[#4CAF50] font-medium w-full text-left">
-              Cart
-            </span>
+            <div className="flex items-center justify-between py-2 text-gray-600 hover:text-[#4CAF50] font-medium w-full">
+              <span>Cart</span>
+              {cartItemCount > 0 && (
+                <Badge className="bg-[#4CAF50] text-white">
+                  {cartItemCount}
+                </Badge>
+              )}
+            </div>
           </Link>
-          <Link href="/login" onClick={() => handleNavAction('')}>
-            <span className="block py-2 text-gray-600 hover:text-[#4CAF50] font-medium w-full text-left">
-              Login
-            </span>
-          </Link>
+          
+          {user ? (
+            <>
+              <Link href="/settings" onClick={() => handleNavAction('')}>
+                <span className="block py-2 text-gray-600 hover:text-[#4CAF50] font-medium w-full text-left">
+                  Settings
+                </span>
+              </Link>
+              
+              {user.role === "admin" && (
+                <Link href="/admin" onClick={() => handleNavAction('')}>
+                  <span className="block py-2 text-gray-600 hover:text-[#4CAF50] font-medium w-full text-left">
+                    Admin Dashboard
+                  </span>
+                </Link>
+              )}
+              
+              <button 
+                onClick={handleLogout}
+                className="block py-2 text-red-600 hover:text-red-700 font-medium w-full text-left"
+              >
+                Log out
+              </button>
+            </>
+          ) : (
+            <Link href="/login" onClick={() => handleNavAction('')}>
+              <span className="block py-2 text-gray-600 hover:text-[#4CAF50] font-medium w-full text-left">
+                Login
+              </span>
+            </Link>
+          )}
         </div>
       )}
     </header>

@@ -1,19 +1,18 @@
-import { waitlistEntries, type WaitlistEntry, type InsertWaitlistEntry } from "@shared/schema";
-
-// Basic user interfaces for authentication
-interface User {
-  id: number;
-  username: string;
-  password: string;
-}
-
-type InsertUser = Omit<User, 'id'>;
+import { 
+  waitlistEntries, type WaitlistEntry, type InsertWaitlistEntry,
+  users, type User, type InsertUser
+} from "@shared/schema";
+import bcrypt from "bcryptjs";
 
 export interface IStorage {
   // User related methods
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
+  getUserByEmail(email: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
+  validateUserCredentials(username: string, password: string): Promise<User | null>;
+  updateUserDarkMode(id: number, darkMode: boolean): Promise<User | undefined>;
+  updateUserLastLogin(id: number): Promise<User | undefined>;
   
   // Waitlist related methods
   createWaitlistEntry(entry: InsertWaitlistEntry): Promise<WaitlistEntry>;
@@ -45,12 +44,59 @@ export class MemStorage implements IStorage {
       (user) => user.username === username,
     );
   }
+  
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    return Array.from(this.users.values()).find(
+      (user) => user.email === email,
+    );
+  }
 
   async createUser(insertUser: InsertUser): Promise<User> {
     const id = this.currentUserId++;
-    const user: User = { ...insertUser, id };
+    // Hash password before storing
+    const hashedPassword = await bcrypt.hash(insertUser.password, 10);
+    
+    const user: User = { 
+      ...insertUser, 
+      id,
+      password: hashedPassword,
+      createdAt: new Date(),
+      lastLogin: null,
+      role: insertUser.role || 'user',
+      userType: insertUser.userType || 'customer',
+      darkMode: insertUser.darkMode ?? false
+    };
+    
     this.users.set(id, user);
     return user;
+  }
+  
+  async validateUserCredentials(username: string, password: string): Promise<User | null> {
+    const user = await this.getUserByUsername(username);
+    if (!user) return null;
+    
+    const isValid = await bcrypt.compare(password, user.password);
+    if (!isValid) return null;
+    
+    return user;
+  }
+  
+  async updateUserDarkMode(id: number, darkMode: boolean): Promise<User | undefined> {
+    const user = await this.getUser(id);
+    if (!user) return undefined;
+    
+    const updatedUser = { ...user, darkMode };
+    this.users.set(id, updatedUser);
+    return updatedUser;
+  }
+  
+  async updateUserLastLogin(id: number): Promise<User | undefined> {
+    const user = await this.getUser(id);
+    if (!user) return undefined;
+    
+    const updatedUser = { ...user, lastLogin: new Date() };
+    this.users.set(id, updatedUser);
+    return updatedUser;
   }
 
   async createWaitlistEntry(entry: InsertWaitlistEntry): Promise<WaitlistEntry> {

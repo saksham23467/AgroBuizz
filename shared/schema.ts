@@ -5,6 +5,20 @@ import { relations } from "drizzle-orm";
 
 // User Types
 export const userTypeEnum = pgEnum('user_type', ['farmer', 'customer', 'vendor', 'admin']);
+export const userRoleEnum = pgEnum('user_role', ['user', 'admin']);
+
+// User Table - For authentication
+export const users = pgTable("users", {
+  id: serial("id").primaryKey(),
+  username: varchar("username", { length: 50 }).notNull().unique(),
+  email: varchar("email", { length: 100 }).notNull().unique(),
+  password: varchar("password", { length: 100 }).notNull(),
+  role: userRoleEnum("role").notNull().default("user"),
+  userType: userTypeEnum("user_type").notNull().default("customer"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  lastLogin: timestamp("last_login"),
+  darkMode: boolean("dark_mode").default(false),
+});
 export const roleEnum = pgEnum('role', ['admin', 'manager', 'support']);
 export const orderTypeEnum = pgEnum('order_type', ['standard', 'express', 'rental', 'subscription']);
 export const orderStatusEnum = pgEnum('order_status', ['pending', 'processing', 'shipped', 'delivered', 'cancelled']);
@@ -255,6 +269,7 @@ export const vendorsRelations = relations(vendors, ({ many }) => ({
 }));
 
 // Define insert schemas for each table
+export const insertUserSchema = createInsertSchema(users).omit({ createdAt: true, lastLogin: true });
 export const insertAdminSchema = createInsertSchema(admins);
 export const insertCropSchema = createInsertSchema(crops);
 export const insertCustomerSchema = createInsertSchema(customers).omit({ profileCreationDate: true });
@@ -282,6 +297,9 @@ export const insertWaitlistSchema = createInsertSchema(waitlistEntries).pick({
 });
 
 // Define types
+export type InsertUser = z.infer<typeof insertUserSchema>;
+export type User = typeof users.$inferSelect;
+
 export type InsertAdmin = z.infer<typeof insertAdminSchema>;
 export type Admin = typeof admins.$inferSelect;
 

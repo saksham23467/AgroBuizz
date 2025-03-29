@@ -1,7 +1,13 @@
+import { useState } from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
+import { useLocation } from "wouter";
+import SearchBar from "@/components/SearchBar";
+import LiveMarketPrices from "@/components/LiveMarketPrices";
 
 export default function HeroSection() {
+  const [_, navigate] = useLocation();
+  
   const scrollToSection = (id: string) => {
     const element = document.getElementById(id);
     if (element) {
@@ -13,6 +19,20 @@ export default function HeroSection() {
         top: offsetPosition,
         behavior: "smooth"
       });
+    }
+  };
+  
+  const handleSearchSelect = (item: string) => {
+    // Navigate to the appropriate marketplace based on the search result
+    if (item.toLowerCase().includes('seed')) {
+      navigate('/seed-market');
+    } else if (item.toLowerCase().includes('equipment') || item.toLowerCase().includes('tractor') || item.toLowerCase().includes('tools')) {
+      navigate('/equipment-market');
+    } else if (item.toLowerCase().includes('produce') || item.toLowerCase().includes('fruit') || item.toLowerCase().includes('vegetable')) {
+      navigate('/produce-market');
+    } else {
+      // Default to seed market if we can't determine category
+      navigate('/seed-market');
     }
   };
 
@@ -61,8 +81,21 @@ export default function HeroSection() {
           transition={{ duration: 0.5, delay: 0.2 }}
         >
           <div className="bg-white rounded-xl shadow-2xl overflow-hidden border border-gray-100">
-            <div className="w-full h-[400px] bg-gray-200 flex items-center justify-center">
-              <p className="text-gray-500 text-lg">Agricultural Marketplace Preview</p>
+            <div className="p-6 bg-white">
+              <h3 className="text-xl font-semibold mb-4 text-gray-800">Find Agricultural Products</h3>
+              <SearchBar 
+                placeholder="Search for seeds, equipment, or produce..." 
+                onSelect={handleSearchSelect}
+                className="w-full mb-6"
+              />
+              
+              <div className="mt-8">
+                <LiveMarketPrices 
+                  title="Today's Market Highlights" 
+                  description="Real-time prices from our marketplace"
+                  limit={5}
+                />
+              </div>
             </div>
           </div>
           <div className="absolute -bottom-3 -right-3 -left-3 h-20 bg-gradient-to-t from-gray-50 to-transparent z-10"></div>
