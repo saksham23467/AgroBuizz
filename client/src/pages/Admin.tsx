@@ -28,7 +28,6 @@ import {
   ClipboardList, Package2Icon, TrendingUp, AlertTriangle,
   CheckCircle2, Eye, MoreVertical, Truck, XCircle
 } from "lucide-react";
-import OrderManagement from "./OrderManagement";
 import InventoryManagement from "./InventoryManagement";
 import Analytics from "./Analytics";
 
@@ -93,6 +92,22 @@ export default function AdminDashboard() {
       navigate("/");
     }
   }, [user, navigate]);
+  
+  // Make sure the tab navigation works properly
+  useEffect(() => {
+    // This ensures the tabs content is properly synced with state
+    if (activeTab) {
+      const tabElement = document.querySelector(`[value="${activeTab}"]`);
+      if (tabElement) {
+        // Ensure the TabsContent with this value is displayed
+        const tabsContent = document.querySelector(`[data-state="active"][data-orientation="horizontal"]`);
+        if (!tabsContent) {
+          // Force a reset of active tab if there's an issue
+          setActiveTab(activeTab);
+        }
+      }
+    }
+  }, [activeTab]);
 
   const handleSignOut = async () => {
     try {
@@ -688,7 +703,7 @@ export default function AdminDashboard() {
                     <SelectValue placeholder="Filter by status" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All Statuses</SelectItem>
+                    <SelectItem value="all">All Statuses</SelectItem>
                     <SelectItem value="pending">Pending</SelectItem>
                     <SelectItem value="processing">Processing</SelectItem>
                     <SelectItem value="shipped">Shipped</SelectItem>
