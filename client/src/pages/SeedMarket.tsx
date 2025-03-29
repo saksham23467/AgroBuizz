@@ -8,6 +8,8 @@ import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
+import { useCart } from "@/hooks/use-cart";
+import { Link } from "wouter";
 
 // Sample seed data (mock for now, would come from the API)
 const seedProducts = [
@@ -70,9 +72,9 @@ const seedProducts = [
 export default function SeedMarket() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [cart, setCart] = useState<Array<{id: number, quantity: number}>>([]);
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const { toast } = useToast();
+  const { addToCart, getTotalItems } = useCart();
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(e.target.value);
@@ -89,26 +91,15 @@ export default function SeedMarket() {
     return matchesSearch && matchesCategory;
   });
 
-  const addToCart = (productId: number) => {
-    setCart(prev => {
-      const existingItem = prev.find(item => item.id === productId);
-      if (existingItem) {
-        return prev.map(item => 
-          item.id === productId ? { ...item, quantity: item.quantity + 1 } : item
-        );
-      } else {
-        return [...prev, { id: productId, quantity: 1 }];
-      }
+  // Helper to add product to cart with all details
+  const handleAddToCart = (product: any) => {
+    addToCart({
+      id: product.id,
+      quantity: 1,
+      name: product.name,
+      price: product.price,
+      imageUrl: product.image
     });
-
-    toast({
-      title: "Added to cart",
-      description: "Seed product has been added to your cart",
-    });
-  };
-
-  const getTotalCartItems = () => {
-    return cart.reduce((total, item) => total + item.quantity, 0);
   };
 
   const fadeInUp = {
@@ -120,14 +111,16 @@ export default function SeedMarket() {
     <div className="container mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-bold text-[#2E7D32]">Seed Marketplace</h1>
-        <Button variant="outline" className="relative">
-          <ShoppingCart className="h-5 w-5 text-[#4CAF50]" />
-          {getTotalCartItems() > 0 && (
-            <span className="absolute -top-2 -right-2 bg-[#FFEB3B] text-[#33691E] rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold">
-              {getTotalCartItems()}
-            </span>
-          )}
-        </Button>
+        <Link href="/checkout">
+          <Button variant="outline" className="relative">
+            <ShoppingCart className="h-5 w-5 text-[#4CAF50]" />
+            {getTotalItems() > 0 && (
+              <span className="absolute -top-2 -right-2 bg-[#FFEB3B] text-[#33691E] rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold">
+                {getTotalItems()}
+              </span>
+            )}
+          </Button>
+        </Link>
       </div>
 
       <div className="flex flex-col md:flex-row gap-6 mb-8">
@@ -230,7 +223,7 @@ export default function SeedMarket() {
                       <div className="flex justify-end">
                         <Button 
                           className="bg-[#FFEB3B] hover:bg-[#FDD835] text-[#33691E] font-bold"
-                          onClick={() => selectedProduct && addToCart(selectedProduct.id)}
+                          onClick={() => selectedProduct && handleAddToCart(selectedProduct)}
                         >
                           Add to Cart
                         </Button>
@@ -242,7 +235,7 @@ export default function SeedMarket() {
               <CardFooter className="pt-0">
                 <Button 
                   className="w-full bg-[#4CAF50] hover:bg-[#43A047] text-white"
-                  onClick={() => addToCart(product.id)}
+                  onClick={() => handleAddToCart(product)}
                 >
                   Add to Cart
                 </Button>

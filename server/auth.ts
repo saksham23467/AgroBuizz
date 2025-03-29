@@ -286,7 +286,7 @@ export function setupAuth(app: Express) {
       await storage.createUser({
         username: 'admin',
         email: 'admin@agrobuizz.com',
-        password: '12345',
+        password: '123456',
         role: 'admin',
         userType: 'admin',
         darkMode: false

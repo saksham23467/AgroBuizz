@@ -1,4 +1,5 @@
-import { Facebook, Twitter, Instagram, Mail, MapPin, Code } from "lucide-react";
+import { Facebook, Twitter, Instagram, Mail, MapPin, Code, Lock } from "lucide-react";
+import { Link } from "wouter";
 
 export default function Footer() {
   return (
@@ -7,12 +8,12 @@ export default function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           <div>
             <div className="flex items-center gap-2 mb-4">
-              <div className="bg-white text-gray-900 p-2 rounded-lg">
+              <div className="bg-[#E8F5E9] text-[#4CAF50] p-2 rounded-lg">
                 <Code className="h-5 w-5" />
               </div>
-              <span className="text-xl font-bold">ProductName</span>
+              <span className="text-xl font-bold">AgroBuizz</span>
             </div>
-            <p className="text-gray-400 mb-4">Revolutionizing the way you work with cutting-edge productivity tools.</p>
+            <p className="text-gray-400 mb-4">Revolutionizing agriculture with our marketplace platform connecting farmers, merchants, and buyers.</p>
             <div className="flex space-x-4">
               <a href="#" className="text-gray-400 hover:text-white transition">
                 <Facebook className="h-6 w-6" />
@@ -42,18 +43,24 @@ export default function Footer() {
             <ul className="space-y-2">
               <li className="flex items-start">
                 <Mail className="h-5 w-5 text-gray-400 mr-2 mt-0.5" />
-                <span className="text-gray-400">contact@productname.com</span>
+                <span className="text-gray-400">contact@agrobuizz.com</span>
               </li>
               <li className="flex items-start">
                 <MapPin className="h-5 w-5 text-gray-400 mr-2 mt-0.5" />
-                <span className="text-gray-400">123 Innovation Street<br />Tech City, TC 12345</span>
+                <span className="text-gray-400">456 Farming District<br />Agro City, AC 67890</span>
               </li>
             </ul>
           </div>
         </div>
         
         <div className="border-t border-gray-800 mt-12 pt-8 text-center text-gray-400 text-sm">
-          <p>&copy; {new Date().getFullYear()} ProductName. All rights reserved.</p>
+          <p>&copy; {new Date().getFullYear()} AgroBuizz. All rights reserved.</p>
+          <div className="mt-4 flex justify-center items-center">
+            <Link to="/login" className="flex items-center text-gray-400 hover:text-white transition text-xs">
+              <Lock className="h-3 w-3 mr-1" />
+              <span>Admin Login</span>
+            </Link>
+          </div>
         </div>
       </div>
     </footer>

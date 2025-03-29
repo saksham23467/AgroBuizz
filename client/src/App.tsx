@@ -15,6 +15,7 @@ import Admin from "@/pages/Admin";
 import Header from "@/components/Header";
 import { AuthProvider } from "@/hooks/use-auth";
 import { ProtectedRoute, AdminRoute } from "@/components/protected-route";
+import { CartProvider } from "@/contexts/CartContext";
 
 function Router() {
   return (
@@ -45,8 +46,10 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <Router />
-        <Toaster />
+        <CartProvider>
+          <Router />
+          <Toaster />
+        </CartProvider>
       </AuthProvider>
     </QueryClientProvider>
   );

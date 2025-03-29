@@ -1,10 +1,12 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import { useLocation } from "wouter";
+import { useAuth } from "@/hooks/use-auth";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -69,6 +71,15 @@ export default function Login() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
+  const { user, loginMutation, registerMutation } = useAuth();
+  const [location, navigate] = useLocation();
+  
+  // Redirect to home if already logged in
+  useEffect(() => {
+    if (user) {
+      navigate("/");
+    }
+  }, [user, navigate]);
 
   // Login form
   const loginForm = useForm<LoginFormValues>({
@@ -98,20 +109,18 @@ export default function Login() {
     setIsSubmitting(true);
     
     try {
-      // This would be a real API request in a production app
-      // For now, just simulate a successful login
-      console.log("Login data:", data);
-      
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      await loginMutation.mutateAsync({ 
+        username: data.username, 
+        password: data.password 
+      });
       
       toast({
         title: "Login successful!",
         description: "Welcome back to AgroBuizz.",
       });
       
-      // In a real app, we would redirect to the dashboard
-      // window.location.href = "/dashboard";
+      // Redirect to home page after successful login
+      navigate("/");
     } catch (error) {
       toast({
         title: "Login failed",
@@ -127,12 +136,15 @@ export default function Login() {
     setIsSubmitting(true);
     
     try {
-      // This would be a real API request in a production app
-      // For now, just simulate a successful registration
-      console.log("Registration data:", data);
-      
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      // Map form data to registerMutation expected format
+      await registerMutation.mutateAsync({
+        username: data.username,
+        email: data.email,
+        password: data.password,
+        role: "user",
+        userType: data.userType === "merchant" ? "vendor" : "farmer",
+        darkMode: false
+      });
       
       toast({
         title: "Registration successful!",
