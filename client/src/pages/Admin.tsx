@@ -15,7 +15,14 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { BarChart4, Users, ShoppingBag, BoxesIcon, LayoutDashboard, LogOut, Search, PlusCircle, Edit, Trash2, RefreshCw } from "lucide-react";
+import { 
+  BarChart4, Users, ShoppingBag, BoxesIcon, LayoutDashboard, 
+  LogOut, Search, PlusCircle, Edit, Trash2, RefreshCw,
+  ClipboardList, Package2Icon, TrendingUp
+} from "lucide-react";
+import OrderManagement from "./OrderManagement";
+import InventoryManagement from "./InventoryManagement";
+import Analytics from "./Analytics";
 
 // Mock data for products
 const seedProducts = [
@@ -193,6 +200,22 @@ export default function AdminDashboard() {
           </button>
           
           <button 
+            className={`w-full text-left p-3 pl-6 flex items-center space-x-3 ${activeTab === "inventory" ? "bg-[#2E7D32] text-white" : "text-white/80 hover:bg-[#2E7D32]/50"}`}
+            onClick={() => setActiveTab("inventory")}
+          >
+            <Package2Icon size={18} />
+            <span>Inventory</span>
+          </button>
+          
+          <button 
+            className={`w-full text-left p-3 pl-6 flex items-center space-x-3 ${activeTab === "orders" ? "bg-[#2E7D32] text-white" : "text-white/80 hover:bg-[#2E7D32]/50"}`}
+            onClick={() => setActiveTab("orders")}
+          >
+            <ClipboardList size={18} />
+            <span>Orders</span>
+          </button>
+          
+          <button 
             className={`w-full text-left p-3 pl-6 flex items-center space-x-3 ${activeTab === "users" ? "bg-[#2E7D32] text-white" : "text-white/80 hover:bg-[#2E7D32]/50"}`}
             onClick={() => setActiveTab("users")}
           >
@@ -201,11 +224,11 @@ export default function AdminDashboard() {
           </button>
           
           <button 
-            className={`w-full text-left p-3 pl-6 flex items-center space-x-3 ${activeTab === "statistics" ? "bg-[#2E7D32] text-white" : "text-white/80 hover:bg-[#2E7D32]/50"}`}
-            onClick={() => setActiveTab("statistics")}
+            className={`w-full text-left p-3 pl-6 flex items-center space-x-3 ${activeTab === "analytics" ? "bg-[#2E7D32] text-white" : "text-white/80 hover:bg-[#2E7D32]/50"}`}
+            onClick={() => setActiveTab("analytics")}
           >
-            <BarChart4 size={18} />
-            <span>Statistics</span>
+            <TrendingUp size={18} />
+            <span>Analytics</span>
           </button>
         </div>
         
@@ -236,8 +259,10 @@ export default function AdminDashboard() {
           <TabsList>
             <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
             <TabsTrigger value="products">Products</TabsTrigger>
+            <TabsTrigger value="inventory">Inventory</TabsTrigger>
+            <TabsTrigger value="orders">Orders</TabsTrigger>
             <TabsTrigger value="users">Users</TabsTrigger>
-            <TabsTrigger value="statistics">Statistics</TabsTrigger>
+            <TabsTrigger value="analytics">Analytics</TabsTrigger>
           </TabsList>
         </Tabs>
         
@@ -632,6 +657,18 @@ export default function AdminDashboard() {
               </Card>
             </div>
           </div>
+        </TabsContent>
+
+        <TabsContent value="inventory">
+          <InventoryManagement />
+        </TabsContent>
+        
+        <TabsContent value="orders">
+          <OrderManagement />
+        </TabsContent>
+        
+        <TabsContent value="analytics">
+          <Analytics />
         </TabsContent>
       </div>
     </div>

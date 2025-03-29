@@ -1,0 +1,64 @@
+Prompt
+Project Context: We have a TypeScript/Node.js/React project structured into client, server, and shared directories (as shown in the attached screenshot). We need an Admin Dashboard that is entirely separate from the user-facing dashboard.
+
+Requirements for the Admin Dashboard:
+
+Dedicated Admin Layout:
+
+The admin dashboard must have its own layout, distinct from the user interface.
+
+Consider creating a new folder under client/src (e.g., admin) or a separate route within routes.ts specifically for admin pages.
+
+Authentication & Authorization:
+
+Require admin login credentials (e.g., admin / 12345) before granting access.
+
+Validate admin role in both frontend routes (React Router) and backend middleware (Express/Node).
+
+Dashboard Features:
+
+Overview Panel: Show key stats such as total users, total products, recent orders, etc.
+
+CRUD Operations: Provide pages for creating, reading, updating, and deleting records (e.g., products, inventory, orders) in the database.
+
+User Management: List all registered users (customers, farmers, vendors) with the ability to deactivate or modify user roles.
+
+Order Management: Display active orders, allow status updates, and view details.
+
+Inventory Management: Let admins add or remove products/crops, update quantities, and manage vendor/farmer associations.
+
+Design & Navigation:
+
+Include a sidebar or top navigation bar with clear links to the different admin sections (e.g., “Dashboard,” “Products,” “Users,” “Orders,” “Settings”).
+
+Ensure the styling matches the brand but is clearly differentiated from the user-facing layout (e.g., different color scheme or layout structure).
+
+Real-Time Updates & Scalability:
+
+Whenever an admin modifies database entries (like adding a new product), the changes should be reflected instantly on the user-facing side.
+
+Consider using a real-time approach (websockets or polling) for updates if needed.
+
+File Structure Suggestions:
+
+client/src/admin – React components and pages specific to the admin dashboard.
+
+client/src/admin/routes.ts or client/src/routes/admin.ts – Admin routing logic.
+
+server/src/routes/adminRoutes.ts – Admin-specific backend routes for database operations.
+
+shared/ – Shared interfaces, types, or utility functions that both user and admin dashboards can utilize.
+
+Security & Role Checks:
+
+Protect all admin routes with middleware that checks the user’s role in the session or JWT token.
+
+Return a 403 Forbidden or redirect if a non-admin tries to access admin endpoints.
+
+Optional Enhancements:
+
+Analytics: Graphs or charts showing sales trends, inventory usage, etc.
+
+Logs / Audit Trails: Keep track of changes made by admin users for accountability.
+
+Goal: Implement a well-organized, fully functional Admin Dashboard that is visually and functionally distinct from the user-facing application. It should allow administrators to manage users, products, orders, and system data securely and efficiently.
