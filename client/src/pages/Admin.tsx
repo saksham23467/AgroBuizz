@@ -232,7 +232,16 @@ export default function AdminDashboard() {
       
       {/* Main Content */}
       <div className="flex-1 overflow-auto">
-        <TabsContent value="dashboard" className={activeTab === "dashboard" ? "block" : "hidden"}>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="hidden">
+          <TabsList>
+            <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
+            <TabsTrigger value="products">Products</TabsTrigger>
+            <TabsTrigger value="users">Users</TabsTrigger>
+            <TabsTrigger value="statistics">Statistics</TabsTrigger>
+          </TabsList>
+        </Tabs>
+        
+        <TabsContent value="dashboard">
           <div className="p-8">
             <h2 className="text-2xl font-bold text-[#33691E]">Dashboard Overview</h2>
             <p className="text-gray-500 mb-6">Welcome back, {user?.username || 'Admin'}</p>
@@ -343,7 +352,7 @@ export default function AdminDashboard() {
           </div>
         </TabsContent>
         
-        <TabsContent value="products" className={activeTab === "products" ? "block" : "hidden"}>
+        <TabsContent value="products">
           <div className="p-8">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-2xl font-bold text-[#33691E]">Product Management</h2>
@@ -513,7 +522,7 @@ export default function AdminDashboard() {
           </Dialog>
         </TabsContent>
         
-        <TabsContent value="users" className={activeTab === "users" ? "block" : "hidden"}>
+        <TabsContent value="users">
           <div className="p-8">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-2xl font-bold text-[#33691E]">User Management</h2>
@@ -581,7 +590,7 @@ export default function AdminDashboard() {
           </div>
         </TabsContent>
         
-        <TabsContent value="statistics" className={activeTab === "statistics" ? "block" : "hidden"}>
+        <TabsContent value="statistics">
           <div className="p-8">
             <h2 className="text-2xl font-bold text-[#33691E] mb-6">Statistics &amp; Analytics</h2>
             

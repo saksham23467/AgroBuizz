@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
@@ -37,10 +37,11 @@ export default function AdminLogin() {
   const [location, navigate] = useLocation();
 
   // Redirect to admin dashboard if already logged in as admin
-  if (user && user.role === "admin") {
-    navigate("/admin");
-    return null;
-  }
+  useEffect(() => {
+    if (user && user.role === "admin") {
+      navigate("/admin");
+    }
+  }, [user, navigate]);
 
   // Admin login form
   const adminLoginForm = useForm<AdminLoginFormValues>({
