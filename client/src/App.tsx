@@ -12,7 +12,9 @@ import Checkout from "@/pages/Checkout";
 import About from "@/pages/About";
 import Settings from "@/pages/Settings";
 import Admin from "@/pages/Admin";
+import AdminLogin from "@/pages/AdminLogin";
 import Header from "@/components/Header";
+import Footer from "@/components/Footer";
 import { AuthProvider } from "@/hooks/use-auth";
 import { ProtectedRoute, AdminRoute } from "@/components/protected-route";
 import { CartProvider } from "@/contexts/CartContext";
@@ -26,6 +28,7 @@ function Router() {
           <Route path="/" component={Home} />
           <Route path="/login" component={Login} />
           <Route path="/about" component={About} />
+          <Route path="/admin-login" component={AdminLogin} />
           {/* Public marketplace pages */}
           <Route path="/seed-market" component={SeedMarket} />
           <Route path="/equipment-market" component={EquipmentMarket} />
@@ -38,6 +41,7 @@ function Router() {
           <Route component={NotFound} />
         </Switch>
       </main>
+      <Footer />
     </>
   );
 }
