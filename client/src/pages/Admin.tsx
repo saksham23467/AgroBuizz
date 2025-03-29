@@ -244,8 +244,8 @@ export default function AdminDashboard() {
           </div>
           
           <Button 
-            variant="outline" 
-            className="w-full border-white text-white font-medium hover:bg-white/20 hover:text-white"
+            variant="destructive" 
+            className="w-full font-medium text-white"
             onClick={handleSignOut}
           >
             <LogOut size={16} className="mr-2" /> Sign Out
@@ -662,7 +662,7 @@ export default function AdminDashboard() {
           <InventoryManagement />
         </TabsContent>
         
-        <TabsContent value="orders">
+        <TabsContent value="orders" className="mt-0 p-0">
           <OrderManagement />
         </TabsContent>
         

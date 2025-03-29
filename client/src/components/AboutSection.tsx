@@ -38,11 +38,11 @@ export default function AboutSection() {
             </p>
             <div className="flex items-center gap-4">
               <div className="w-14 h-14 rounded-full bg-[#8BC34A]/20 flex items-center justify-center border-2 border-[#8BC34A]">
-                <span className="text-[#33691E] text-xs font-bold">JD</span>
+                <span className="text-[#33691E] text-xs font-bold">RA</span>
               </div>
               <div>
-                <p className="font-medium text-[#33691E]">John Doe</p>
-                <p className="text-[#558B2F] text-sm">Founder & Agricultural Expert</p>
+                <p className="font-medium text-[#33691E]">Rahul Agarwal</p>
+                <p className="text-[#558B2F] text-sm">Co-founder & CEO</p>
               </div>
             </div>
           </motion.div>
