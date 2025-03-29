@@ -255,8 +255,8 @@ export default function AdminDashboard() {
       
       {/* Main Content */}
       <div className="flex-1 overflow-auto">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="hidden">
-          <TabsList>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="hidden">
             <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
             <TabsTrigger value="products">Products</TabsTrigger>
             <TabsTrigger value="inventory">Inventory</TabsTrigger>
@@ -264,7 +264,6 @@ export default function AdminDashboard() {
             <TabsTrigger value="users">Users</TabsTrigger>
             <TabsTrigger value="analytics">Analytics</TabsTrigger>
           </TabsList>
-        </Tabs>
         
         <TabsContent value="dashboard">
           <div className="p-8">
@@ -670,6 +669,7 @@ export default function AdminDashboard() {
         <TabsContent value="analytics">
           <Analytics />
         </TabsContent>
+        </Tabs>
       </div>
     </div>
   );
