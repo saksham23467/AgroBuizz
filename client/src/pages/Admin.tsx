@@ -16,9 +16,17 @@ import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuSeparator, 
+  DropdownMenuTrigger 
+} from "@/components/ui/dropdown-menu";
+import { 
   BarChart4, Users, ShoppingBag, BoxesIcon, LayoutDashboard, 
   LogOut, Search, PlusCircle, Edit, Trash2, RefreshCw,
-  ClipboardList, Package2Icon, TrendingUp
+  ClipboardList, Package2Icon, TrendingUp, AlertTriangle,
+  CheckCircle2, Eye, MoreVertical, Truck, XCircle
 } from "lucide-react";
 import OrderManagement from "./OrderManagement";
 import InventoryManagement from "./InventoryManagement";
@@ -212,7 +220,7 @@ export default function AdminDashboard() {
             onClick={() => setActiveTab("orders")}
           >
             <ClipboardList size={18} />
-            <span>Orders</span>
+            <span className="font-medium">Orders</span>
           </button>
           
           <button 
@@ -662,8 +670,118 @@ export default function AdminDashboard() {
           <InventoryManagement />
         </TabsContent>
         
-        <TabsContent value="orders" className="mt-0 p-0">
-          <OrderManagement />
+        <TabsContent value="orders">
+          <div className="p-8">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-bold text-[#33691E]">Order Management</h2>
+              <div className="flex space-x-3 items-center">
+                <div className="relative w-64">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
+                  <Input 
+                    placeholder="Search orders..." 
+                    className="pl-9"
+                  />
+                </div>
+                
+                <Select>
+                  <SelectTrigger className="w-[180px]">
+                    <SelectValue placeholder="Filter by status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">All Statuses</SelectItem>
+                    <SelectItem value="pending">Pending</SelectItem>
+                    <SelectItem value="processing">Processing</SelectItem>
+                    <SelectItem value="shipped">Shipped</SelectItem>
+                    <SelectItem value="delivered">Delivered</SelectItem>
+                    <SelectItem value="cancelled">Cancelled</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <Card>
+              <CardContent className="p-0">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Order ID</TableHead>
+                      <TableHead>Customer</TableHead>
+                      <TableHead>Date</TableHead>
+                      <TableHead>Items</TableHead>
+                      <TableHead>Total</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {[
+                      { 
+                        id: "ORD-001", 
+                        customer: "John Farmer", 
+                        customerType: "farmer",
+                        items: ["Premium Corn Seeds", "Basic Tractor"], 
+                        total: 2530, 
+                        status: "pending", 
+                        date: "2025-03-20"
+                      },
+                      { 
+                        id: "ORD-002", 
+                        customer: "Sara Vendor", 
+                        customerType: "vendor",
+                        items: ["Organic Tomato Seeds", "Irrigation System"], 
+                        total: 475, 
+                        status: "processing", 
+                        date: "2025-03-22"
+                      },
+                      { 
+                        id: "ORD-003", 
+                        customer: "Mike Customer", 
+                        customerType: "customer",
+                        items: ["Fresh Tomatoes", "Organic Lettuce"], 
+                        total: 9, 
+                        status: "shipped", 
+                        date: "2025-03-23"
+                      }
+                    ].map(order => (
+                      <TableRow key={order.id}>
+                        <TableCell className="font-medium">{order.id}</TableCell>
+                        <TableCell>
+                          {order.customer}
+                          <Badge variant="outline" className="ml-2 capitalize">
+                            {order.customerType}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>{order.date}</TableCell>
+                        <TableCell>
+                          {order.items.length > 1 
+                            ? `${order.items[0]} + ${order.items.length - 1} more` 
+                            : order.items[0]}
+                        </TableCell>
+                        <TableCell>{order.total} points</TableCell>
+                        <TableCell>
+                          <Badge 
+                            variant={order.status === "pending" ? "outline" : order.status === "processing" ? "secondary" : (order.status === "shipped" ? "default" : "destructive")}
+                            className="capitalize flex items-center w-fit"
+                          >
+                            {order.status === "pending" && <AlertTriangle className="mr-1 h-3 w-3 text-yellow-500" />}
+                            {order.status === "processing" && <RefreshCw className="mr-1 h-3 w-3 text-blue-500 animate-spin" />}
+                            {order.status === "shipped" && <Truck className="mr-1 h-3 w-3" />}
+                            {order.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Button variant="outline" size="sm" className="h-8 px-2">
+                            <Eye className="mr-1 h-4 w-4" />
+                            View
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
         
         <TabsContent value="analytics">
