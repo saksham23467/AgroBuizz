@@ -1,0 +1,339 @@
+Prompt:
+
+I need to build an interactive web application for AgroBuizz using a tech stack of Node.js, React.js, CSS, and MySQL. The database schema must include the following tables and relationships:
+
+1. Core Tables
+Admin Table:
+
+sql
+Copy
+Edit
+CREATE TABLE admin (
+    admin_id VARCHAR(50) PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    email VARCHAR(100) NOT NULL UNIQUE,
+    role VARCHAR(50) NOT NULL
+);
+Crop Table:
+
+sql
+Copy
+Edit
+CREATE TABLE crop (
+    crop_id VARCHAR(50) PRIMARY KEY,
+    type VARCHAR(50) NOT NULL,
+    quantity INTEGER CHECK (quantity >= 0),
+    price NUMERIC(10,2) CHECK (price >= 0),
+    description TEXT
+);
+Customer Table:
+
+sql
+Copy
+Edit
+CREATE TABLE customer (
+    customer_id VARCHAR(50) PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    contact_info VARCHAR(50) NOT NULL,
+    address TEXT NOT NULL,
+    profile_creation_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+Farmer Table:
+
+sql
+Copy
+Edit
+CREATE TABLE farmer (
+    farmer_id VARCHAR(50) PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    contact_info VARCHAR(50) NOT NULL,
+    address TEXT NOT NULL,
+    farm_type VARCHAR(50),
+    crops_grown TEXT,
+    profile_creation_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+Product Table:
+
+sql
+Copy
+Edit
+CREATE TABLE product (
+    product_id VARCHAR(50) PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    type VARCHAR(50) NOT NULL,
+    description TEXT,
+    price NUMERIC(10,2) CHECK (price >= 0),
+    quantity INTEGER CHECK (quantity >= 0),
+    classification VARCHAR(50)
+);
+Vendor Table:
+
+sql
+Copy
+Edit
+CREATE TABLE vendor (
+    vendor_id VARCHAR(50) PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    business_details TEXT NOT NULL,
+    contact_info VARCHAR(50) NOT NULL,
+    address TEXT NOT NULL,
+    profile_creation_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+2. Join & Inventory Tables
+Farmer_Crop: Links farmers and crops.
+
+sql
+Copy
+Edit
+CREATE TABLE farmer_crop (
+    farmer_id VARCHAR(50) NOT NULL,
+    crop_id VARCHAR(50) NOT NULL,
+    PRIMARY KEY (farmer_id, crop_id),
+    FOREIGN KEY (farmer_id) REFERENCES farmer(farmer_id) ON DELETE CASCADE,
+    FOREIGN KEY (crop_id) REFERENCES crop(crop_id) ON DELETE CASCADE
+);
+Vendor_Product: Links vendors and products.
+
+sql
+Copy
+Edit
+CREATE TABLE vendor_product (
+    vendor_id VARCHAR(50) NOT NULL,
+    product_id VARCHAR(50) NOT NULL,
+    PRIMARY KEY (vendor_id, product_id),
+    FOREIGN KEY (vendor_id) REFERENCES vendor(vendor_id) ON DELETE CASCADE,
+    FOREIGN KEY (product_id) REFERENCES product(product_id) ON DELETE CASCADE
+);
+Farmer Inventory:
+
+sql
+Copy
+Edit
+CREATE TABLE farmer_inventory (
+    farmer_id VARCHAR(50) NOT NULL,
+    crop_id VARCHAR(50) NOT NULL,
+    stock_level INTEGER CHECK (stock_level >= 0),
+    low_stock_notification BOOLEAN DEFAULT FALSE,
+    PRIMARY KEY (farmer_id, crop_id),
+    FOREIGN KEY (farmer_id) REFERENCES farmer(farmer_id) ON DELETE CASCADE,
+    FOREIGN KEY (crop_id) REFERENCES crop(crop_id) ON DELETE CASCADE
+);
+Vendor Inventory:
+
+sql
+Copy
+Edit
+CREATE TABLE vendor_inventory (
+    vendor_id VARCHAR(50) NOT NULL,
+    product_id VARCHAR(50) NOT NULL,
+    stock_level INTEGER CHECK (stock_level >= 0),
+    low_stock_notification BOOLEAN DEFAULT FALSE,
+    PRIMARY KEY (vendor_id, product_id),
+    FOREIGN KEY (vendor_id) REFERENCES vendor(vendor_id) ON DELETE CASCADE,
+    FOREIGN KEY (product_id) REFERENCES product(product_id) ON DELETE CASCADE
+);
+3. Order Tables
+Farmer_Customer_Order:
+
+sql
+Copy
+Edit
+CREATE TABLE farmer_customer_order (
+    order_id VARCHAR(50) PRIMARY KEY,
+    farmer_id VARCHAR(50) NOT NULL,
+    customer_id VARCHAR(50) NOT NULL,
+    crop_id VARCHAR(50) NOT NULL,
+    order_type VARCHAR(50) NOT NULL,
+    order_status VARCHAR(50),
+    quantity INTEGER CHECK (quantity > 0),
+    order_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (farmer_id) REFERENCES farmer(farmer_id) ON DELETE CASCADE,
+    FOREIGN KEY (customer_id) REFERENCES customer(customer_id) ON DELETE CASCADE,
+    FOREIGN KEY (crop_id) REFERENCES crop(crop_id) ON DELETE CASCADE
+);
+Vendor_Farmer_Order:
+
+sql
+Copy
+Edit
+CREATE TABLE vendor_farmer_order (
+    order_id VARCHAR(50) PRIMARY KEY,
+    vendor_id VARCHAR(50) NOT NULL,
+    farmer_id VARCHAR(50) NOT NULL,
+    product_id VARCHAR(50) NOT NULL,
+    order_type VARCHAR(50) NOT NULL,
+    order_status VARCHAR(50),
+    quantity INTEGER CHECK (quantity > 0),
+    order_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (vendor_id) REFERENCES vendor(vendor_id) ON DELETE CASCADE,
+    FOREIGN KEY (farmer_id) REFERENCES farmer(farmer_id) ON DELETE CASCADE,
+    FOREIGN KEY (product_id) REFERENCES product(product_id) ON DELETE CASCADE
+);
+4. Transaction Tables
+Farmer_Customer_Transaction:
+
+sql
+Copy
+Edit
+CREATE TABLE farmer_customer_transaction (
+    transaction_id VARCHAR(50) PRIMARY KEY,
+    order_id VARCHAR(50) NOT NULL,
+    payment_mode VARCHAR(50),
+    amount NUMERIC(10,2) CHECK (amount >= 0),
+    transaction_timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    commission NUMERIC(10,2),
+    FOREIGN KEY (order_id) REFERENCES farmer_customer_order(order_id) ON DELETE CASCADE
+);
+Vendor_Farmer_Transaction:
+
+sql
+Copy
+Edit
+CREATE TABLE vendor_farmer_transaction (
+    transaction_id VARCHAR(50) PRIMARY KEY,
+    order_id VARCHAR(50) NOT NULL,
+    payment_mode VARCHAR(50),
+    amount NUMERIC(10,2) CHECK (amount >= 0),
+    transaction_timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    commission NUMERIC(10,2),
+    FOREIGN KEY (order_id) REFERENCES vendor_farmer_order(order_id) ON DELETE CASCADE
+);
+5. Feedback Tables
+Farmer_Customer_Feedback:
+
+sql
+Copy
+Edit
+CREATE TABLE farmer_customer_feedback (
+    feedback_id VARCHAR(50) PRIMARY KEY,
+    order_id VARCHAR(50) NOT NULL,
+    farmer_id VARCHAR(50),
+    customer_id VARCHAR(50),
+    rating INTEGER CHECK (rating BETWEEN 1 AND 5),
+    comments TEXT,
+    feedback_timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (order_id) REFERENCES farmer_customer_order(order_id) ON DELETE CASCADE,
+    FOREIGN KEY (farmer_id) REFERENCES farmer(farmer_id) ON DELETE SET NULL,
+    FOREIGN KEY (customer_id) REFERENCES customer(customer_id) ON DELETE SET NULL
+);
+Vendor_Farmer_Feedback:
+
+sql
+Copy
+Edit
+CREATE TABLE vendor_farmer_feedback (
+    feedback_id VARCHAR(50) PRIMARY KEY,
+    order_id VARCHAR(50) NOT NULL,
+    farmer_id VARCHAR(50),
+    vendor_id VARCHAR(50),
+    rating INTEGER CHECK (rating BETWEEN 1 AND 5),
+    comments TEXT,
+    feedback_timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (order_id) REFERENCES vendor_farmer_order(order_id) ON DELETE CASCADE,
+    FOREIGN KEY (farmer_id) REFERENCES farmer(farmer_id) ON DELETE SET NULL,
+    FOREIGN KEY (vendor_id) REFERENCES vendor(vendor_id) ON DELETE SET NULL
+);
+6. Dispute Tables
+Farmer_Customer_Dispute:
+
+sql
+Copy
+Edit
+CREATE TABLE farmer_customer_dispute (
+    dispute_id VARCHAR(50) PRIMARY KEY,
+    order_id VARCHAR(50) NOT NULL,
+    dispute_type VARCHAR(50) NOT NULL,
+    dispute_status VARCHAR(50),
+    details TEXT,
+    resolution_date DATE,
+    FOREIGN KEY (order_id) REFERENCES farmer_customer_order(order_id) ON DELETE CASCADE
+);
+Vendor_Farmer_Dispute:
+
+sql
+Copy
+Edit
+CREATE TABLE vendor_farmer_dispute (
+    dispute_id VARCHAR(50) PRIMARY KEY,
+    order_id VARCHAR(50) NOT NULL,
+    dispute_type VARCHAR(50) NOT NULL,
+    dispute_status VARCHAR(50),
+    details TEXT,
+    resolution_date DATE,
+    FOREIGN KEY (order_id) REFERENCES vendor_farmer_order(order_id) ON DELETE CASCADE
+);
+Additional Interactive Webapp Functionalities:
+
+User Login Before Cart Actions:
+
+When a user attempts to add an item to the cart, the app must prompt them to log in if they are not already authenticated.
+
+The backend will check the users table (or the appropriate role table like farmer or customer) in MySQL for credentials and session management.
+
+Once logged in, the cart starts at zero. Each addition to the cart is validated by checking product availability from the corresponding inventory tables (farmer_inventory or vendor_inventory) before updating the order.
+
+Dynamic Cart & Order Updates:
+
+When items are added to the cart, the app must:
+
+Validate that the product is in stock.
+
+Update a temporary session cart.
+
+Upon checkout, create a new order record in either the farmer_customer_order or vendor_farmer_order table.
+
+Reflect the order changes in the database and reduce the product stock accordingly.
+
+Interactive Search Bar:
+
+Implement an interactive search bar that performs real-time queries on the product tables (crop, product) and related inventory.
+
+Matching text should be shown in a dropdown list as the user types, using AJAX or websockets to fetch live data from MySQL.
+
+The API should handle search queries using SQL LIKE clauses or full-text search to match the input.
+
+Conflict Resolution (Help) Page:
+
+Create a dedicated "Help" page that includes:
+
+A clear heading titled "Help".
+
+A section for FAQs about common issues.
+
+Display of a support contact number.
+
+A conflict raising form that allows users to file a dispute or report an issue.
+
+The conflict raising form should connect to the MySQL database to create a new dispute record in either the farmer_customer_dispute or vendor_farmer_dispute table.
+
+Additionally, consider including a feedback submission option linked to the relevant feedback tables.
+
+Interactive Flow Overview:
+
+Login Prompt: If the user is not logged in, prompt them with the login page before performing cart actions.
+
+Product Availability Check: Each time a product is added to the cart, query the database to ensure that there is sufficient stock.
+
+Order Processing: When a user completes a purchase (even if using a points-based simulation), update the orders and inventory in the database accordingly.
+
+Conflict Resolution Page: Provide users with an easy way to access help, search FAQs, and submit a conflict report that is stored in the database for admin review.
+
+Summary:
+
+Database Integration: Use MySQL for storing all core data (users, products, orders, transactions, feedback, and disputes).
+
+Interactive Elements:
+
+Require login before adding to cart.
+
+Validate product availability against inventory tables.
+
+Update orders and adjust stock levels in the database.
+
+Create an interactive search bar that displays live results.
+
+Conflict Resolution Page:
+
+Build a "Help" page with FAQs, support contact details, and a form for raising disputes connected to the database.
+
+Please implement these requirements to ensure a robust, interactive web application that handles user actions and database updates seamlessly.

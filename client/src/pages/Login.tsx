@@ -52,8 +52,8 @@ const registerSchema = z.object({
   userType: z.enum(["farmer", "merchant"], {
     required_error: "Please select a user type",
   }),
-  agreeTerms: z.literal(true, {
-    errorMap: () => ({ message: "You must agree to the terms and conditions" }),
+  agreeTerms: z.boolean().refine(val => val === true, {
+    message: "You must agree to the terms and conditions",
   }),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords do not match",
@@ -90,7 +90,7 @@ export default function Login() {
       password: "",
       confirmPassword: "",
       userType: "farmer",
-      agreeTerms: false,
+      agreeTerms: true,
     },
   });
 

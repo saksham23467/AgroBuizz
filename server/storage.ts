@@ -1,6 +1,16 @@
-import { users, type User, type InsertUser, waitlistEntries, type WaitlistEntry, type InsertWaitlistEntry } from "@shared/schema";
+import { waitlistEntries, type WaitlistEntry, type InsertWaitlistEntry } from "@shared/schema";
+
+// Basic user interfaces for authentication
+interface User {
+  id: number;
+  username: string;
+  password: string;
+}
+
+type InsertUser = Omit<User, 'id'>;
 
 export interface IStorage {
+  // User related methods
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
@@ -14,12 +24,14 @@ export interface IStorage {
 export class MemStorage implements IStorage {
   private users: Map<number, User>;
   private waitlist: Map<number, WaitlistEntry>;
+  
   currentUserId: number;
   currentWaitlistId: number;
 
   constructor() {
     this.users = new Map();
     this.waitlist = new Map();
+    
     this.currentUserId = 1;
     this.currentWaitlistId = 1;
   }
@@ -47,6 +59,7 @@ export class MemStorage implements IStorage {
       ...entry,
       id,
       createdAt: new Date(),
+      notifications: entry.notifications === undefined ? false : entry.notifications,
     };
     this.waitlist.set(id, waitlistEntry);
     return waitlistEntry;
@@ -63,4 +76,5 @@ export class MemStorage implements IStorage {
   }
 }
 
+// Just use memory storage for now
 export const storage = new MemStorage();
