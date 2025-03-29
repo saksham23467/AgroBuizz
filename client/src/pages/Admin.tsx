@@ -184,7 +184,7 @@ export default function AdminDashboard() {
         
         <div className="mt-6">
           <button 
-            className={`w-full text-left p-3 pl-6 flex items-center space-x-3 ${activeTab === "dashboard" ? "bg-[#2E7D32] text-white" : "text-white/80 hover:bg-[#2E7D32]/50"}`}
+            className={`w-full text-left p-3 pl-6 flex items-center space-x-3 ${activeTab === "dashboard" ? "bg-[#2E7D32] text-white" : "text-white hover:bg-[#2E7D32]/50"}`}
             onClick={() => setActiveTab("dashboard")}
           >
             <LayoutDashboard size={18} />
@@ -192,7 +192,7 @@ export default function AdminDashboard() {
           </button>
           
           <button 
-            className={`w-full text-left p-3 pl-6 flex items-center space-x-3 ${activeTab === "products" ? "bg-[#2E7D32] text-white" : "text-white/80 hover:bg-[#2E7D32]/50"}`}
+            className={`w-full text-left p-3 pl-6 flex items-center space-x-3 ${activeTab === "products" ? "bg-[#2E7D32] text-white" : "text-white hover:bg-[#2E7D32]/50"}`}
             onClick={() => setActiveTab("products")}
           >
             <ShoppingBag size={18} />
@@ -200,7 +200,7 @@ export default function AdminDashboard() {
           </button>
           
           <button 
-            className={`w-full text-left p-3 pl-6 flex items-center space-x-3 ${activeTab === "inventory" ? "bg-[#2E7D32] text-white" : "text-white/80 hover:bg-[#2E7D32]/50"}`}
+            className={`w-full text-left p-3 pl-6 flex items-center space-x-3 ${activeTab === "inventory" ? "bg-[#2E7D32] text-white" : "text-white hover:bg-[#2E7D32]/50"}`}
             onClick={() => setActiveTab("inventory")}
           >
             <Package2Icon size={18} />
@@ -208,7 +208,7 @@ export default function AdminDashboard() {
           </button>
           
           <button 
-            className={`w-full text-left p-3 pl-6 flex items-center space-x-3 ${activeTab === "orders" ? "bg-[#2E7D32] text-white" : "text-white/80 hover:bg-[#2E7D32]/50"}`}
+            className={`w-full text-left p-3 pl-6 flex items-center space-x-3 ${activeTab === "orders" ? "bg-[#2E7D32] text-white" : "text-white hover:bg-[#2E7D32]/50"}`}
             onClick={() => setActiveTab("orders")}
           >
             <ClipboardList size={18} />
@@ -216,7 +216,7 @@ export default function AdminDashboard() {
           </button>
           
           <button 
-            className={`w-full text-left p-3 pl-6 flex items-center space-x-3 ${activeTab === "users" ? "bg-[#2E7D32] text-white" : "text-white/80 hover:bg-[#2E7D32]/50"}`}
+            className={`w-full text-left p-3 pl-6 flex items-center space-x-3 ${activeTab === "users" ? "bg-[#2E7D32] text-white" : "text-white hover:bg-[#2E7D32]/50"}`}
             onClick={() => setActiveTab("users")}
           >
             <Users size={18} />
@@ -224,7 +224,7 @@ export default function AdminDashboard() {
           </button>
           
           <button 
-            className={`w-full text-left p-3 pl-6 flex items-center space-x-3 ${activeTab === "analytics" ? "bg-[#2E7D32] text-white" : "text-white/80 hover:bg-[#2E7D32]/50"}`}
+            className={`w-full text-left p-3 pl-6 flex items-center space-x-3 ${activeTab === "analytics" ? "bg-[#2E7D32] text-white" : "text-white hover:bg-[#2E7D32]/50"}`}
             onClick={() => setActiveTab("analytics")}
           >
             <TrendingUp size={18} />
@@ -245,7 +245,7 @@ export default function AdminDashboard() {
           
           <Button 
             variant="outline" 
-            className="w-full border-white/30 text-white hover:bg-white/10 hover:text-white"
+            className="w-full border-white text-white font-medium hover:bg-white/20 hover:text-white"
             onClick={handleSignOut}
           >
             <LogOut size={16} className="mr-2" /> Sign Out
