@@ -33,7 +33,7 @@ import { Textarea } from "@/components/ui/textarea";
 // Mock inventory data
 const seedInventory = [
   { 
-    id: 1, 
+    id: 101, 
     name: "Organic Tomato Seeds", 
     sku: "S-TOM-001", 
     category: "vegetable", 
@@ -47,7 +47,7 @@ const seedInventory = [
     location: "Warehouse A, Shelf 3"
   },
   { 
-    id: 2, 
+    id: 102, 
     name: "Premium Corn Seeds", 
     sku: "S-CRN-002", 
     category: "grain", 
@@ -61,7 +61,7 @@ const seedInventory = [
     location: "Warehouse A, Shelf 4"
   },
   { 
-    id: 3, 
+    id: 103, 
     name: "Organic Lettuce Seeds", 
     sku: "S-LET-003", 
     category: "vegetable", 
@@ -75,7 +75,7 @@ const seedInventory = [
     location: "Warehouse A, Shelf 3"
   },
   { 
-    id: 4, 
+    id: 104, 
     name: "Premium Rice Seeds", 
     sku: "S-RIC-004", 
     category: "grain", 
@@ -89,7 +89,7 @@ const seedInventory = [
     location: "Warehouse B, Shelf 1"
   },
   { 
-    id: 5, 
+    id: 105, 
     name: "Organic Carrot Seeds", 
     sku: "S-CAR-005", 
     category: "vegetable", 
@@ -106,7 +106,7 @@ const seedInventory = [
 
 const equipmentInventory = [
   { 
-    id: 1, 
+    id: 201, 
     name: "Basic Tractor", 
     sku: "E-TRA-001", 
     category: "machinery", 
@@ -120,7 +120,7 @@ const equipmentInventory = [
     location: "Warehouse C, Section 1"
   },
   { 
-    id: 2, 
+    id: 202, 
     name: "Irrigation System", 
     sku: "E-IRR-002", 
     category: "irrigation", 
@@ -134,7 +134,7 @@ const equipmentInventory = [
     location: "Warehouse C, Section 2"
   },
   { 
-    id: 3, 
+    id: 203, 
     name: "Harvester", 
     sku: "E-HAR-003", 
     category: "machinery", 
@@ -151,7 +151,7 @@ const equipmentInventory = [
 
 const produceInventory = [
   { 
-    id: 1, 
+    id: 301, 
     name: "Fresh Tomatoes", 
     sku: "P-TOM-001", 
     category: "vegetable", 
@@ -166,7 +166,7 @@ const produceInventory = [
     expiry: "2025-04-05"
   },
   { 
-    id: 2, 
+    id: 302, 
     name: "Premium Corn", 
     sku: "P-CRN-002", 
     category: "grain", 
@@ -181,7 +181,7 @@ const produceInventory = [
     expiry: "2025-05-15"
   },
   { 
-    id: 3, 
+    id: 303, 
     name: "Organic Lettuce", 
     sku: "P-LET-003", 
     category: "vegetable", 
@@ -571,24 +571,24 @@ export default function InventoryManagement() {
               />
             </div>
             
-            <Select value={filterStatus || ""} onValueChange={(value) => setFilterStatus(value || null)}>
+            <Select value={filterStatus || "all"} onValueChange={(value) => setFilterStatus(value === "all" ? null : value)}>
               <SelectTrigger className="w-[150px]">
                 <SelectValue placeholder="Filter status" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Status</SelectItem>
+                <SelectItem value="all">All Status</SelectItem>
                 <SelectItem value="low">Low Stock</SelectItem>
                 <SelectItem value="normal">Normal</SelectItem>
                 <SelectItem value="overstock">Overstock</SelectItem>
               </SelectContent>
             </Select>
             
-            <Select value={filterCategory || ""} onValueChange={(value) => setFilterCategory(value || null)}>
+            <Select value={filterCategory || "all"} onValueChange={(value) => setFilterCategory(value === "all" ? null : value)}>
               <SelectTrigger className="w-[150px]">
                 <SelectValue placeholder="Filter category" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Categories</SelectItem>
+                <SelectItem value="all">All Categories</SelectItem>
                 {productCategories[activeTab as keyof typeof productCategories]?.map(category => (
                   <SelectItem key={category} value={category}>
                     {category.charAt(0).toUpperCase() + category.slice(1)}
