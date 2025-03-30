@@ -1,0 +1,127 @@
+/* Reusable animations for better dark mode experience */
+
+/* Button hover effects */
+.btn-animate {
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+}
+
+.btn-animate:hover:not(:disabled) {
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+/* Card hover effects */
+.card-animate {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  will-change: transform, box-shadow;
+}
+
+.card-animate:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+}
+
+/* Page transitions */
+.page-enter {
+  opacity: 0;
+  transform: translateY(20px);
+}
+
+.page-enter-active {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 300ms ease-out, transform 300ms ease-out;
+}
+
+.page-exit {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.page-exit-active {
+  opacity: 0;
+  transform: translateY(-20px);
+  transition: opacity 300ms ease-in, transform 300ms ease-in;
+}
+
+/* Dark mode transition */
+.dark-mode-transition {
+  transition: background-color 0.3s ease, 
+              color 0.3s ease, 
+              border-color 0.3s ease;
+}
+
+/* Input focus effect */
+.input-focus-animate {
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.input-focus-animate:focus {
+  box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.3);
+}
+
+/* Switch toggle animation */
+@keyframes toggle-on {
+  0% { transform: translateX(0); }
+  50% { transform: translateX(16px) scale(1.2); }
+  100% { transform: translateX(16px) scale(1); }
+}
+
+@keyframes toggle-off {
+  0% { transform: translateX(16px); }
+  50% { transform: translateX(0) scale(1.2); }
+  100% { transform: translateX(0) scale(1); }
+}
+
+.toggle-animate-on {
+  animation: toggle-on 0.3s forwards ease;
+}
+
+.toggle-animate-off {
+  animation: toggle-off 0.3s forwards ease;
+}
+
+/* Fade in animation */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.fade-in {
+  animation: fadeIn 0.5s ease forwards;
+}
+
+/* Slide up animation */
+@keyframes slideUp {
+  from { 
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to { 
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.slide-up {
+  animation: slideUp 0.4s ease forwards;
+}
+
+/* Typography animations */
+.text-focus {
+  transition: font-weight 0.2s ease, letter-spacing 0.2s ease;
+}
+
+.text-focus:hover {
+  letter-spacing: 0.02em;
+}
+
+/* Staggered list item animations */
+.stagger-item {
+  opacity: 0;
+  transform: translateY(10px);
+}
+
+.stagger-enter {
+  animation: slideUp 0.4s ease forwards;
+}

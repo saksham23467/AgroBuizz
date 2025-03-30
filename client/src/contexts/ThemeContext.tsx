@@ -1,5 +1,7 @@
-import React, { createContext, useContext, useEffect } from "react";
+import React, { createContext, useContext, useEffect, useRef } from "react";
 import { useAuth } from "@/hooks/use-auth";
+import { motion, AnimatePresence } from "framer-motion";
+import { darkModeTransition } from "@/lib/utils";
 
 // Define dark mode color palette
 const DARK_MODE_COLORS = {
@@ -26,16 +28,34 @@ export const ThemeContext = createContext<ThemeContextType | null>(null);
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const { user, updateDarkModeMutation } = useAuth();
   const isDarkMode = user?.darkMode || false;
-
-  // Function to toggle dark mode
+  const transitionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  
+  // Function to toggle dark mode with enhanced animation
   const toggleDarkMode = () => {
     if (user) {
+      // Apply transition class before change
+      document.documentElement.classList.add("dark-mode-transition");
+      
+      // Clear any existing timeout
+      if (transitionTimeoutRef.current) {
+        clearTimeout(transitionTimeoutRef.current);
+      }
+      
+      // Update dark mode preference
       updateDarkModeMutation.mutate(!isDarkMode);
+      
+      // Remove transition class after transition is complete
+      transitionTimeoutRef.current = setTimeout(() => {
+        document.documentElement.classList.remove("dark-mode-transition");
+      }, 300); // Match with transition duration
     }
   };
 
-  // Apply dark mode classes to the HTML element
+  // Apply dark mode classes to the HTML element with smooth transitions
   useEffect(() => {
+    // Begin transition
+    document.documentElement.classList.add("dark-mode-transition");
+    
     if (isDarkMode) {
       document.documentElement.classList.add("dark-mode");
       
@@ -57,11 +77,46 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       document.documentElement.style.removeProperty("--color-highlight");
       document.documentElement.style.removeProperty("--color-border");
     }
+    
+    // Remove transition class after transition is complete
+    const timeout = setTimeout(() => {
+      document.documentElement.classList.remove("dark-mode-transition");
+    }, 300);
+    
+    return () => {
+      clearTimeout(timeout);
+    }
   }, [isDarkMode]);
+
+  // Clean up any lingering timeouts
+  useEffect(() => {
+    return () => {
+      if (transitionTimeoutRef.current) {
+        clearTimeout(transitionTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  // Theme toggle icon animation
+  const themeIconVariants = {
+    light: { rotate: 0 },
+    dark: { rotate: 180 },
+  };
 
   return (
     <ThemeContext.Provider value={{ isDarkMode, toggleDarkMode }}>
-      {children}
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={isDarkMode ? "dark" : "light"}
+          initial={{ opacity: 0.8 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0.8 }}
+          transition={darkModeTransition}
+          className="contents"
+        >
+          {children}
+        </motion.div>
+      </AnimatePresence>
     </ThemeContext.Provider>
   );
 }
