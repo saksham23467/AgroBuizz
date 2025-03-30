@@ -53,7 +53,7 @@ export function AdminRoute({
         }
         
         if (!user) {
-          return <Redirect to="/login" />;
+          return <Redirect to="/admin-login" />;
         }
         
         if (user.role !== 'admin') {

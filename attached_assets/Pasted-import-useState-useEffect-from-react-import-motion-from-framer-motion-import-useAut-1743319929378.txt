@@ -88,23 +88,10 @@ export default function AdminDashboard() {
 
   // Force navigation away if not admin
   useEffect(() => {
-    // If user is not logged in or is not an admin, redirect to login page
-    if (!user) {
-      navigate("/admin-login");
-      toast({
-        title: "Access Denied",
-        description: "Please log in with an admin account to access this page.",
-        variant: "destructive",
-      });
-    } else if (user.role !== "admin") {
+    if (user && user.role !== "admin") {
       navigate("/");
-      toast({
-        title: "Access Denied",
-        description: "You don't have permission to access the admin dashboard.",
-        variant: "destructive",
-      });
     }
-  }, [user, navigate, toast]);
+  }, [user, navigate]);
   
   // Make sure the tab navigation works properly
   useEffect(() => {

@@ -46,9 +46,7 @@ export default function HeroSection() {
           animate={{ opacity: 1 }}
           transition={{ duration: 0.5 }}
         >
-          <span className="inline-block bg-[#E8F5E9] text-[#2E7D32] rounded-full px-4 py-1 text-sm font-medium mb-6">
-            Coming Soon
-          </span>
+
           <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight mb-6">
             Connecting Farmers & <span className="text-[#4CAF50]">Buyers</span>
           </h1>

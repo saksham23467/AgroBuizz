@@ -8,6 +8,7 @@ import { useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { queryClient } from "@/lib/queryClient";
 import { LockKeyhole, User } from "lucide-react";
 import {
   Form,
@@ -62,6 +63,15 @@ export default function AdminLogin() {
       });
       
       if (result.role !== "admin") {
+        // Handle non-admin user logins by showing specialized error and logging out
+        try {
+          // Force logout for non-admin users who tried to access admin page
+          await fetch("/api/logout", { method: "POST" });
+          // Reset query cache for the user query
+          queryClient.resetQueries();
+        } catch (e) {
+          console.error("Failed to force logout:", e);
+        }
         throw new Error("Unauthorized: Admin access only");
       }
       
@@ -73,9 +83,14 @@ export default function AdminLogin() {
       // Redirect to admin dashboard after successful login
       navigate("/admin");
     } catch (error) {
+      // Check for unauthorized error specifically
+      const errorMessage = error instanceof Error && error.message.includes("Unauthorized")
+        ? "You don't have admin privileges. Only admin accounts can access this area."
+        : "Invalid admin credentials. Please try again.";
+      
       toast({
-        title: "Admin login failed",
-        description: "Invalid admin credentials. Please try again.",
+        title: "Admin Access Denied",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
