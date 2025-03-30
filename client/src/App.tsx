@@ -16,6 +16,7 @@ import AdminLogin from "@/pages/AdminLogin";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { AuthProvider } from "@/hooks/use-auth";
+import { ThemeProvider } from "@/contexts/ThemeContext";
 import { ProtectedRoute, AdminRoute } from "@/components/protected-route";
 import { CartProvider } from "@/contexts/CartContext";
 
@@ -50,10 +51,12 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <CartProvider>
-          <Router />
-          <Toaster />
-        </CartProvider>
+        <ThemeProvider>
+          <CartProvider>
+            <Router />
+            <Toaster />
+          </CartProvider>
+        </ThemeProvider>
       </AuthProvider>
     </QueryClientProvider>
   );

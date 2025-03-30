@@ -4,6 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
+import { useTheme } from "@/contexts/ThemeContext";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -72,6 +73,7 @@ type PasswordFormValues = z.infer<typeof passwordFormSchema>;
 export default function SettingsPage() {
   const { user, updateDarkModeMutation } = useAuth();
   const { toast } = useToast();
+  const { isDarkMode } = useTheme();
   const [activeTab, setActiveTab] = useState("account");
   
   // Profile form
@@ -148,23 +150,23 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-24 md:py-32">
+    <div className={`container mx-auto px-4 py-24 md:py-32 ${isDarkMode ? 'bg-[#121212] text-[#E0E0E0]' : ''}`}>
       <div className="max-w-4xl mx-auto">
-        <h1 className="text-3xl font-bold mb-6">Account Settings</h1>
+        <h1 className={`text-3xl font-bold mb-6 ${isDarkMode ? 'text-[#E0E0E0]' : ''}`}>Account Settings</h1>
         
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-3 mb-8">
-            <TabsTrigger value="account">Account</TabsTrigger>
-            <TabsTrigger value="security">Security</TabsTrigger>
-            <TabsTrigger value="appearance">Appearance</TabsTrigger>
+          <TabsList className={`grid w-full grid-cols-3 mb-8 ${isDarkMode ? 'bg-[#242424]' : ''}`}>
+            <TabsTrigger value="account" className={isDarkMode ? 'data-[state=active]:bg-[#333333] data-[state=active]:text-[#E0E0E0]' : ''}>Account</TabsTrigger>
+            <TabsTrigger value="security" className={isDarkMode ? 'data-[state=active]:bg-[#333333] data-[state=active]:text-[#E0E0E0]' : ''}>Security</TabsTrigger>
+            <TabsTrigger value="appearance" className={isDarkMode ? 'data-[state=active]:bg-[#333333] data-[state=active]:text-[#E0E0E0]' : ''}>Appearance</TabsTrigger>
           </TabsList>
           
           {/* Account Tab */}
           <TabsContent value="account">
-            <Card>
+            <Card className={isDarkMode ? 'bg-[#1E1E1E] border-[#424242]' : ''}>
               <CardHeader>
-                <CardTitle>Profile Information</CardTitle>
-                <CardDescription>
+                <CardTitle className={isDarkMode ? 'text-[#E0E0E0]' : ''}>Profile Information</CardTitle>
+                <CardDescription className={isDarkMode ? 'text-[#B0B0B0]' : ''}>
                   Update your account details and user profile.
                 </CardDescription>
               </CardHeader>
@@ -176,11 +178,15 @@ export default function SettingsPage() {
                       name="username"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Username</FormLabel>
+                          <FormLabel className={isDarkMode ? 'text-[#E0E0E0]' : ''}>Username</FormLabel>
                           <FormControl>
-                            <Input placeholder="Username" {...field} />
+                            <Input 
+                              placeholder="Username" 
+                              {...field} 
+                              className={isDarkMode ? 'bg-[#2A2A2A] border-[#424242] text-[#E0E0E0]' : ''}
+                            />
                           </FormControl>
-                          <FormDescription>
+                          <FormDescription className={isDarkMode ? 'text-[#B0B0B0]' : ''}>
                             This is your public display name.
                           </FormDescription>
                           <FormMessage />
@@ -193,11 +199,16 @@ export default function SettingsPage() {
                       name="email"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Email</FormLabel>
+                          <FormLabel className={isDarkMode ? 'text-[#E0E0E0]' : ''}>Email</FormLabel>
                           <FormControl>
-                            <Input placeholder="Email" type="email" {...field} />
+                            <Input 
+                              placeholder="Email" 
+                              type="email" 
+                              {...field} 
+                              className={isDarkMode ? 'bg-[#2A2A2A] border-[#424242] text-[#E0E0E0]' : ''}
+                            />
                           </FormControl>
-                          <FormDescription>
+                          <FormDescription className={isDarkMode ? 'text-[#B0B0B0]' : ''}>
                             Your email address is used for notifications and login.
                           </FormDescription>
                           <FormMessage />
@@ -210,23 +221,23 @@ export default function SettingsPage() {
                       name="userType"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>User Type</FormLabel>
+                          <FormLabel className={isDarkMode ? 'text-[#E0E0E0]' : ''}>User Type</FormLabel>
                           <Select 
                             onValueChange={field.onChange} 
                             defaultValue={field.value}
                           >
                             <FormControl>
-                              <SelectTrigger>
+                              <SelectTrigger className={isDarkMode ? 'bg-[#2A2A2A] border-[#424242] text-[#E0E0E0]' : ''}>
                                 <SelectValue placeholder="Select a user type" />
                               </SelectTrigger>
                             </FormControl>
-                            <SelectContent>
+                            <SelectContent className={isDarkMode ? 'bg-[#2A2A2A] border-[#424242] text-[#E0E0E0]' : ''}>
                               <SelectItem value="farmer">Farmer</SelectItem>
                               <SelectItem value="customer">Customer</SelectItem>
                               <SelectItem value="vendor">Vendor</SelectItem>
                             </SelectContent>
                           </Select>
-                          <FormDescription>
+                          <FormDescription className={isDarkMode ? 'text-[#B0B0B0]' : ''}>
                             Your user type determines what features are available to you.
                           </FormDescription>
                           <FormMessage />
@@ -256,10 +267,10 @@ export default function SettingsPage() {
           
           {/* Security Tab */}
           <TabsContent value="security">
-            <Card>
+            <Card className={isDarkMode ? 'bg-[#1E1E1E] border-[#424242]' : ''}>
               <CardHeader>
-                <CardTitle>Password</CardTitle>
-                <CardDescription>
+                <CardTitle className={isDarkMode ? 'text-[#E0E0E0]' : ''}>Password</CardTitle>
+                <CardDescription className={isDarkMode ? 'text-[#B0B0B0]' : ''}>
                   Change your password to keep your account secure.
                 </CardDescription>
               </CardHeader>
@@ -271,9 +282,14 @@ export default function SettingsPage() {
                       name="currentPassword"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Current Password</FormLabel>
+                          <FormLabel className={isDarkMode ? 'text-[#E0E0E0]' : ''}>Current Password</FormLabel>
                           <FormControl>
-                            <Input placeholder="Current Password" type="password" {...field} />
+                            <Input 
+                              placeholder="Current Password" 
+                              type="password" 
+                              {...field} 
+                              className={isDarkMode ? 'bg-[#2A2A2A] border-[#424242] text-[#E0E0E0]' : ''}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -285,9 +301,14 @@ export default function SettingsPage() {
                       name="newPassword"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>New Password</FormLabel>
+                          <FormLabel className={isDarkMode ? 'text-[#E0E0E0]' : ''}>New Password</FormLabel>
                           <FormControl>
-                            <Input placeholder="New Password" type="password" {...field} />
+                            <Input 
+                              placeholder="New Password" 
+                              type="password" 
+                              {...field} 
+                              className={isDarkMode ? 'bg-[#2A2A2A] border-[#424242] text-[#E0E0E0]' : ''}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -299,12 +320,13 @@ export default function SettingsPage() {
                       name="confirmPassword"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Confirm New Password</FormLabel>
+                          <FormLabel className={isDarkMode ? 'text-[#E0E0E0]' : ''}>Confirm New Password</FormLabel>
                           <FormControl>
                             <Input 
                               placeholder="Confirm New Password" 
                               type="password" 
                               {...field} 
+                              className={isDarkMode ? 'bg-[#2A2A2A] border-[#424242] text-[#E0E0E0]' : ''}
                             />
                           </FormControl>
                           <FormMessage />
@@ -334,19 +356,19 @@ export default function SettingsPage() {
           
           {/* Appearance Tab */}
           <TabsContent value="appearance">
-            <Card>
+            <Card className={isDarkMode ? 'bg-[#1E1E1E] border-[#424242]' : ''}>
               <CardHeader>
-                <CardTitle>Appearance</CardTitle>
-                <CardDescription>
+                <CardTitle className={isDarkMode ? 'text-[#E0E0E0]' : ''}>Appearance</CardTitle>
+                <CardDescription className={isDarkMode ? 'text-[#B0B0B0]' : ''}>
                   Customize how AgroBuizz looks for you.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <Label htmlFor="dark-mode" className="flex flex-col space-y-1">
+                    <Label htmlFor="dark-mode" className={`flex flex-col space-y-1 ${isDarkMode ? 'text-[#E0E0E0]' : ''}`}>
                       <span>Dark Mode</span>
-                      <span className="text-sm text-gray-500">
+                      <span className={`text-sm ${isDarkMode ? 'text-[#B0B0B0]' : 'text-gray-500'}`}>
                         Switch between light and dark theme
                       </span>
                     </Label>
@@ -359,25 +381,25 @@ export default function SettingsPage() {
                   </div>
                 </div>
                 
-                <Separator />
+                <Separator className={isDarkMode ? 'bg-[#424242]' : ''} />
                 
                 <div className="space-y-2">
-                  <h3 className="text-lg font-medium">Color Theme</h3>
-                  <p className="text-sm text-gray-500">
+                  <h3 className={`text-lg font-medium ${isDarkMode ? 'text-[#E0E0E0]' : ''}`}>Color Theme</h3>
+                  <p className={`text-sm ${isDarkMode ? 'text-[#B0B0B0]' : 'text-gray-500'}`}>
                     Choose your preferred color theme (coming soon)
                   </p>
                   <div className="grid grid-cols-3 gap-4 pt-2">
                     <div className="flex flex-col items-center space-y-2">
-                      <div className="w-full h-20 rounded-md bg-gradient-to-r from-[#4CAF50] to-[#8BC34A] border border-gray-200 cursor-pointer" />
-                      <span className="text-sm">Green (Default)</span>
+                      <div className={`w-full h-20 rounded-md bg-gradient-to-r from-[#4CAF50] to-[#8BC34A] border ${isDarkMode ? 'border-[#424242]' : 'border-gray-200'} cursor-pointer`} />
+                      <span className={`text-sm ${isDarkMode ? 'text-[#E0E0E0]' : ''}`}>Green (Default)</span>
                     </div>
                     <div className="flex flex-col items-center space-y-2 opacity-50">
-                      <div className="w-full h-20 rounded-md bg-gradient-to-r from-blue-500 to-cyan-400 border border-gray-200 cursor-not-allowed" />
-                      <span className="text-sm">Blue (Coming Soon)</span>
+                      <div className={`w-full h-20 rounded-md bg-gradient-to-r from-blue-500 to-cyan-400 border ${isDarkMode ? 'border-[#424242]' : 'border-gray-200'} cursor-not-allowed`} />
+                      <span className={`text-sm ${isDarkMode ? 'text-[#E0E0E0]' : ''}`}>Blue (Coming Soon)</span>
                     </div>
                     <div className="flex flex-col items-center space-y-2 opacity-50">
-                      <div className="w-full h-20 rounded-md bg-gradient-to-r from-orange-500 to-amber-400 border border-gray-200 cursor-not-allowed" />
-                      <span className="text-sm">Orange (Coming Soon)</span>
+                      <div className={`w-full h-20 rounded-md bg-gradient-to-r from-orange-500 to-amber-400 border ${isDarkMode ? 'border-[#424242]' : 'border-gray-200'} cursor-not-allowed`} />
+                      <span className={`text-sm ${isDarkMode ? 'text-[#E0E0E0]' : ''}`}>Orange (Coming Soon)</span>
                     </div>
                   </div>
                 </div>

@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
-import { Menu, X, Leaf, ShoppingCart, User, LogOut, Settings } from "lucide-react";
+import { Menu, X, Leaf, ShoppingCart, User, LogOut, Settings, Sun, Moon } from "lucide-react";
 import { 
   DropdownMenu,
   DropdownMenuContent,
@@ -11,12 +11,14 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/hooks/use-auth";
+import { useTheme } from "@/contexts/ThemeContext";
 
 export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [location] = useLocation();
   const [cartItemCount, setCartItemCount] = useState(0);
   const { user, logoutMutation } = useAuth();
+  const { isDarkMode, toggleDarkMode } = useTheme();
 
   const toggleMobileMenu = () => {
     setMobileMenuOpen(!mobileMenuOpen);
@@ -79,19 +81,19 @@ export default function Header() {
   };
 
   return (
-    <header className="fixed top-0 w-full bg-white/90 backdrop-blur-md z-50 shadow-sm">
+    <header className={`fixed top-0 w-full z-50 shadow-sm ${isDarkMode ? 'bg-[#181818]/95' : 'bg-white/90'} backdrop-blur-md transition-colors`}>
       <div className="container mx-auto px-4 py-4 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2">
           <div className="bg-gradient-to-r from-[#4CAF50] to-[#8BC34A] text-white p-2 rounded-lg">
             <Leaf className="h-5 w-5" />
           </div>
-          <span className="text-xl font-bold text-[#2E7D32]">AgroBuizz</span>
+          <span className={`text-xl font-bold ${isDarkMode ? 'text-[#8BC34A]' : 'text-[#2E7D32]'}`}>AgroBuizz</span>
         </Link>
 
         <nav className="hidden md:flex items-center gap-6">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button className="text-gray-600 hover:text-[#4CAF50] font-medium transition">
+              <button className={`font-medium transition ${isDarkMode ? 'text-gray-300 hover:text-[#8BC34A]' : 'text-gray-600 hover:text-[#4CAF50]'}`}>
                 Markets
               </button>
             </DropdownMenuTrigger>
@@ -109,7 +111,7 @@ export default function Header() {
           </DropdownMenu>
           
           <Link href="/about">
-            <span className="text-gray-600 hover:text-[#4CAF50] font-medium transition cursor-pointer">
+            <span className={`font-medium transition cursor-pointer ${isDarkMode ? 'text-gray-300 hover:text-[#8BC34A]' : 'text-gray-600 hover:text-[#4CAF50]'}`}>
               About Us
             </span>
           </Link>
@@ -117,7 +119,7 @@ export default function Header() {
           {isHomePage && (
             <button 
               onClick={() => scrollToSection('waitlist')} 
-              className="text-gray-600 hover:text-[#4CAF50] font-medium transition"
+              className={`font-medium transition ${isDarkMode ? 'text-gray-300 hover:text-[#8BC34A]' : 'text-gray-600 hover:text-[#4CAF50]'}`}
             >
               Join Waitlist
             </button>
@@ -125,7 +127,11 @@ export default function Header() {
           
           <div className="flex items-center gap-2">
             <Link href="/checkout" className="relative">
-              <Button variant="ghost" size="icon" className="text-gray-600 hover:text-[#4CAF50]">
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className={`${isDarkMode ? 'text-gray-300 hover:text-[#8BC34A]' : 'text-gray-600 hover:text-[#4CAF50]'}`}
+              >
                 <ShoppingCart className="h-5 w-5" />
                 {cartItemCount > 0 && (
                   <Badge 
@@ -138,13 +144,26 @@ export default function Header() {
               </Button>
             </Link>
             
+            {/* Dark mode toggle button */}
+            {user && (
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={toggleDarkMode} 
+                className={`${isDarkMode ? 'text-gray-300 hover:text-[#8BC34A]' : 'text-gray-600 hover:text-[#4CAF50]'}`}
+                title={isDarkMode ? "Switch to light mode" : "Switch to dark mode"}
+              >
+                {isDarkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+              </Button>
+            )}
+            
             {user ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="flex items-center gap-2 text-gray-600 hover:text-[#4CAF50]">
+                  <Button variant="ghost" className={`flex items-center gap-2 ${isDarkMode ? 'text-gray-300 hover:text-[#8BC34A]' : 'text-gray-600 hover:text-[#4CAF50]'}`}>
                     <div className="flex flex-col items-start">
                       <span className="text-sm font-medium">{user.username}</span>
-                      <span className="text-xs text-gray-500 capitalize">{user.userType}</span>
+                      <span className={`text-xs capitalize ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>{user.userType}</span>
                     </div>
                   </Button>
                 </DropdownMenuTrigger>
@@ -164,7 +183,7 @@ export default function Header() {
                     </DropdownMenuItem>
                   )}
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-red-600">
+                  <DropdownMenuItem onClick={handleLogout} className={`cursor-pointer ${isDarkMode ? 'text-red-400' : 'text-red-600'}`}>
                     <LogOut className="mr-2 h-4 w-4" />
                     <span>Log out</span>
                   </DropdownMenuItem>
@@ -172,7 +191,7 @@ export default function Header() {
               </DropdownMenu>
             ) : (
               <Link href="/login">
-                <Button className="bg-[#4CAF50] hover:bg-[#43A047]">
+                <Button className="bg-[#4CAF50] hover:bg-[#43A047] text-white">
                   <User className="h-4 w-4 mr-2" />
                   Login
                 </Button>
@@ -182,7 +201,13 @@ export default function Header() {
         </nav>
 
         <div className="md:hidden">
-          <Button variant="ghost" size="icon" onClick={toggleMobileMenu} aria-label="Toggle menu">
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={toggleMobileMenu} 
+            aria-label="Toggle menu"
+            className={isDarkMode ? 'text-gray-300 hover:text-[#8BC34A]' : ''}
+          >
             {mobileMenuOpen ? (
               <X className="h-6 w-6" />
             ) : (
@@ -194,24 +219,24 @@ export default function Header() {
 
       {/* Mobile menu */}
       {mobileMenuOpen && (
-        <div className="md:hidden px-4 py-2 pb-4 bg-white shadow-md">
+        <div className={`md:hidden px-4 py-2 pb-4 shadow-md ${isDarkMode ? 'bg-[#1E1E1E]' : 'bg-white'} transition-colors`}>
           <Link href="/seed-market" onClick={() => handleNavAction('')}>
-            <span className="block py-2 text-gray-600 hover:text-[#4CAF50] font-medium w-full text-left">
+            <span className={`block py-2 font-medium w-full text-left ${isDarkMode ? 'text-gray-300 hover:text-[#8BC34A]' : 'text-gray-600 hover:text-[#4CAF50]'}`}>
               Seed Market
             </span>
           </Link>
           <Link href="/equipment-market" onClick={() => handleNavAction('')}>
-            <span className="block py-2 text-gray-600 hover:text-[#4CAF50] font-medium w-full text-left">
+            <span className={`block py-2 font-medium w-full text-left ${isDarkMode ? 'text-gray-300 hover:text-[#8BC34A]' : 'text-gray-600 hover:text-[#4CAF50]'}`}>
               Equipment Market
             </span>
           </Link>
           <Link href="/produce-market" onClick={() => handleNavAction('')}>
-            <span className="block py-2 text-gray-600 hover:text-[#4CAF50] font-medium w-full text-left">
+            <span className={`block py-2 font-medium w-full text-left ${isDarkMode ? 'text-gray-300 hover:text-[#8BC34A]' : 'text-gray-600 hover:text-[#4CAF50]'}`}>
               Produce Market
             </span>
           </Link>
           <Link href="/about" onClick={() => handleNavAction('')}>
-            <span className="block py-2 text-gray-600 hover:text-[#4CAF50] font-medium w-full text-left">
+            <span className={`block py-2 font-medium w-full text-left ${isDarkMode ? 'text-gray-300 hover:text-[#8BC34A]' : 'text-gray-600 hover:text-[#4CAF50]'}`}>
               About Us
             </span>
           </Link>
@@ -219,14 +244,14 @@ export default function Header() {
           {isHomePage && (
             <button 
               onClick={() => scrollToSection('waitlist')} 
-              className="block py-2 text-gray-600 hover:text-[#4CAF50] font-medium w-full text-left"
+              className={`block py-2 font-medium w-full text-left ${isDarkMode ? 'text-gray-300 hover:text-[#8BC34A]' : 'text-gray-600 hover:text-[#4CAF50]'}`}
             >
               Join Waitlist
             </button>
           )}
           
           <Link href="/checkout" onClick={() => handleNavAction('')}>
-            <div className="flex items-center justify-between py-2 text-gray-600 hover:text-[#4CAF50] font-medium w-full">
+            <div className={`flex items-center justify-between py-2 font-medium w-full ${isDarkMode ? 'text-gray-300 hover:text-[#8BC34A]' : 'text-gray-600 hover:text-[#4CAF50]'}`}>
               <span>Cart</span>
               {cartItemCount > 0 && (
                 <Badge className="bg-[#4CAF50] text-white">
@@ -239,29 +264,47 @@ export default function Header() {
           {user ? (
             <>
               <Link href="/settings" onClick={() => handleNavAction('')}>
-                <span className="block py-2 text-gray-600 hover:text-[#4CAF50] font-medium w-full text-left">
+                <span className={`block py-2 font-medium w-full text-left ${isDarkMode ? 'text-gray-300 hover:text-[#8BC34A]' : 'text-gray-600 hover:text-[#4CAF50]'}`}>
                   Settings
                 </span>
               </Link>
               
               {user.role === "admin" && (
                 <Link href="/admin" onClick={() => handleNavAction('')}>
-                  <span className="block py-2 text-gray-600 hover:text-[#4CAF50] font-medium w-full text-left">
+                  <span className={`block py-2 font-medium w-full text-left ${isDarkMode ? 'text-gray-300 hover:text-[#8BC34A]' : 'text-gray-600 hover:text-[#4CAF50]'}`}>
                     Admin Dashboard
                   </span>
                 </Link>
               )}
               
+              {/* Dark mode toggle for mobile */}
+              <button 
+                onClick={toggleDarkMode}
+                className={`flex items-center py-2 font-medium w-full text-left ${isDarkMode ? 'text-gray-300 hover:text-[#8BC34A]' : 'text-gray-600 hover:text-[#4CAF50]'}`}
+              >
+                {isDarkMode ? (
+                  <>
+                    <Sun className="h-4 w-4 mr-2" />
+                    Light Mode
+                  </>
+                ) : (
+                  <>
+                    <Moon className="h-4 w-4 mr-2" />
+                    Dark Mode
+                  </>
+                )}
+              </button>
+              
               <button 
                 onClick={handleLogout}
-                className="block py-2 text-red-600 hover:text-red-700 font-medium w-full text-left"
+                className={`block py-2 font-medium w-full text-left ${isDarkMode ? 'text-red-400 hover:text-red-300' : 'text-red-600 hover:text-red-700'}`}
               >
                 Log out
               </button>
             </>
           ) : (
             <Link href="/login" onClick={() => handleNavAction('')}>
-              <span className="block py-2 text-gray-600 hover:text-[#4CAF50] font-medium w-full text-left">
+              <span className={`block py-2 font-medium w-full text-left ${isDarkMode ? 'text-gray-300 hover:text-[#8BC34A]' : 'text-gray-600 hover:text-[#4CAF50]'}`}>
                 Login
               </span>
             </Link>
