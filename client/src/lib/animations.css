@@ -3,11 +3,17 @@
 /* Button hover effects */
 .btn-animate {
   transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+  will-change: transform, box-shadow;
 }
 
 .btn-animate:hover:not(:disabled) {
   transform: scale(1.05);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.btn-animate:active:not(:disabled) {
+  transform: scale(0.98);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
 /* Card hover effects */
@@ -25,39 +31,46 @@
 .page-enter {
   opacity: 0;
   transform: translateY(20px);
+  filter: blur(4px);
 }
 
 .page-enter-active {
   opacity: 1;
   transform: translateY(0);
-  transition: opacity 300ms ease-out, transform 300ms ease-out;
+  filter: blur(0);
+  transition: opacity 300ms ease-out, transform 300ms ease-out, filter 300ms ease-out;
 }
 
 .page-exit {
   opacity: 1;
   transform: translateY(0);
+  filter: blur(0);
 }
 
 .page-exit-active {
   opacity: 0;
   transform: translateY(-20px);
-  transition: opacity 300ms ease-in, transform 300ms ease-in;
+  filter: blur(4px);
+  transition: opacity 300ms ease-in, transform 300ms ease-in, filter 300ms ease-in;
 }
 
 /* Dark mode transition */
 .dark-mode-transition {
   transition: background-color 0.3s ease, 
               color 0.3s ease, 
-              border-color 0.3s ease;
+              border-color 0.3s ease,
+              box-shadow 0.3s ease,
+              filter 0.3s ease;
 }
 
 /* Input focus effect */
 .input-focus-animate {
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
 }
 
 .input-focus-animate:focus {
   box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.3);
+  transform: translateY(-1px);
 }
 
 /* Switch toggle animation */
@@ -107,6 +120,91 @@
   animation: slideUp 0.4s ease forwards;
 }
 
+/* Login modal animation */
+@keyframes loginModalAppear {
+  0% { 
+    opacity: 0; 
+    transform: scale(0.85) translateY(20px);
+    filter: blur(8px);
+    box-shadow: 0 0 0 rgba(0, 0, 0, 0);
+  }
+  50% { 
+    opacity: 1;
+    transform: scale(1.02) translateY(-5px);
+    filter: blur(0);
+  }
+  70% { 
+    transform: scale(0.98) translateY(2px);
+  }
+  100% { 
+    opacity: 1;
+    transform: scale(1) translateY(0);
+    filter: blur(0);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+  }
+}
+
+.login-modal-enter {
+  animation: loginModalAppear 500ms cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  will-change: transform, opacity, filter, box-shadow;
+}
+
+/* Ripple effect for buttons */
+@keyframes rippleEffect {
+  0% {
+    transform: scale(0);
+    opacity: 0.5;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 0;
+  }
+}
+
+.ripple {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  animation: rippleEffect 0.8s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  background-color: rgba(255, 255, 255, 0.35);
+  will-change: transform, opacity;
+}
+
+/* Animated link effects */
+.link-hover {
+  position: relative;
+  transition: color 0.2s ease;
+}
+
+.link-hover::after {
+  content: '';
+  position: absolute;
+  width: 0;
+  height: 2px;
+  bottom: -2px;
+  left: 0;
+  background-color: currentColor;
+  transition: width 0.3s ease;
+}
+
+.link-hover:hover::after {
+  width: 100%;
+}
+
+/* Icon link animation */
+@keyframes iconWiggle {
+  0% { transform: rotate(0); }
+  25% { transform: rotate(-8deg); }
+  50% { transform: rotate(8deg); }
+  75% { transform: rotate(-5deg); }
+  100% { transform: rotate(0); }
+}
+
+.icon-animate:hover .icon {
+  animation: iconWiggle 0.5s ease;
+  transform-origin: center;
+}
+
 /* Typography animations */
 .text-focus {
   transition: font-weight 0.2s ease, letter-spacing 0.2s ease;
@@ -124,4 +222,23 @@
 
 .stagger-enter {
   animation: slideUp 0.4s ease forwards;
+}
+
+/* Scale pulse animation for cards and badges */
+@keyframes scalePulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
+
+.scale-pulse {
+  animation: scalePulse 2s infinite ease-in-out;
+}
+
+/* Hardware accelerated animations */
+.hardware-accelerated {
+  will-change: transform, opacity;
+  backface-visibility: hidden;
+  transform: translateZ(0);
+  perspective: 1000px;
 }

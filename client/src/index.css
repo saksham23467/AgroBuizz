@@ -30,11 +30,22 @@ html.dark-mode {
     @apply border-border;
   }
 
+  html {
+    scroll-behavior: smooth;
+  }
+
+  html.dark-mode-transition * {
+    transition: background-color 0.3s ease, 
+                color 0.3s ease, 
+                border-color 0.3s ease,
+                box-shadow 0.3s ease,
+                filter 0.3s ease;
+  }
+
   body {
     @apply font-sans antialiased;
     background-color: var(--color-background);
     color: var(--color-text-primary);
-    transition: background-color 0.3s ease, color 0.3s ease;
   }
 }
 
@@ -118,4 +129,77 @@ html.dark-mode .footer {
 
 html.dark-mode .sidebar {
   background-color: #1A1A1A;
+}
+
+/* Animation utility classes */
+@layer utilities {
+  /* Hover effect utilities */
+  .hover-scale {
+    @apply transition-transform duration-200;
+  }
+  .hover-scale:hover {
+    transform: scale(1.05);
+  }
+  
+  .hover-scale-sm {
+    @apply transition-transform duration-200;
+  }
+  .hover-scale-sm:hover {
+    transform: scale(1.02);
+  }
+  
+  .hover-lift {
+    @apply transition-all duration-300;
+  }
+  .hover-lift:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+  }
+  
+  /* Click effects */
+  .click-scale:active {
+    transform: scale(0.98);
+  }
+  
+  /* Animation duration utilities */
+  .duration-300 {
+    transition-duration: 300ms;
+  }
+  
+  .duration-500 {
+    transition-duration: 500ms;
+  }
+  
+  /* Hardware acceleration for smoother animations */
+  .hw-accelerate {
+    transform: translateZ(0);
+    backface-visibility: hidden;
+    perspective: 1000px;
+  }
+  
+  /* Page transitions */
+  .page-transition-wrapper {
+    position: relative;
+    width: 100%;
+    min-height: 100vh;
+  }
+  
+  /* Login modal */
+  .login-modal {
+    transform-origin: center;
+  }
+  
+  /* Icon hover animations */
+  .icon-hover-animate {
+    transition: transform 0.3s ease;
+  }
+  
+  .icon-hover-animate:hover {
+    transform: scale(1.15) rotate(5deg);
+  }
+  
+  /* Staggered animation parent */
+  .stagger-parent {
+    position: relative;
+  }
 }

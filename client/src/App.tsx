@@ -20,171 +20,83 @@ import { AuthProvider } from "@/hooks/use-auth";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { ProtectedRoute, AdminRoute } from "@/components/protected-route";
 import { CartProvider } from "@/contexts/CartContext";
+import AnimatedPage from "@/components/AnimatedPage";
+import { pageTransitionVariants, hardwareAcceleratedProps } from "@/lib/utils";
 
 function Router() {
   const [location] = useLocation();
   
-  // Animation variants for page transitions
-  const pageVariants = {
-    initial: {
-      opacity: 0,
-      y: 20,
-    },
-    in: {
-      opacity: 1,
-      y: 0,
-      transition: {
-        duration: 0.3,
-        ease: "easeOut",
-      },
-    },
-    out: {
-      opacity: 0,
-      y: -20,
-      transition: {
-        duration: 0.2,
-        ease: "easeIn",
-      },
-    },
-  };
-
-  // Wrap each component with motion for animations
+  // Enhanced page transition component wrappers with our AnimatedPage component
   const MotionHome = () => (
-    <motion.div
-      initial="initial"
-      animate="in"
-      exit="out"
-      variants={pageVariants}
-      className="fade-in"
-    >
+    <AnimatedPage>
       <Home />
-    </motion.div>
+    </AnimatedPage>
   );
 
   const MotionLogin = () => (
-    <motion.div
-      initial="initial"
-      animate="in"
-      exit="out"
-      variants={pageVariants}
-      className="fade-in"
-    >
+    <AnimatedPage>
       <Login />
-    </motion.div>
+    </AnimatedPage>
   );
 
   const MotionAbout = () => (
-    <motion.div
-      initial="initial"
-      animate="in"
-      exit="out"
-      variants={pageVariants}
-      className="fade-in"
-    >
+    <AnimatedPage>
       <About />
-    </motion.div>
+    </AnimatedPage>
   );
   
   const MotionAdminLogin = () => (
-    <motion.div
-      initial="initial"
-      animate="in"
-      exit="out"
-      variants={pageVariants}
-      className="fade-in"
-    >
+    <AnimatedPage>
       <AdminLogin />
-    </motion.div>
+    </AnimatedPage>
   );
 
   const MotionSeedMarket = () => (
-    <motion.div
-      initial="initial"
-      animate="in"
-      exit="out"
-      variants={pageVariants}
-      className="fade-in"
-    >
+    <AnimatedPage>
       <SeedMarket />
-    </motion.div>
+    </AnimatedPage>
   );
 
   const MotionEquipmentMarket = () => (
-    <motion.div
-      initial="initial"
-      animate="in"
-      exit="out"
-      variants={pageVariants}
-      className="fade-in"
-    >
+    <AnimatedPage>
       <EquipmentMarket />
-    </motion.div>
+    </AnimatedPage>
   );
 
   const MotionProduceMarket = () => (
-    <motion.div
-      initial="initial"
-      animate="in"
-      exit="out"
-      variants={pageVariants}
-      className="fade-in"
-    >
+    <AnimatedPage>
       <ProduceMarket />
-    </motion.div>
+    </AnimatedPage>
   );
 
   const MotionCheckout = () => (
-    <motion.div
-      initial="initial"
-      animate="in"
-      exit="out"
-      variants={pageVariants}
-      className="fade-in"
-    >
+    <AnimatedPage>
       <Checkout />
-    </motion.div>
+    </AnimatedPage>
   );
 
   const MotionSettings = () => (
-    <motion.div
-      initial="initial"
-      animate="in"
-      exit="out"
-      variants={pageVariants}
-      className="fade-in"
-    >
+    <AnimatedPage>
       <Settings />
-    </motion.div>
+    </AnimatedPage>
   );
 
   const MotionAdmin = () => (
-    <motion.div
-      initial="initial"
-      animate="in"
-      exit="out"
-      variants={pageVariants}
-      className="fade-in"
-    >
+    <AnimatedPage>
       <Admin />
-    </motion.div>
+    </AnimatedPage>
   );
 
   const MotionNotFound = () => (
-    <motion.div
-      initial="initial"
-      animate="in"
-      exit="out"
-      variants={pageVariants}
-      className="fade-in"
-    >
+    <AnimatedPage>
       <NotFound />
-    </motion.div>
+    </AnimatedPage>
   );
 
   return (
     <>
       <Header />
-      <main className="dark-mode-transition">
+      <main className="dark-mode-transition page-transition-wrapper">
         <AnimatePresence mode="wait">
           <Switch location={location} key={location}>
             <Route path="/" component={MotionHome} />
