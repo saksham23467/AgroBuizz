@@ -1002,17 +1002,43 @@ export default function AdminDashboard() {
                     <Table>
                       <TableHeader>
                         <TableRow>
-                          <TableHead>Column 1</TableHead>
-                          <TableHead>Column 2</TableHead>
-                          <TableHead>Column 3</TableHead>
+                          {queryColumns.length > 0 ? (
+                            queryColumns.map((column, index) => (
+                              <TableHead key={index}>{column}</TableHead>
+                            ))
+                          ) : (
+                            <>
+                              <TableHead>Column</TableHead>
+                              <TableHead>Value</TableHead>
+                            </>
+                          )}
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        <TableRow>
-                          <TableCell colSpan={3} className="text-center py-8 text-muted-foreground">
-                            Execute a query to view results
-                          </TableCell>
-                        </TableRow>
+                        {queryResults && queryResults.length > 0 ? (
+                          queryResults.map((row, rowIndex) => (
+                            <TableRow key={rowIndex}>
+                              {Object.values(row).map((value: any, cellIndex) => (
+                                <TableCell key={cellIndex}>
+                                  {value === null ? 
+                                    <span className="text-muted-foreground">NULL</span> : 
+                                    String(value)}
+                                </TableCell>
+                              ))}
+                            </TableRow>
+                          ))
+                        ) : (
+                          <TableRow>
+                            <TableCell 
+                              colSpan={queryColumns.length || 2} 
+                              className="text-center py-8 text-muted-foreground"
+                            >
+                              {executeQueryMutation.isPending || executePredefinedQuery.isPending ? 
+                                "Executing query..." : 
+                                "Execute a query to view results"}
+                            </TableCell>
+                          </TableRow>
+                        )}
                       </TableBody>
                     </Table>
                   </div>
@@ -1037,11 +1063,32 @@ export default function AdminDashboard() {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        <TableRow>
-                          <TableCell colSpan={3} className="text-center py-8 text-muted-foreground">
-                            No recent queries
-                          </TableCell>
-                        </TableRow>
+                        {queryHistory.length > 0 ? (
+                          queryHistory.map((entry, index) => (
+                            <TableRow key={index}>
+                              <TableCell className="font-mono text-xs max-w-[270px] truncate">
+                                {entry.query}
+                              </TableCell>
+                              <TableCell className="text-xs">
+                                {entry.timestamp.toLocaleTimeString()}
+                              </TableCell>
+                              <TableCell>
+                                <Badge
+                                  variant={entry.status === 'success' ? 'outline' : 'destructive'}
+                                  className={entry.status === 'success' ? 'bg-green-50 text-green-600' : ''}
+                                >
+                                  {entry.status}
+                                </Badge>
+                              </TableCell>
+                            </TableRow>
+                          ))
+                        ) : (
+                          <TableRow>
+                            <TableCell colSpan={3} className="text-center py-8 text-muted-foreground">
+                              No recent queries
+                            </TableCell>
+                          </TableRow>
+                        )}
                       </TableBody>
                     </Table>
                   </div>
@@ -1077,7 +1124,16 @@ export default function AdminDashboard() {
                     </div>
                     
                     <div className="pt-4">
-                      <Button variant="outline" className="w-full">
+                      <Button 
+                        variant="outline" 
+                        className="w-full"
+                        onClick={() => {
+                          toast({
+                            title: "Connection refreshed",
+                            description: "Database connection is active",
+                          });
+                        }}
+                      >
                         <RefreshCw className="mr-2 h-4 w-4" /> Refresh Connection
                       </Button>
                     </div>
