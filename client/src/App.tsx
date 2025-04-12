@@ -16,6 +16,7 @@ import Admin from "@/pages/Admin";
 import AdminLogin from "@/pages/AdminLogin";
 import AuthPage from "@/pages/auth-page";
 import VendorDashboard from "@/pages/VendorDashboard";
+import FarmerDashboard from "@/pages/FarmerDashboard";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { AuthProvider } from "@/hooks/use-auth";
@@ -100,6 +101,12 @@ function Router() {
       <VendorDashboard />
     </AnimatedPage>
   );
+  
+  const MotionFarmerDashboard = () => (
+    <AnimatedPage>
+      <FarmerDashboard />
+    </AnimatedPage>
+  );
 
   const MotionNotFound = () => (
     <AnimatedPage>
@@ -127,6 +134,7 @@ function Router() {
             <ProtectedRoute path="/settings" component={MotionSettings} />
             {/* Role-specific routes */}
             <VendorRoute path="/vendor" component={MotionVendorDashboard} />
+            <FarmerRoute path="/farmer" component={MotionFarmerDashboard} />
             {/* Admin dashboard route */}
             <AdminRoute path="/admin" component={MotionAdmin} />
             <Route component={MotionNotFound} />
