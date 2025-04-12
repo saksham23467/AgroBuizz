@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Search, Filter, ShoppingCart } from "lucide-react";
+import { Search, Filter, ShoppingCart, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
@@ -9,7 +9,8 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { useCart } from "@/hooks/use-cart";
-import { Link } from "wouter";
+import { useAuth } from "@/hooks/use-auth";
+import { Link, useLocation } from "wouter";
 
 // Sample seed data (mock for now, would come from the API)
 const seedProducts = [
@@ -73,8 +74,26 @@ export default function SeedMarket() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
+  const [, setLocation] = useLocation();
   const { toast } = useToast();
   const { addToCart, getTotalItems } = useCart();
+  const { user, isLoading } = useAuth();
+  
+  // Check if the user is authorized to access this market
+  // Only farmers can buy seeds (or customers if explicitly allowed)
+  useEffect(() => {
+    if (!isLoading && user) {
+      // If user is neither a farmer nor admin, redirect to home with a message
+      if (user.userType !== 'farmer' && user.role !== 'admin') {
+        toast({
+          title: "Access Restricted",
+          description: "Only farmers can purchase seeds. Please contact support if you need access.",
+          variant: "destructive"
+        });
+        setLocation("/");
+      }
+    }
+  }, [user, isLoading, toast, setLocation]);
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(e.target.value);

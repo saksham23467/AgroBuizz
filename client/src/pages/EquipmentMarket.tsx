@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Search, Filter, ShoppingCart, Tractor } from "lucide-react";
+import { Search, Filter, ShoppingCart, Tractor, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
@@ -9,6 +9,8 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/use-auth";
+import { Link, useLocation } from "wouter";
 
 // Sample equipment data (mock for now, would come from the API)
 const equipmentProducts = [
@@ -82,7 +84,25 @@ export default function EquipmentMarket() {
   const [availabilityFilter, setAvailabilityFilter] = useState("all");
   const [cart, setCart] = useState<Array<{id: number, quantity: number}>>([]);
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
+  const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const { user, isLoading } = useAuth();
+  
+  // Check if the user is authorized to access this market
+  // Only farmers can buy equipment (or admins if explicitly allowed)
+  useEffect(() => {
+    if (!isLoading && user) {
+      // If user is neither a farmer nor admin, redirect to home with a message
+      if (user.userType !== 'farmer' && user.role !== 'admin') {
+        toast({
+          title: "Access Restricted",
+          description: "Only farmers can access agricultural equipment. Please contact support if you need access.",
+          variant: "destructive"
+        });
+        setLocation("/");
+      }
+    }
+  }, [user, isLoading, toast, setLocation]);
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(e.target.value);

@@ -98,11 +98,22 @@ export default function AuthPage() {
       });
       
       if (res.ok) {
+        const data = await res.json();
         toast({
           title: "Login successful",
           description: "Welcome back to AgroBuizz!",
         });
-        setLocation("/");
+        
+        // Redirect based on user type
+        if (data.user?.userType === "vendor") {
+          setLocation("/vendor");
+        } else if (data.user?.userType === "farmer") {
+          setLocation("/farmer");
+        } else if (data.user?.role === "admin") {
+          setLocation("/admin");
+        } else {
+          setLocation("/");
+        }
       } else {
         const data = await res.json();
         toast({
@@ -133,11 +144,20 @@ export default function AuthPage() {
       const res = await apiRequest("POST", "/api/register", userData);
       
       if (res.ok) {
+        const data = await res.json();
         toast({
           title: "Registration successful",
           description: "Your account has been created!",
         });
-        setLocation("/");
+        
+        // Redirect based on user type
+        if (userData.userType === "vendor") {
+          setLocation("/vendor");
+        } else if (userData.userType === "farmer") {
+          setLocation("/farmer");
+        } else {
+          setLocation("/");
+        }
       } else {
         const data = await res.json();
         toast({
