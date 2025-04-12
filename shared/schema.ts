@@ -236,16 +236,7 @@ export const queryStatusEnum = pgEnum('query_status', ['unsolved', 'in_progress'
     responseDate: timestamp("response_date"),
   });
 
-  // Waitlist Entries (keep the original table)
-  export const waitlistEntries = pgTable("waitlist_entries", {
-    id: serial("id").primaryKey(),
-    name: text("name").notNull(),
-    email: text("email").notNull().unique(),
-    reason: text("reason").notNull(),
-    userType: text("user_type").notNull(),
-    notifications: boolean("notifications").default(false),
-    createdAt: timestamp("created_at").defaultNow().notNull(),
-  });
+  // Waitlist entries removed - no longer needed
   
   // Define relations
   export const adminsRelations = relations(admins, ({ many }) => ({
@@ -318,13 +309,7 @@ export const queryStatusEnum = pgEnum('query_status', ['unsolved', 'in_progress'
     vendorResponse: true,
     responseDate: true 
   });
-  export const insertWaitlistSchema = createInsertSchema(waitlistEntries).pick({
-    name: true,
-    email: true,
-    reason: true,
-    userType: true,
-    notifications: true,
-  });
+  // Waitlist schema removed
   
   // Define types
   export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -387,6 +372,5 @@ export const queryStatusEnum = pgEnum('query_status', ['unsolved', 'in_progress'
   export type InsertProductComplaint = z.infer<typeof insertProductComplaintSchema>;
   export type ProductComplaint = typeof productComplaints.$inferSelect;
 
-  export type InsertWaitlistEntry = z.infer<typeof insertWaitlistSchema>;
-  export type WaitlistEntry = typeof waitlistEntries.$inferSelect;
+  // Waitlist types removed
   

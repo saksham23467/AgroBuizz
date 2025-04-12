@@ -1,5 +1,5 @@
 import { 
-  waitlistEntries, type WaitlistEntry, type InsertWaitlistEntry,
+  // Waitlist imports removed
   users, type User, type InsertUser,
   productComplaints, type ProductComplaint, type InsertProductComplaint,
   products, type Product, type InsertProduct,
@@ -23,10 +23,7 @@ export interface IStorage {
   updateUserDarkMode(id: number, darkMode: boolean): Promise<User | undefined>;
   updateUserLastLogin(id: number): Promise<User | undefined>;
   
-  // Waitlist related methods
-  createWaitlistEntry(entry: InsertWaitlistEntry): Promise<WaitlistEntry>;
-  getWaitlistEntries(): Promise<WaitlistEntry[]>;
-  getWaitlistEntryByEmail(email: string): Promise<WaitlistEntry | undefined>;
+  // Waitlist methods removed
   
   // Product related methods
   getProducts(): Promise<Product[]>; 
@@ -61,8 +58,15 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getUser(id: number): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.id, id));
-    return user;
+    try {
+      console.log(`[DATABASE] Looking up user by ID: ${id}`);
+      const [user] = await db.select().from(users).where(eq(users.id, id));
+      console.log(`[DATABASE] User found: ${user ? 'Yes' : 'No'}`);
+      return user;
+    } catch (error) {
+      console.error(`[DATABASE ERROR] Failed to get user by ID: ${id}`, error);
+      throw error;
+    }
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
@@ -120,25 +124,7 @@ export class DatabaseStorage implements IStorage {
     return updatedUser;
   }
 
-  async createWaitlistEntry(entry: InsertWaitlistEntry): Promise<WaitlistEntry> {
-    const [waitlistEntry] = await db.insert(waitlistEntries)
-      .values({
-        ...entry,
-        notifications: entry.notifications === undefined ? false : entry.notifications,
-      })
-      .returning();
-    
-    return waitlistEntry;
-  }
-
-  async getWaitlistEntries(): Promise<WaitlistEntry[]> {
-    return await db.select().from(waitlistEntries);
-  }
-
-  async getWaitlistEntryByEmail(email: string): Promise<WaitlistEntry | undefined> {
-    const [entry] = await db.select().from(waitlistEntries).where(eq(waitlistEntries.email, email));
-    return entry;
-  }
+  // Waitlist methods implementation removed
 
   // Product related methods
   async getProducts(): Promise<Product[]> {
