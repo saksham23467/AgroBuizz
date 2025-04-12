@@ -116,14 +116,7 @@ export default function Header() {
             </span>
           </Link>
           
-          {isHomePage && (
-            <button 
-              onClick={() => scrollToSection('waitlist')} 
-              className={`font-medium transition ${isDarkMode ? 'text-gray-300 hover:text-[#8BC34A]' : 'text-gray-600 hover:text-[#4CAF50]'}`}
-            >
-              Join Waitlist
-            </button>
-          )}
+          {/* Waitlist button removed */}
           
           <div className="flex items-center gap-2">
             <Link href="/checkout" className="relative">

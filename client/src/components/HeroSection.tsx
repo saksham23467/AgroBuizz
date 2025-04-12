@@ -57,9 +57,9 @@ export default function HeroSection() {
             <Button 
               size="lg" 
               className="bg-[#FFEB3B] hover:bg-[#FDD835] text-[#33691E] font-medium py-3 px-8 rounded-lg shadow-lg hover:shadow-xl transition transform hover:-translate-y-0.5"
-              onClick={() => scrollToSection('waitlist')}
+              onClick={() => navigate('/auth')}
             >
-              Join the Waitlist
+              Get Started
             </Button>
             <Button 
               variant="outline" 

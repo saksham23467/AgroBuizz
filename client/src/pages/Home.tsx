@@ -1,7 +1,7 @@
 import HeroSection from "@/components/HeroSection";
 import FeatureSection from "@/components/FeatureSection";
 import AboutSection from "@/components/AboutSection";
-import WaitlistSection from "@/components/WaitlistSection";
+// Removed WaitlistSection import
 
 export default function Home() {
   return (
@@ -10,7 +10,7 @@ export default function Home() {
         <HeroSection />
         <FeatureSection />
         <AboutSection />
-        <WaitlistSection />
+        {/* WaitlistSection component removed */}
       </main>
     </div>
   );
