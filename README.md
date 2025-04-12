@@ -60,11 +60,20 @@ cd agrobuizz
 npm install
 ```
 
-3. Run database migrations to create the necessary tables:
+3. Set up the database by running the setup script:
 
 ```bash
-npm run db:push
+# On Unix/Linux/macOS
+./setup-database.sh
+
+# On Windows (using PowerShell)
+node scripts/db-setup.js
 ```
+
+This script will:
+- Verify your database connection
+- Create all necessary database tables based on the schema
+- Apply any pending migrations
 
 4. Start the development server:
 
