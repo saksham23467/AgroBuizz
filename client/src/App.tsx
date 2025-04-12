@@ -15,6 +15,7 @@ import Settings from "@/pages/Settings";
 import Admin from "@/pages/Admin";
 import AdminLogin from "@/pages/AdminLogin";
 import AuthPage from "@/pages/auth-page";
+import VendorDashboard from "@/pages/VendorDashboard";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { AuthProvider } from "@/hooks/use-auth";
@@ -93,6 +94,12 @@ function Router() {
       <Admin />
     </AnimatedPage>
   );
+  
+  const MotionVendorDashboard = () => (
+    <AnimatedPage>
+      <VendorDashboard />
+    </AnimatedPage>
+  );
 
   const MotionNotFound = () => (
     <AnimatedPage>
@@ -118,6 +125,7 @@ function Router() {
             {/* Protected routes that require authentication */}
             <ProtectedRoute path="/checkout" component={MotionCheckout} />
             <ProtectedRoute path="/settings" component={MotionSettings} />
+            <ProtectedRoute path="/vendor" component={MotionVendorDashboard} />
             {/* Admin dashboard route */}
             <AdminRoute path="/admin" component={MotionAdmin} />
             <Route component={MotionNotFound} />

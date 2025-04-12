@@ -7,7 +7,7 @@ import {
   vendorProducts
 } from "@shared/schema";
 import bcrypt from "bcryptjs";
-import { eq, and, desc } from 'drizzle-orm';
+import { eq, and, desc, inArray } from 'drizzle-orm';
 import { db } from './db';
 import connectPg from "connect-pg-simple";
 import session from "express-session";
@@ -185,11 +185,11 @@ export class DatabaseStorage implements IStorage {
         const productIds = vendorProductEntries.map(entry => entry.productId);
         
         // Fetch the actual products
-        const products = await db.select()
-          .from(this.products)
-          .where(inArray(this.products.productId, productIds));
+        const productList = await db.select()
+          .from(products)
+          .where(inArray(products.productId, productIds));
           
-        return products;
+        return productList;
       }
       
       // Fallback: return all products for now
