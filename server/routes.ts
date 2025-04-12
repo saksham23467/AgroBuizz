@@ -77,7 +77,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   app.get("/api/user/complaints", ensureAuthenticated, async (req: Request, res: Response) => {
     try {
-      const complaints = await storage.getProductComplaints(req.user.id);
+      // User is guaranteed to exist due to ensureAuthenticated middleware
+      const user = req.user!;
+      const complaints = await storage.getProductComplaints(user.id);
       return res.status(200).json(complaints);
     } catch (error) {
       console.error("Error fetching user complaints:", error);
@@ -88,7 +90,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Vendor API routes
   app.get("/api/vendor/products", ensureVendor, async (req: Request, res: Response) => {
     try {
-      const products = await storage.getVendorProducts(req.user.id.toString());
+      // User is guaranteed to exist due to ensureVendor middleware
+      const user = req.user!;
+      const products = await storage.getVendorProducts(user.id.toString());
       return res.status(200).json(products);
     } catch (error) {
       console.error("Error fetching vendor products:", error);
@@ -98,7 +102,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   app.get("/api/vendor/complaints", ensureVendor, async (req: Request, res: Response) => {
     try {
-      const complaints = await storage.getVendorComplaints(req.user.id.toString());
+      // User is guaranteed to exist due to ensureVendor middleware
+      const user = req.user!;
+      const complaints = await storage.getVendorComplaints(user.id.toString());
       return res.status(200).json(complaints);
     } catch (error) {
       console.error("Error fetching vendor complaints:", error);
@@ -108,6 +114,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   app.post("/api/vendor/complaints/:id", ensureVendor, async (req: Request, res: Response) => {
     try {
+      // User is guaranteed to exist due to ensureVendor middleware
+      const user = req.user!;
       const complaintId = parseInt(req.params.id);
       const { status, response } = req.body;
       
