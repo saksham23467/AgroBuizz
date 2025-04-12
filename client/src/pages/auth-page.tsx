@@ -177,14 +177,16 @@ export default function AuthPage() {
       
       const res = await apiRequest("POST", "/api/register", userData);
       
+      // Get the response data whether success or error
+      const data = await res.json();
+      
       if (res.ok) {
-        const data = await res.json();
         toast({
           title: "Registration successful",
           description: "Your account has been created!",
         });
         
-        console.log("[AUTH] Registration successful for user:", data.username);
+        console.log("[AUTH] Registration successful for user:", data.user?.username);
         
         // Set location and reload to ensure all components update with auth state
         let redirectPath = "/";
@@ -201,18 +203,34 @@ export default function AuthPage() {
           window.location.reload();
         }, 100);
       } else {
-        const data = await res.json();
+        // Show specific error message from server
+        console.error("Registration failed:", data.message);
         toast({
           title: "Registration failed",
           description: data.message || "Failed to create account",
           variant: "destructive"
         });
+        
+        // Add specific handling for common errors
+        if (data.message?.includes("Email already exists")) {
+          registerForm.setError("email", {
+            type: "manual",
+            message: "This email is already registered. Please use another email."
+          });
+        }
+        
+        if (data.message?.includes("Username already exists")) {
+          registerForm.setError("username", {
+            type: "manual",
+            message: "This username is already taken. Please choose another one."
+          });
+        }
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Registration error:", error);
       toast({
         title: "Registration error",
-        description: "An unexpected error occurred",
+        description: "An unexpected error occurred. Please try again.",
         variant: "destructive"
       });
     } finally {
