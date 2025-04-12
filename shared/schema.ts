@@ -24,6 +24,7 @@
   export const orderStatusEnum = pgEnum('order_status', ['pending', 'processing', 'shipped', 'delivered', 'cancelled']);
   export const disputeTypeEnum = pgEnum('dispute_type', ['quality', 'delivery', 'payment', 'other']);
   export const disputeStatusEnum = pgEnum('dispute_status', ['open', 'investigating', 'resolved', 'closed']);
+export const queryStatusEnum = pgEnum('query_status', ['unsolved', 'in_progress', 'solved']);
   
   // Admin Table
   export const admins = pgTable("admins", {
@@ -219,6 +220,21 @@
     resolutionDate: date("resolution_date"),
   });
   
+  // Product Complaints Table
+  export const productComplaints = pgTable("product_complaints", {
+    id: serial("id").primaryKey(),
+    userId: integer("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+    productId: varchar("product_id", { length: 50 }).notNull().references(() => products.productId, { onDelete: 'cascade' }),
+    vendorId: varchar("vendor_id", { length: 50 }).notNull().references(() => vendors.vendorId, { onDelete: 'cascade' }),
+    title: varchar("title", { length: 100 }).notNull(),
+    description: text("description").notNull(),
+    status: queryStatusEnum("status").notNull().default("unsolved"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+    vendorResponse: text("vendor_response"),
+    responseDate: timestamp("response_date"),
+  });
+
   // Waitlist Entries (keep the original table)
   export const waitlistEntries = pgTable("waitlist_entries", {
     id: serial("id").primaryKey(),
@@ -259,6 +275,7 @@
     vendorProducts: many(vendorProducts),
     vendorInventories: many(vendorInventories),
     vendorFarmerOrders: many(vendorFarmerOrders),
+    productComplaints: many(productComplaints)
   }));
   
   export const vendorsRelations = relations(vendors, ({ many }) => ({
@@ -266,6 +283,11 @@
     vendorInventories: many(vendorInventories),
     vendorFarmerOrders: many(vendorFarmerOrders),
     vendorFarmerFeedbacks: many(vendorFarmerFeedbacks),
+    productComplaints: many(productComplaints)
+  }));
+  
+  export const usersRelations = relations(users, ({ many }) => ({
+    productComplaints: many(productComplaints)
   }));
   
   // Define insert schemas for each table
@@ -288,6 +310,13 @@
   export const insertVendorFarmerFeedbackSchema = createInsertSchema(vendorFarmerFeedbacks).omit({ feedbackTimestamp: true });
   export const insertFarmerCustomerDisputeSchema = createInsertSchema(farmerCustomerDisputes);
   export const insertVendorFarmerDisputeSchema = createInsertSchema(vendorFarmerDisputes);
+  export const insertProductComplaintSchema = createInsertSchema(productComplaints).omit({ 
+    createdAt: true, 
+    updatedAt: true, 
+    status: true,
+    vendorResponse: true,
+    responseDate: true 
+  });
   export const insertWaitlistSchema = createInsertSchema(waitlistEntries).pick({
     name: true,
     email: true,
@@ -354,6 +383,9 @@
   export type InsertVendorFarmerDispute = z.infer<typeof insertVendorFarmerDisputeSchema>;
   export type VendorFarmerDispute = typeof vendorFarmerDisputes.$inferSelect;
   
+  export type InsertProductComplaint = z.infer<typeof insertProductComplaintSchema>;
+  export type ProductComplaint = typeof productComplaints.$inferSelect;
+
   export type InsertWaitlistEntry = z.infer<typeof insertWaitlistSchema>;
   export type WaitlistEntry = typeof waitlistEntries.$inferSelect;
   

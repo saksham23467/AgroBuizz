@@ -1,8 +1,16 @@
 import { 
   waitlistEntries, type WaitlistEntry, type InsertWaitlistEntry,
-  users, type User, type InsertUser
+  users, type User, type InsertUser,
+  productComplaints, type ProductComplaint, type InsertProductComplaint,
+  products, type Product, type InsertProduct,
+  vendors, type Vendor, type InsertVendor
 } from "@shared/schema";
 import bcrypt from "bcryptjs";
+import { eq, and, desc } from 'drizzle-orm';
+import { db } from './db';
+import connectPg from "connect-pg-simple";
+import session from "express-session";
+import { pool } from "./db";
 
 export interface IStorage {
   // User related methods
@@ -18,6 +26,24 @@ export interface IStorage {
   createWaitlistEntry(entry: InsertWaitlistEntry): Promise<WaitlistEntry>;
   getWaitlistEntries(): Promise<WaitlistEntry[]>;
   getWaitlistEntryByEmail(email: string): Promise<WaitlistEntry | undefined>;
+  
+  // Product related methods
+  getProducts(): Promise<Product[]>; 
+  getProductById(productId: string): Promise<Product | undefined>;
+  searchProducts(query: string): Promise<Product[]>;
+  
+  // Vendor related methods
+  getVendorById(vendorId: string): Promise<Vendor | undefined>;
+  getVendorProducts(vendorId: string): Promise<Product[]>;
+  
+  // Product Complaint related methods
+  createProductComplaint(complaint: InsertProductComplaint): Promise<ProductComplaint>;
+  getProductComplaints(userId: number): Promise<ProductComplaint[]>;
+  getVendorComplaints(vendorId: string): Promise<ProductComplaint[]>;
+  updateComplaintStatus(complaintId: number, status: string): Promise<ProductComplaint | undefined>;
+  addVendorResponse(complaintId: number, response: string): Promise<ProductComplaint | undefined>;
+  
+  sessionStore: session.Store;
 }
 
 export class MemStorage implements IStorage {
