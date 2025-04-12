@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Search, ShoppingCart, Leaf } from "lucide-react";
+import { Search, ShoppingCart, Leaf, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
@@ -10,6 +10,8 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/use-auth";
+import { Link, useLocation } from "wouter";
 
 // Sample produce data (mock for now, would come from the API)
 const produceProducts = [
@@ -89,7 +91,19 @@ export default function ProduceMarket() {
   const [seasonalOnly, setSeasonalOnly] = useState(false);
   const [cart, setCart] = useState<Array<{id: number, quantity: number}>>([]);
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
+  const [showRestrictedMessage, setShowRestrictedMessage] = useState(false);
+  const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const { user, isLoading } = useAuth();
+  
+  // Check if the user is authorized to purchase produce
+  // All users can view produce, but only customers and farmers can purchase
+  useEffect(() => {
+    if (!isLoading && user) {
+      // For produce market, customers and farmers can purchase
+      setShowRestrictedMessage(user.userType !== 'customer' && user.userType !== 'farmer' && user.role !== 'admin');
+    }
+  }, [user, isLoading]);
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(e.target.value);
@@ -112,6 +126,16 @@ export default function ProduceMarket() {
   });
 
   const addToCart = (productId: number) => {
+    // Check if user has permission to purchase
+    if (showRestrictedMessage) {
+      toast({
+        title: "Access Restricted",
+        description: "Only customers and farmers can purchase produce. Please contact support if you need access.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     setCart(prev => {
       const existingItem = prev.find(item => item.id === productId);
       if (existingItem) {
@@ -151,6 +175,16 @@ export default function ProduceMarket() {
           )}
         </Button>
       </div>
+      
+      {showRestrictedMessage && (
+        <div className="bg-[#FFECB3] border border-[#FFC107] rounded-md p-4 mb-6 flex items-center gap-3">
+          <AlertTriangle className="h-5 w-5 text-[#FF6F00]" />
+          <div>
+            <h3 className="font-medium text-[#FF6F00]">Viewing Mode Only</h3>
+            <p className="text-sm text-[#FF8F00]">As a vendor, you can browse but not purchase produce. Contact support for more information.</p>
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
         <div className="md:col-span-3">
@@ -305,10 +339,13 @@ export default function ProduceMarket() {
                           </div>
                           <div className="flex justify-end">
                             <Button 
-                              className="bg-[#FFEB3B] hover:bg-[#FDD835] text-[#33691E] font-bold"
+                              className={`font-bold ${showRestrictedMessage 
+                                ? "bg-gray-300 hover:bg-gray-300 text-gray-600 cursor-not-allowed"
+                                : "bg-[#FFEB3B] hover:bg-[#FDD835] text-[#33691E]"}`}
                               onClick={() => selectedProduct && addToCart(selectedProduct.id)}
+                              disabled={showRestrictedMessage}
                             >
-                              Add to Cart
+                              {showRestrictedMessage ? "Viewing Only" : "Add to Cart"}
                             </Button>
                           </div>
                         </DialogContent>
@@ -317,10 +354,13 @@ export default function ProduceMarket() {
                   </CardContent>
                   <CardFooter className="pt-0">
                     <Button 
-                      className="w-full bg-[#4CAF50] hover:bg-[#43A047] text-white"
+                      className={`w-full ${showRestrictedMessage 
+                        ? "bg-gray-300 hover:bg-gray-300 text-gray-600 cursor-not-allowed" 
+                        : "bg-[#4CAF50] hover:bg-[#43A047] text-white"}`}
                       onClick={() => addToCart(product.id)}
+                      disabled={showRestrictedMessage}
                     >
-                      Add to Cart
+                      {showRestrictedMessage ? "Viewing Only" : "Add to Cart"}
                     </Button>
                   </CardFooter>
                 </Card>
