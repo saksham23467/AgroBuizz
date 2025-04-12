@@ -4,6 +4,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
 import { apiRequest } from "@/lib/queryClient";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -85,6 +86,13 @@ export default function AdminDashboard() {
     stock: 0,
     description: "",
   });
+  
+  // Database query state
+  const [sqlQuery, setSqlQuery] = useState("");
+  const [selectedPredefinedQuery, setSelectedPredefinedQuery] = useState("");
+  const [queryResults, setQueryResults] = useState<any[] | null>(null);
+  const [queryColumns, setQueryColumns] = useState<string[]>([]);
+  const [queryHistory, setQueryHistory] = useState<{query: string, timestamp: Date, status: 'success'|'error'}[]>([]);
 
   // Force navigation away if not admin
   useEffect(() => {
@@ -208,6 +216,101 @@ export default function AdminDashboard() {
     setIsConfirmDeleteOpen(false);
     setSelectedProduct(null);
   };
+  
+  // SQL Query Execution
+  const executeQueryMutation = useMutation({
+    mutationFn: async (queryToExecute: string) => {
+      const res = await apiRequest("POST", "/api/admin/execute-query", { 
+        sql: queryToExecute 
+      });
+      return await res.json();
+    },
+    onSuccess: (data) => {
+      // Assuming data has rows and columns properties
+      setQueryResults(data.rows || []);
+      setQueryColumns(data.columns || []);
+      setQueryHistory(prev => [
+        { 
+          query: sqlQuery, 
+          timestamp: new Date(), 
+          status: 'success' 
+        }, 
+        ...prev.slice(0, 4)
+      ]);
+      toast({
+        title: "Query executed successfully",
+        description: `Found ${data.rows?.length || 0} results.`,
+      });
+    },
+    onError: (error: Error) => {
+      setQueryHistory(prev => [
+        { 
+          query: sqlQuery, 
+          timestamp: new Date(), 
+          status: 'error' 
+        }, 
+        ...prev.slice(0, 4)
+      ]);
+      toast({
+        title: "Query failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  });
+  
+  // Handler for executing predefined queries
+  const executePredefinedQuery = useMutation({
+    mutationFn: async (queryName: string) => {
+      const res = await apiRequest("GET", `/api/admin/${queryName}`);
+      return await res.json();
+    },
+    onSuccess: (data) => {
+      setQueryResults(data.rows || []);
+      setQueryColumns(data.columns || []);
+      setQueryHistory(prev => [
+        { 
+          query: `Predefined query: ${selectedPredefinedQuery}`, 
+          timestamp: new Date(), 
+          status: 'success' 
+        }, 
+        ...prev.slice(0, 4)
+      ]);
+      toast({
+        title: "Predefined query executed",
+        description: `Found ${data.rows?.length || 0} results.`,
+      });
+    },
+    onError: (error: Error) => {
+      setQueryHistory(prev => [
+        { 
+          query: `Predefined query: ${selectedPredefinedQuery}`, 
+          timestamp: new Date(), 
+          status: 'error' 
+        }, 
+        ...prev.slice(0, 4)
+      ]);
+      toast({
+        title: "Query failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  });
+  
+  const handleExecuteQuery = () => {
+    if (sqlQuery.trim()) {
+      executeQueryMutation.mutate(sqlQuery);
+    } else if (selectedPredefinedQuery) {
+      executePredefinedQuery.mutate(selectedPredefinedQuery);
+    } else {
+      toast({
+        title: "No query to execute",
+        description: "Please enter a SQL query or select a predefined query.",
+        variant: "destructive",
+      });
+    }
+  };
 
   return (
     <div className="flex min-h-screen bg-[#F9FBF7]">
@@ -266,6 +369,14 @@ export default function AdminDashboard() {
             <TrendingUp size={18} />
             <span>Analytics</span>
           </button>
+          
+          <button 
+            className={`w-full text-left p-3 pl-6 flex items-center space-x-3 ${activeTab === "database" ? "bg-[#2E7D32] text-white" : "text-white hover:bg-[#2E7D32]/50"}`}
+            onClick={() => setActiveTab("database")}
+          >
+            <BarChart4 size={18} />
+            <span>Database</span>
+          </button>
         </div>
         
         <div className="absolute bottom-0 w-64 p-4 bg-[#33691E]">
@@ -299,6 +410,7 @@ export default function AdminDashboard() {
             <TabsTrigger value="orders">Orders</TabsTrigger>
             <TabsTrigger value="users">Users</TabsTrigger>
             <TabsTrigger value="analytics">Analytics</TabsTrigger>
+            <TabsTrigger value="database">Database</TabsTrigger>
           </TabsList>
         
         <TabsContent value="dashboard">
@@ -814,6 +926,166 @@ export default function AdminDashboard() {
         
         <TabsContent value="analytics">
           <Analytics />
+        </TabsContent>
+        
+        <TabsContent value="database">
+          <div className="p-8">
+            <h2 className="text-2xl font-bold text-[#33691E]">Database Queries</h2>
+            <p className="text-gray-500 mb-6">Execute and view SQL database queries</p>
+            
+            <div className="grid grid-cols-1 gap-6 mb-8">
+              <Card className="mb-6">
+                <CardHeader>
+                  <CardTitle>Query Execution</CardTitle>
+                  <CardDescription>Run SQL queries against the database</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <Textarea 
+                      placeholder="Enter custom SQL query or select a predefined query from the dropdown below..." 
+                      className="min-h-[150px] font-mono"
+                      id="custom-query"
+                      value={sqlQuery}
+                      onChange={(e) => setSqlQuery(e.target.value)}
+                    />
+                    <div className="flex flex-col sm:flex-row gap-4">
+                      <Select
+                        value={selectedPredefinedQuery}
+                        onValueChange={setSelectedPredefinedQuery}
+                      >
+                        <SelectTrigger className="flex-1">
+                          <SelectValue placeholder="Choose a predefined query" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="farmers-with-crops">Farmers with their crops</SelectItem>
+                          <SelectItem value="customers-with-multiple-orders">Customers with 3+ orders</SelectItem>
+                          <SelectItem value="products-by-type">Products by type</SelectItem>
+                          <SelectItem value="products-by-price-range">Products by price range</SelectItem>
+                          <SelectItem value="available-products">Available products with stock</SelectItem>
+                          <SelectItem value="products-by-vendor-ratings">Products by vendor ratings</SelectItem>
+                          <SelectItem value="crops-for-sale">Crops for sale</SelectItem>
+                          <SelectItem value="vendor-product-counts">Products count by vendor</SelectItem>
+                          <SelectItem value="farmer-orders">Farmer orders</SelectItem>
+                          <SelectItem value="disputes">Disputes tracking</SelectItem>
+                          <SelectItem value="highly-rated-vendors">Highly rated vendors</SelectItem>
+                          <SelectItem value="orders-by-year">Orders by year (2025)</SelectItem>
+                          <SelectItem value="crop-sales">Crop sales</SelectItem>
+                          <SelectItem value="farmers-with-multiple-disputes">Farmers with multiple disputes</SelectItem>
+                          <SelectItem value="most-sold-items">Most sold items</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <Button 
+                        className="bg-[#4CAF50] hover:bg-[#43A047]" 
+                        onClick={handleExecuteQuery}
+                        disabled={executeQueryMutation.isPending || executePredefinedQuery.isPending}
+                      >
+                        {(executeQueryMutation.isPending || executePredefinedQuery.isPending) ? (
+                          <>
+                            <RefreshCw className="mr-2 h-4 w-4 animate-spin" /> Executing...
+                          </>
+                        ) : (
+                          <>Execute Query</>
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardHeader>
+                  <CardTitle>Query Results</CardTitle>
+                  <CardDescription>Query execution results will appear below</CardDescription>
+                </CardHeader>
+                <CardContent className="p-0">
+                  <div className="max-h-[500px] overflow-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Column 1</TableHead>
+                          <TableHead>Column 2</TableHead>
+                          <TableHead>Column 3</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        <TableRow>
+                          <TableCell colSpan={3} className="text-center py-8 text-muted-foreground">
+                            Execute a query to view results
+                          </TableCell>
+                        </TableRow>
+                      </TableBody>
+                    </Table>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Recent Queries</CardTitle>
+                  <CardDescription>Your recently executed queries</CardDescription>
+                </CardHeader>
+                <CardContent className="p-0">
+                  <div className="max-h-[300px] overflow-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Query</TableHead>
+                          <TableHead className="w-[120px]">Executed</TableHead>
+                          <TableHead className="w-[80px]">Status</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        <TableRow>
+                          <TableCell colSpan={3} className="text-center py-8 text-muted-foreground">
+                            No recent queries
+                          </TableCell>
+                        </TableRow>
+                      </TableBody>
+                    </Table>
+                  </div>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardHeader>
+                  <CardTitle>Database Info</CardTitle>
+                  <CardDescription>Information about the database</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-3 gap-4">
+                      <div className="col-span-1 font-medium">Database:</div>
+                      <div className="col-span-2">agrobuizz</div>
+                      
+                      <div className="col-span-1 font-medium">Tables:</div>
+                      <div className="col-span-2">23</div>
+                      
+                      <div className="col-span-1 font-medium">Connection:</div>
+                      <div className="col-span-2">
+                        <Badge variant="outline" className="bg-green-50 text-green-600 hover:bg-green-50">
+                          Connected
+                        </Badge>
+                      </div>
+                      
+                      <div className="col-span-1 font-medium">Version:</div>
+                      <div className="col-span-2">PostgreSQL 14</div>
+                      
+                      <div className="col-span-1 font-medium">Last Backup:</div>
+                      <div className="col-span-2">Never</div>
+                    </div>
+                    
+                    <div className="pt-4">
+                      <Button variant="outline" className="w-full">
+                        <RefreshCw className="mr-2 h-4 w-4" /> Refresh Connection
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
         </TabsContent>
         </Tabs>
       </div>
