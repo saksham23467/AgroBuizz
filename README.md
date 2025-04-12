@@ -162,8 +162,7 @@ The admin dashboard provides access to powerful analytics and reporting:
 - `GET /api/vendor/products` - Get vendor's products
 - `GET /api/vendor/complaints` - Get complaints for vendor's products
 - `POST /api/vendor/complaints/:id` - Update complaint status/response
-- `POST /api/waitlist` - Join the platform waitlist
-- `GET /api/waitlist` - Get waitlist entries (admin access)
+// Waitlist API endpoints removed
 
 ## WebSocket API
 
