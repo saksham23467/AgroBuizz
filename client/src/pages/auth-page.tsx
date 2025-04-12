@@ -104,16 +104,24 @@ export default function AuthPage() {
           description: "Welcome back to AgroBuizz!",
         });
         
-        // Redirect based on user type
+        console.log("[AUTH] Login successful for user:", data.user?.username);
+        
+        // Set location and reload to ensure all components update with auth state
+        let redirectPath = "/";
+        
         if (data.user?.userType === "vendor") {
-          setLocation("/vendor");
+          redirectPath = "/vendor";
         } else if (data.user?.userType === "farmer") {
-          setLocation("/farmer");
+          redirectPath = "/farmer";
         } else if (data.user?.role === "admin") {
-          setLocation("/admin");
-        } else {
-          setLocation("/");
+          redirectPath = "/admin";
         }
+        
+        // Set location and reload window to refresh auth state everywhere
+        setLocation(redirectPath);
+        setTimeout(() => {
+          window.location.reload();
+        }, 100);
       } else {
         const data = await res.json();
         toast({
@@ -150,14 +158,22 @@ export default function AuthPage() {
           description: "Your account has been created!",
         });
         
-        // Redirect based on user type
+        console.log("[AUTH] Registration successful for user:", data.username);
+        
+        // Set location and reload to ensure all components update with auth state
+        let redirectPath = "/";
+        
         if (userData.userType === "vendor") {
-          setLocation("/vendor");
+          redirectPath = "/vendor";
         } else if (userData.userType === "farmer") {
-          setLocation("/farmer");
-        } else {
-          setLocation("/");
+          redirectPath = "/farmer";
         }
+        
+        // Set location and reload window to refresh auth state everywhere
+        setLocation(redirectPath);
+        setTimeout(() => {
+          window.location.reload();
+        }, 100);
       } else {
         const data = await res.json();
         toast({
