@@ -3,7 +3,8 @@ import {
   users, type User, type InsertUser,
   productComplaints, type ProductComplaint, type InsertProductComplaint,
   products, type Product, type InsertProduct,
-  vendors, type Vendor, type InsertVendor
+  vendors, type Vendor, type InsertVendor,
+  vendorProducts
 } from "@shared/schema";
 import bcrypt from "bcryptjs";
 import { eq, and, desc } from 'drizzle-orm';
@@ -46,54 +47,48 @@ export interface IStorage {
   sessionStore: session.Store;
 }
 
-export class MemStorage implements IStorage {
-  private users: Map<number, User>;
-  private waitlist: Map<number, WaitlistEntry>;
-  
-  currentUserId: number;
-  currentWaitlistId: number;
+// MemStorage class removed as we're now using DatabaseStorage
+
+export class DatabaseStorage implements IStorage {
+  sessionStore: session.Store;
 
   constructor() {
-    this.users = new Map();
-    this.waitlist = new Map();
-    
-    this.currentUserId = 1;
-    this.currentWaitlistId = 1;
+    const PostgresSessionStore = connectPg(session);
+    this.sessionStore = new PostgresSessionStore({ 
+      pool, 
+      createTableIfMissing: true 
+    });
   }
 
   async getUser(id: number): Promise<User | undefined> {
-    return this.users.get(id);
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user;
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(
-      (user) => user.username === username,
-    );
+    const [user] = await db.select().from(users).where(eq(users.username, username));
+    return user;
   }
   
   async getUserByEmail(email: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(
-      (user) => user.email === email,
-    );
+    const [user] = await db.select().from(users).where(eq(users.email, email));
+    return user;
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
-    const id = this.currentUserId++;
     // Hash password before storing
     const hashedPassword = await bcrypt.hash(insertUser.password, 10);
     
-    const user: User = { 
-      ...insertUser, 
-      id,
-      password: hashedPassword,
-      createdAt: new Date(),
-      lastLogin: null,
-      role: insertUser.role || 'user',
-      userType: insertUser.userType || 'customer',
-      darkMode: insertUser.darkMode ?? false
-    };
+    const [user] = await db.insert(users)
+      .values({
+        ...insertUser,
+        password: hashedPassword,
+        role: insertUser.role || 'user',
+        userType: insertUser.userType || 'customer',
+        darkMode: insertUser.darkMode ?? false
+      })
+      .returning();
     
-    this.users.set(id, user);
     return user;
   }
   
@@ -108,45 +103,144 @@ export class MemStorage implements IStorage {
   }
   
   async updateUserDarkMode(id: number, darkMode: boolean): Promise<User | undefined> {
-    const user = await this.getUser(id);
-    if (!user) return undefined;
+    const [updatedUser] = await db.update(users)
+      .set({ darkMode })
+      .where(eq(users.id, id))
+      .returning();
     
-    const updatedUser = { ...user, darkMode };
-    this.users.set(id, updatedUser);
     return updatedUser;
   }
   
   async updateUserLastLogin(id: number): Promise<User | undefined> {
-    const user = await this.getUser(id);
-    if (!user) return undefined;
+    const [updatedUser] = await db.update(users)
+      .set({ lastLogin: new Date() })
+      .where(eq(users.id, id))
+      .returning();
     
-    const updatedUser = { ...user, lastLogin: new Date() };
-    this.users.set(id, updatedUser);
     return updatedUser;
   }
 
   async createWaitlistEntry(entry: InsertWaitlistEntry): Promise<WaitlistEntry> {
-    const id = this.currentWaitlistId++;
-    const waitlistEntry: WaitlistEntry = {
-      ...entry,
-      id,
-      createdAt: new Date(),
-      notifications: entry.notifications === undefined ? false : entry.notifications,
-    };
-    this.waitlist.set(id, waitlistEntry);
+    const [waitlistEntry] = await db.insert(waitlistEntries)
+      .values({
+        ...entry,
+        notifications: entry.notifications === undefined ? false : entry.notifications,
+      })
+      .returning();
+    
     return waitlistEntry;
   }
 
   async getWaitlistEntries(): Promise<WaitlistEntry[]> {
-    return Array.from(this.waitlist.values());
+    return await db.select().from(waitlistEntries);
   }
 
   async getWaitlistEntryByEmail(email: string): Promise<WaitlistEntry | undefined> {
-    return Array.from(this.waitlist.values()).find(
-      (entry) => entry.email === email,
+    const [entry] = await db.select().from(waitlistEntries).where(eq(waitlistEntries.email, email));
+    return entry;
+  }
+
+  // Product related methods
+  async getProducts(): Promise<Product[]> {
+    return await db.select().from(products);
+  }
+
+  async getProductById(productId: string): Promise<Product | undefined> {
+    const [product] = await db.select().from(products).where(eq(products.productId, productId));
+    return product;
+  }
+
+  async searchProducts(query: string): Promise<Product[]> {
+    // Convert query to lowercase for case-insensitive search
+    const lowercasedQuery = query.toLowerCase();
+    
+    // Get all products - in a real app, we'd use a more efficient SQL query with LIKE or full-text search
+    const allProducts = await this.getProducts();
+    
+    // Filter products that match the query in name, type, or description
+    return allProducts.filter(product => 
+      product.name.toLowerCase().includes(lowercasedQuery) ||
+      product.type.toLowerCase().includes(lowercasedQuery) ||
+      (product.description && product.description.toLowerCase().includes(lowercasedQuery))
     );
+  }
+
+  // Vendor related methods
+  async getVendorById(vendorId: string): Promise<Vendor | undefined> {
+    const [vendor] = await db.select().from(vendors).where(eq(vendors.vendorId, vendorId));
+    return vendor;
+  }
+
+  async getVendorProducts(vendorId: string): Promise<Product[]> {
+    try {
+      // First, check if we can directly query products by vendorId
+      // If there's a direct relationship in the products table
+      const vendorProducts = await db.select()
+        .from(products)
+        .where(eq(products.vendorId, vendorId));
+      
+      if (vendorProducts.length > 0) {
+        return vendorProducts;
+      }
+      
+      // Fallback: return all products for now
+      // In a real app, you would handle the many-to-many relationship properly
+      return await this.getProducts();
+    } catch (error) {
+      console.error("Error getting vendor products:", error);
+      return []; // Return empty array on error
+    }
+  }
+
+  // Product Complaint related methods
+  async createProductComplaint(complaint: InsertProductComplaint): Promise<ProductComplaint> {
+    const [newComplaint] = await db.insert(productComplaints)
+      .values(complaint)
+      .returning();
+    
+    return newComplaint;
+  }
+
+  async getProductComplaints(userId: number): Promise<ProductComplaint[]> {
+    return await db.select()
+      .from(productComplaints)
+      .where(eq(productComplaints.userId, userId))
+      .orderBy(desc(productComplaints.createdAt));
+  }
+
+  async getVendorComplaints(vendorId: string): Promise<ProductComplaint[]> {
+    return await db.select()
+      .from(productComplaints)
+      .where(eq(productComplaints.vendorId, vendorId))
+      .orderBy(desc(productComplaints.createdAt));
+  }
+
+  async updateComplaintStatus(complaintId: number, status: string): Promise<ProductComplaint | undefined> {
+    const [updatedComplaint] = await db.update(productComplaints)
+      .set({ 
+        status: status as any, // Type assertion needed here
+        updatedAt: new Date()
+      })
+      .where(eq(productComplaints.id, complaintId))
+      .returning();
+    
+    return updatedComplaint;
+  }
+
+  async addVendorResponse(complaintId: number, response: string): Promise<ProductComplaint | undefined> {
+    const [updatedComplaint] = await db.update(productComplaints)
+      .set({ 
+        vendorResponse: response,
+        responseDate: new Date(),
+        status: "in_progress" as any, // Type assertion needed here
+        updatedAt: new Date()
+      })
+      .where(eq(productComplaints.id, complaintId))
+      .returning();
+    
+    return updatedComplaint;
   }
 }
 
-// Just use memory storage for now
-export const storage = new MemStorage();
+// Use database storage
+export const storage = new DatabaseStorage();

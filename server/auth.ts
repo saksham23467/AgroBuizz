@@ -4,8 +4,8 @@ import { Express, Request } from "express";
 import session from "express-session";
 import { storage } from "./storage";
 import { User } from "@shared/schema";
-import createMemoryStore from "memorystore";
-
+import { db } from "./db";
+import * as schema from "@shared/schema";
 // Properly type the Express Request user property
 declare global {
   namespace Express {
@@ -23,16 +23,12 @@ declare global {
   }
 }
 
-const MemoryStore = createMemoryStore(session);
-
 export function setupAuth(app: Express) {
   const sessionSettings: session.SessionOptions = {
     secret: process.env.SESSION_SECRET || 'your-secret-key',
     resave: false,
     saveUninitialized: false,
-    store: new MemoryStore({
-      checkPeriod: 86400000, // prune expired entries every 24h
-    }),
+    store: storage.sessionStore,
     cookie: {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
@@ -244,6 +240,72 @@ export function setupAuth(app: Express) {
     }
   });
   
+  // Get all complaints submitted by a user
+  app.get("/api/user/complaints", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ 
+        success: false, 
+        message: "Not authenticated" 
+      });
+    }
+    
+    try {
+      const complaints = await storage.getProductComplaints(req.user.id);
+      res.json({ 
+        success: true, 
+        complaints 
+      });
+    } catch (error) {
+      console.error("Error fetching user complaints:", error);
+      res.status(500).json({
+        success: false,
+        message: "Error fetching complaints"
+      });
+    }
+  });
+  
+  // Submit a new product complaint
+  app.post("/api/products/:productId/complaints", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ 
+        success: false, 
+        message: "Not authenticated" 
+      });
+    }
+    
+    try {
+      const { productId } = req.params;
+      const { title, description, vendorId } = req.body;
+      
+      if (!title || !description || !vendorId) {
+        return res.status(400).json({
+          success: false,
+          message: "Title, description and vendorId are required"
+        });
+      }
+      
+      // Create the complaint
+      const complaint = await storage.createProductComplaint({
+        userId: req.user.id,
+        productId,
+        vendorId,
+        title,
+        description
+      });
+      
+      res.status(201).json({ 
+        success: true, 
+        complaint 
+      });
+    } catch (error) {
+      console.error("Error creating complaint:", error);
+      res.status(500).json({
+        success: false,
+        message: "Error creating complaint"
+      });
+    }
+  });
+  
   // Middleware to check if user is authenticated
   app.use("/api/admin", (req, res, next) => {
     if (!req.isAuthenticated()) {
@@ -264,19 +326,149 @@ export function setupAuth(app: Express) {
   });
   
   // Admin-only route to get all users
-  app.get("/api/admin/users", (req, res) => {
-    // This route is protected by the middleware above
-    const users = Array.from(storage['users'].values()).map(user => ({
-      id: user.id,
-      username: user.username,
-      email: user.email,
-      role: user.role,
-      userType: user.userType,
-      createdAt: user.createdAt,
-      lastLogin: user.lastLogin
-    }));
+  app.get("/api/admin/users", async (req, res) => {
+    try {
+      // This route is protected by the middleware above
+      const result = await db.select().from(schema.users);
+      
+      // Map to safe user objects (without passwords)
+      const safeUsers = result.map(user => ({
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        role: user.role,
+        userType: user.userType,
+        createdAt: user.createdAt,
+        lastLogin: user.lastLogin
+      }));
+      
+      res.json({ success: true, users: safeUsers });
+    } catch (error) {
+      console.error("Error fetching users:", error);
+      res.status(500).json({
+        success: false,
+        message: "Error fetching users"
+      });
+    }
+  });
+  
+  // Middleware to check if user is a vendor
+  app.use("/api/vendor", (req, res, next) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ 
+        success: false, 
+        message: "Not authenticated" 
+      });
+    }
     
-    res.json({ success: true, users });
+    if (req.user.userType !== 'vendor') {
+      return res.status(403).json({ 
+        success: false, 
+        message: "Only vendors can access this resource" 
+      });
+    }
+    
+    next();
+  });
+  
+  // Get vendor's product inventory
+  app.get("/api/vendor/products", async (req, res) => {
+    try {
+      // This API will return vendor's products based on user ID
+      // In a real app, you would look up the vendor ID based on the user ID
+      // For simplicity, we'll mock this with a direct list for now
+      const products = await storage.getProducts();
+      
+      res.json({ 
+        success: true, 
+        products 
+      });
+    } catch (error) {
+      console.error("Error fetching vendor products:", error);
+      res.status(500).json({
+        success: false,
+        message: "Error fetching vendor products"
+      });
+    }
+  });
+  
+  // Get complaints for vendor's products
+  app.get("/api/vendor/complaints", async (req, res) => {
+    try {
+      // In a real app, you would look up complaints for this vendor
+      // Instead, we'll return all complaints for now
+      const vendorId = "vendor1"; // Replace with actual vendor ID in production
+      const complaints = await storage.getVendorComplaints(vendorId);
+      
+      res.json({ 
+        success: true, 
+        complaints 
+      });
+    } catch (error) {
+      console.error("Error fetching vendor complaints:", error);
+      res.status(500).json({
+        success: false,
+        message: "Error fetching vendor complaints"
+      });
+    }
+  });
+  
+  // Update a complaint status or add a response
+  app.post("/api/vendor/complaints/:complaintId", async (req, res) => {
+    try {
+      const { complaintId } = req.params;
+      const { status, response } = req.body;
+      
+      let updatedComplaint;
+      
+      if (response) {
+        updatedComplaint = await storage.addVendorResponse(parseInt(complaintId), response);
+      } else if (status) {
+        updatedComplaint = await storage.updateComplaintStatus(parseInt(complaintId), status);
+      } else {
+        return res.status(400).json({
+          success: false,
+          message: "Either status or response is required"
+        });
+      }
+      
+      if (!updatedComplaint) {
+        return res.status(404).json({
+          success: false,
+          message: "Complaint not found"
+        });
+      }
+      
+      res.json({ 
+        success: true, 
+        complaint: updatedComplaint 
+      });
+    } catch (error) {
+      console.error("Error updating complaint:", error);
+      res.status(500).json({
+        success: false,
+        message: "Error updating complaint"
+      });
+    }
+  });
+  
+  // Middleware to check if user is a farmer
+  app.use("/api/farmer", (req, res, next) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ 
+        success: false, 
+        message: "Not authenticated" 
+      });
+    }
+    
+    if (req.user.userType !== 'farmer') {
+      return res.status(403).json({ 
+        success: false, 
+        message: "Only farmers can access this resource" 
+      });
+    }
+    
+    next();
   });
   
   // Create an admin user if none exists

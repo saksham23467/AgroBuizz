@@ -14,6 +14,7 @@ import About from "@/pages/About";
 import Settings from "@/pages/Settings";
 import Admin from "@/pages/Admin";
 import AdminLogin from "@/pages/AdminLogin";
+import AuthPage from "@/pages/auth-page";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { AuthProvider } from "@/hooks/use-auth";
