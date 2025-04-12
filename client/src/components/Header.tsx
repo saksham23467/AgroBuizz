@@ -174,6 +174,22 @@ export default function Header() {
                       <span>Settings</span>
                     </Link>
                   </DropdownMenuItem>
+                  {user.userType === "vendor" && (
+                    <DropdownMenuItem asChild>
+                      <Link href="/vendor" className="cursor-pointer flex items-center">
+                        <User className="mr-2 h-4 w-4" />
+                        <span>Vendor Dashboard</span>
+                      </Link>
+                    </DropdownMenuItem>
+                  )}
+                  {user.userType === "farmer" && (
+                    <DropdownMenuItem asChild>
+                      <Link href="/farmer" className="cursor-pointer flex items-center">
+                        <User className="mr-2 h-4 w-4" />
+                        <span>Farmer Dashboard</span>
+                      </Link>
+                    </DropdownMenuItem>
+                  )}
                   {user.role === "admin" && (
                     <DropdownMenuItem asChild>
                       <Link href="/admin" className="cursor-pointer flex items-center">
@@ -268,6 +284,22 @@ export default function Header() {
                   Settings
                 </span>
               </Link>
+              
+              {user.userType === "vendor" && (
+                <Link href="/vendor" onClick={() => handleNavAction('')}>
+                  <span className={`block py-2 font-medium w-full text-left ${isDarkMode ? 'text-gray-300 hover:text-[#8BC34A]' : 'text-gray-600 hover:text-[#4CAF50]'}`}>
+                    Vendor Dashboard
+                  </span>
+                </Link>
+              )}
+              
+              {user.userType === "farmer" && (
+                <Link href="/farmer" onClick={() => handleNavAction('')}>
+                  <span className={`block py-2 font-medium w-full text-left ${isDarkMode ? 'text-gray-300 hover:text-[#8BC34A]' : 'text-gray-600 hover:text-[#4CAF50]'}`}>
+                    Farmer Dashboard
+                  </span>
+                </Link>
+              )}
               
               {user.role === "admin" && (
                 <Link href="/admin" onClick={() => handleNavAction('')}>

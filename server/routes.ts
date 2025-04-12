@@ -1,14 +1,142 @@
-import type { Express, Request, Response } from "express";
+import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
-import { insertWaitlistSchema } from "@shared/schema";
+import { insertWaitlistSchema, insertProductComplaintSchema } from "@shared/schema";
 import { fromZodError } from "zod-validation-error";
 import { setupAuth } from "./auth";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Set up authentication
   setupAuth(app);
+  
+  // Middleware to ensure user is authenticated
+  const ensureAuthenticated = (req: Request, res: Response, next: NextFunction) => {
+    if (req.isAuthenticated()) {
+      return next();
+    }
+    res.status(401).json({ success: false, message: "Not authenticated" });
+  };
+  
+  // Middleware to ensure user is a vendor
+  const ensureVendor = (req: Request, res: Response, next: NextFunction) => {
+    if (req.isAuthenticated() && req.user.userType === "vendor") {
+      return next();
+    }
+    res.status(403).json({ success: false, message: "Access denied. Vendor access required." });
+  };
+  
+  // Middleware to ensure user is a farmer
+  const ensureFarmer = (req: Request, res: Response, next: NextFunction) => {
+    if (req.isAuthenticated() && req.user.userType === "farmer") {
+      return next();
+    }
+    res.status(403).json({ success: false, message: "Access denied. Farmer access required." });
+  };
+  
+  // Middleware to ensure user is an admin
+  const ensureAdmin = (req: Request, res: Response, next: NextFunction) => {
+    if (req.isAuthenticated() && req.user.role === "admin") {
+      return next();
+    }
+    res.status(403).json({ success: false, message: "Access denied. Admin access required." });
+  };
+  
+  // User complaints API routes
+  app.post("/api/user/complaints", ensureAuthenticated, async (req: Request, res: Response) => {
+    try {
+      // At this point req.user is guaranteed to exist due to ensureAuthenticated middleware
+      const user = req.user!;
+      
+      // Validate request body
+      const validatedData = insertProductComplaintSchema.safeParse({
+        ...req.body,
+        userId: user.id, // Use the authenticated user's ID
+        status: "unsolved",
+        createdAt: new Date(),
+        updatedAt: new Date()
+      });
+      
+      if (!validatedData.success) {
+        const errorMessage = fromZodError(validatedData.error).message;
+        return res.status(400).json({ message: errorMessage });
+      }
+      
+      // Create the complaint
+      const complaint = await storage.createProductComplaint(validatedData.data);
+      
+      return res.status(201).json({
+        message: "Complaint submitted successfully",
+        complaint
+      });
+    } catch (error) {
+      console.error("Error submitting complaint:", error);
+      return res.status(500).json({ message: "Server error processing your complaint" });
+    }
+  });
+  
+  app.get("/api/user/complaints", ensureAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const complaints = await storage.getProductComplaints(req.user.id);
+      return res.status(200).json(complaints);
+    } catch (error) {
+      console.error("Error fetching user complaints:", error);
+      return res.status(500).json({ message: "Server error fetching complaints" });
+    }
+  });
+  
+  // Vendor API routes
+  app.get("/api/vendor/products", ensureVendor, async (req: Request, res: Response) => {
+    try {
+      const products = await storage.getVendorProducts(req.user.id.toString());
+      return res.status(200).json(products);
+    } catch (error) {
+      console.error("Error fetching vendor products:", error);
+      return res.status(500).json({ message: "Server error fetching products" });
+    }
+  });
+  
+  app.get("/api/vendor/complaints", ensureVendor, async (req: Request, res: Response) => {
+    try {
+      const complaints = await storage.getVendorComplaints(req.user.id.toString());
+      return res.status(200).json(complaints);
+    } catch (error) {
+      console.error("Error fetching vendor complaints:", error);
+      return res.status(500).json({ message: "Server error fetching complaints" });
+    }
+  });
+  
+  app.post("/api/vendor/complaints/:id", ensureVendor, async (req: Request, res: Response) => {
+    try {
+      const complaintId = parseInt(req.params.id);
+      const { status, response } = req.body;
+      
+      let updatedComplaint;
+      
+      // If a status update is requested
+      if (status) {
+        updatedComplaint = await storage.updateComplaintStatus(complaintId, status);
+      }
+      
+      // If a vendor response is provided
+      if (response) {
+        updatedComplaint = await storage.addVendorResponse(complaintId, response);
+      }
+      
+      if (!updatedComplaint) {
+        return res.status(404).json({ message: "Complaint not found or could not be updated" });
+      }
+      
+      return res.status(200).json({
+        message: "Complaint updated successfully",
+        complaint: updatedComplaint
+      });
+    } catch (error) {
+      console.error("Error updating complaint:", error);
+      return res.status(500).json({ message: "Server error updating complaint" });
+    }
+  });
+  
   // API route for waitlist signup
   app.post("/api/waitlist", async (req: Request, res: Response) => {
     try {
