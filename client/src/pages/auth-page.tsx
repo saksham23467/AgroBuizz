@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -14,6 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
 import { insertUserSchema } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
+import { useAuth } from "@/hooks/use-auth";
 
 // Auth animations
 const containerVariants = {
@@ -63,6 +64,31 @@ export default function AuthPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const { user } = useAuth();
+  
+  // Redirect if already logged in
+  useEffect(() => {
+    if (user) {
+      // Determine where to redirect based on user role
+      let redirectPath = "/";
+      
+      if (user.userType === "vendor") {
+        redirectPath = "/vendor";
+      } else if (user.userType === "farmer") {
+        redirectPath = "/farmer";
+      } else if (user.role === "admin") {
+        redirectPath = "/admin";
+      }
+      
+      toast({
+        title: "Already logged in",
+        description: "You are already logged in to your account",
+      });
+      
+      // Redirect to appropriate page
+      setLocation(redirectPath);
+    }
+  }, [user, setLocation, toast]);
   
   // Login form
   const loginForm = useForm<LoginValues>({
