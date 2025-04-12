@@ -76,6 +76,7 @@ export const queryStatusEnum = pgEnum('query_status', ['unsolved', 'in_progress'
     price: numeric("price", { precision: 10, scale: 2 }).notNull().default("0"),
     quantity: integer("quantity").notNull().default(0),
     classification: varchar("classification", { length: 50 }),
+    vendorId: varchar("vendor_id", { length: 50 }),
   });
   
   // Vendor Table

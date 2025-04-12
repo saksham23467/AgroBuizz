@@ -173,18 +173,26 @@ export class DatabaseStorage implements IStorage {
 
   async getVendorProducts(vendorId: string): Promise<Product[]> {
     try {
-      // First, check if we can directly query products by vendorId
-      // If there's a direct relationship in the products table
-      const vendorProducts = await db.select()
-        .from(products)
-        .where(eq(products.vendorId, vendorId));
+      // Use the join table to get all products for this vendor
+      // Since we don't have a direct vendorId in products table yet
+      const vendorProductEntries = await db.select()
+        .from(vendorProducts)
+        .where(eq(vendorProducts.vendorId, vendorId));
       
-      if (vendorProducts.length > 0) {
-        return vendorProducts;
+      // If we found matching products in the join table
+      if (vendorProductEntries.length > 0) {
+        // Get the product IDs
+        const productIds = vendorProductEntries.map(entry => entry.productId);
+        
+        // Fetch the actual products
+        const products = await db.select()
+          .from(this.products)
+          .where(inArray(this.products.productId, productIds));
+          
+        return products;
       }
       
       // Fallback: return all products for now
-      // In a real app, you would handle the many-to-many relationship properly
       return await this.getProducts();
     } catch (error) {
       console.error("Error getting vendor products:", error);

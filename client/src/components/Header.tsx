@@ -190,10 +190,10 @@ export default function Header() {
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : (
-              <Link href="/login">
+              <Link href="/auth">
                 <Button className="bg-[#4CAF50] hover:bg-[#43A047] text-white">
                   <User className="h-4 w-4 mr-2" />
-                  Login
+                  Login / Register
                 </Button>
               </Link>
             )}
@@ -303,9 +303,9 @@ export default function Header() {
               </button>
             </>
           ) : (
-            <Link href="/login" onClick={() => handleNavAction('')}>
+            <Link href="/auth" onClick={() => handleNavAction('')}>
               <span className={`block py-2 font-medium w-full text-left ${isDarkMode ? 'text-gray-300 hover:text-[#8BC34A]' : 'text-gray-600 hover:text-[#4CAF50]'}`}>
-                Login
+                Login / Register
               </span>
             </Link>
           )}

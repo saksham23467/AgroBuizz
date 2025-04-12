@@ -39,6 +39,12 @@ function Router() {
       <Login />
     </AnimatedPage>
   );
+  
+  const MotionAuthPage = () => (
+    <AnimatedPage>
+      <AuthPage />
+    </AnimatedPage>
+  );
 
   const MotionAbout = () => (
     <AnimatedPage>
@@ -102,6 +108,7 @@ function Router() {
           <Switch location={location} key={location}>
             <Route path="/" component={MotionHome} />
             <Route path="/login" component={MotionLogin} />
+            <Route path="/auth" component={MotionAuthPage} />
             <Route path="/about" component={MotionAbout} />
             <Route path="/admin-login" component={MotionAdminLogin} />
             {/* Public marketplace pages */}
