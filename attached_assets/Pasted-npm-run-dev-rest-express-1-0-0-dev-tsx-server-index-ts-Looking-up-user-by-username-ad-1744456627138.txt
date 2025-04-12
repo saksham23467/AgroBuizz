@@ -1,0 +1,62 @@
+npm run dev   
+
+> rest-express@1.0.0 dev
+> tsx server/index.ts
+
+Looking up user by username: admin
+User not found: admin
+Creating new user with username: admin
+User created successfully: ID=1, Username=admin, Role=admin
+Admin user created
+4:43:53 PM [express] serving on port 5000
+Browserslist: browsers data (caniuse-lite) is 6 months old. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+4:44:50 PM [express] GET /api/user 401 in 3ms :: {"success":false,"message":"Not authenticated"}
+Looking up user by username: gaalviinn
+User not found: gaalviinn
+4:45:22 PM [express] POST /api/register 400 in 2ms :: {"success":false,"message":"Email already exis…
+Looking up user by username: gaalviinn
+User not found: gaalviinn
+4:45:24 PM [express] POST /api/register 400 in 2ms :: {"success":false,"message":"Email already exis…
+Looking up user by username: gaalviinn
+User not found: gaalviinn
+4:45:24 PM [express] POST /api/register 400 in 1ms :: {"success":false,"message":"Email already exis…
+Looking up user by username: gaalviinn
+User not found: gaalviinn
+4:45:32 PM [express] POST /api/register 400 in 2ms :: {"success":false,"message":"Email already exis…
+Looking up user by username: gaalviinn
+User not found: gaalviinn
+[AUTH] Creating new user: gaalviinn
+Creating new user with username: gaalviinn
+User created successfully: ID=2, Username=gaalviinn, Role=user
+[AUTH] User created successfully: ID=2, Username=gaalviinn, Role=user
+[AUTH] Logging in newly created user: gaalviinn
+4:45:47 PM [express] POST /api/register 201 in 156ms :: {"success":true,"user":{"id":2,"username":"g…
+4:45:47 PM [express] GET /api/user 200 in 2ms :: {"success":true,"user":{"id":2,"username":"gaalviin…
+WebSocket client connected
+WebSocket client connected
+PS C:\Users\thera\Downloads\LaunchPad (3)\LaunchPad> npm run dev
+
+> rest-express@1.0.0 dev
+> tsx server/index.ts
+
+Looking up user by username: admin
+User not found: admin
+Creating new user with username: admin
+User created successfully: ID=1, Username=admin, Role=admin
+Admin user created
+4:46:08 PM [express] serving on port 5000
+Browserslist: browsers data (caniuse-lite) is 6 months old. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+WebSocket client connected
+WebSocket client connected
+4:46:11 PM [express] GET /api/user 401 in 4ms :: {"success":false,"message":"Not authenticated"}
+WebSocket client disconnected
+WebSocket client disconnected
+Looking up user by username: gaalviinn
+User not found: gaalviinn
+[AUTH] Login attempt for user: gaalviinn
+[AUTH] Login failed for user: gaalviinn
+4:46:18 PM [express] POST /api/login 401 in 2ms :: {"success":false,"message":"Invalid username or p…
