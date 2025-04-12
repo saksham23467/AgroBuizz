@@ -5,10 +5,14 @@ import { storage } from "./storage";
 import { insertWaitlistSchema, insertProductComplaintSchema } from "@shared/schema";
 import { fromZodError } from "zod-validation-error";
 import { setupAuth } from "./auth";
+import adminRoutes from "./admin-routes";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Set up authentication
   setupAuth(app);
+  
+  // Register admin routes
+  app.use('/api/admin', adminRoutes);
   
   // Middleware to ensure user is authenticated
   const ensureAuthenticated = (req: Request, res: Response, next: NextFunction) => {
