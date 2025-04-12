@@ -47,7 +47,7 @@ export default function ComplaintsList({ userType = "customer" }: ComplaintsList
   // Query to fetch complaints
   const { data: complaints, isLoading, error } = useQuery<Complaint[]>({
     queryKey: [apiEndpoint],
-    queryFn: getQueryFn(),
+    queryFn: getQueryFn({ on401: "throw" }),
     enabled: !!user, // Only run query if user is logged in
   });
   
@@ -256,7 +256,8 @@ export default function ComplaintsList({ userType = "customer" }: ComplaintsList
                         
                         <Button 
                           size="sm" 
-                          variant={complaint.status === "solved" ? "success" : "outline"}
+                          variant="outline"
+                          className={complaint.status === "solved" ? "bg-green-100 border-green-500 text-green-700" : ""}
                           onClick={() => handleStatusUpdate(complaint.id, "solved")}
                           disabled={updateStatusMutation.isPending || complaint.status === "solved"}
                         >

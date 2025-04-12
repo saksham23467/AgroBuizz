@@ -1,22 +1,24 @@
 import { useState } from "react";
+import { useMutation } from "@tanstack/react-query";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
 import { Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useAuth } from "@/hooks/use-auth";
 
-// Define the form schema
+// Form validation schema
 const complaintFormSchema = z.object({
-  title: z.string().min(5, "Title must be at least 5 characters"),
-  description: z.string().min(10, "Description must be at least 10 characters"),
+  title: z.string().min(3, { message: "Title must be at least 3 characters" }).max(100),
+  description: z.string().min(10, { message: "Description must be at least 10 characters" }).max(500),
 });
 
+// Types
 type ComplaintFormValues = z.infer<typeof complaintFormSchema>;
 
 type ProductComplaintFormProps = {
@@ -30,145 +32,151 @@ export default function ProductComplaintForm({
   productId,
   vendorId,
   onSuccess,
-  onCancel
+  onCancel,
 }: ProductComplaintFormProps) {
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
+  const { user } = useAuth();
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
-  // Initialize form
+  // Set up form with default values
   const form = useForm<ComplaintFormValues>({
     resolver: zodResolver(complaintFormSchema),
     defaultValues: {
       title: "",
-      description: ""
+      description: "",
     },
   });
   
-  // Handle form submission
-  const onSubmit = async (values: ComplaintFormValues) => {
-    setIsSubmitting(true);
-    
-    try {
-      const response = await apiRequest("POST", `/api/products/${productId}/complaints`, {
-        ...values,
-        vendorId
-      });
+  // Create complaint mutation
+  const createComplaintMutation = useMutation({
+    mutationFn: async (values: ComplaintFormValues) => {
+      if (!user) throw new Error("You must be logged in to submit a complaint");
       
-      if (response.ok) {
-        toast({
-          title: "Complaint submitted",
-          description: "Your complaint has been submitted successfully. The vendor will respond shortly.",
-        });
-        
-        // Invalidate complaints cache
-        queryClient.invalidateQueries({ queryKey: ["/api/user/complaints"] });
-        
-        // Call success callback if provided
-        if (onSuccess) {
-          onSuccess();
-        }
-        
-        // Reset form
-        form.reset();
-      } else {
-        const data = await response.json();
-        throw new Error(data.message || "Failed to submit complaint");
+      const complaint = {
+        userId: user.id,
+        productId,
+        vendorId,
+        title: values.title,
+        description: values.description,
+      };
+      
+      const res = await apiRequest("POST", "/api/user/complaints", complaint);
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.message || "Failed to submit complaint");
       }
-    } catch (error) {
-      console.error("Error submitting complaint:", error);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/user/complaints"] });
+      toast({
+        title: "Complaint submitted",
+        description: "Your complaint has been submitted successfully",
+      });
+      form.reset();
+      if (onSuccess) onSuccess();
+    },
+    onError: (error) => {
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Failed to submit complaint. Please try again.",
+        description: error instanceof Error ? error.message : "Failed to submit complaint",
         variant: "destructive",
       });
-    } finally {
+    },
+    onSettled: () => {
       setIsSubmitting(false);
+    },
+  });
+  
+  // Form submission handler
+  const onSubmit = async (values: ComplaintFormValues) => {
+    if (!user) {
+      toast({
+        title: "Error",
+        description: "You must be logged in to submit a complaint",
+        variant: "destructive",
+      });
+      return;
     }
+    
+    setIsSubmitting(true);
+    createComplaintMutation.mutate(values);
   };
   
   return (
-    <Card className="w-full max-w-md mx-auto">
-      <CardHeader>
-        <CardTitle>Submit a Complaint</CardTitle>
-        <CardDescription>
-          Report an issue with this product. The vendor will review your complaint.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="title"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Title</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Briefly describe the issue" {...field} />
-                  </FormControl>
-                  <FormDescription>
-                    Provide a clear title for your complaint
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            <FormField
-              control={form.control}
-              name="description"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Description</FormLabel>
-                  <FormControl>
-                    <Textarea 
-                      placeholder="Describe the issue in detail" 
-                      className="min-h-32 resize-y"
-                      {...field} 
-                    />
-                  </FormControl>
-                  <FormDescription>
-                    Please provide details about the issue (order number, date, etc.)
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            <div className="flex flex-col sm:flex-row gap-2 pt-2">
+    <div className="space-y-4">
+      <div>
+        <h2 className="text-xl font-bold">Submit a Complaint</h2>
+        <p className="text-sm text-muted-foreground">
+          Let us know about any issues with this product
+        </p>
+      </div>
+      
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <FormField
+            control={form.control}
+            name="title"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Complaint Title</FormLabel>
+                <FormControl>
+                  <Input 
+                    placeholder="Briefly describe the issue"
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          
+          <FormField
+            control={form.control}
+            name="description"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Description</FormLabel>
+                <FormControl>
+                  <Textarea 
+                    placeholder="Provide details about your issue"
+                    className="min-h-[100px]"
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          
+          <div className="flex justify-end gap-2">
+            {onCancel && (
               <Button 
-                type="submit" 
-                className="w-full" 
+                type="button" 
+                variant="outline" 
+                onClick={onCancel}
                 disabled={isSubmitting}
               >
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Submitting...
-                  </>
-                ) : (
-                  "Submit Complaint"
-                )}
+                Cancel
               </Button>
-              
-              {onCancel && (
-                <Button 
-                  type="button" 
-                  variant="outline" 
-                  className="w-full" 
-                  onClick={onCancel}
-                  disabled={isSubmitting}
-                >
-                  Cancel
-                </Button>
+            )}
+            
+            <Button 
+              type="submit" 
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Submitting...
+                </>
+              ) : (
+                "Submit Complaint"
               )}
-            </div>
-          </form>
-        </Form>
-      </CardContent>
-      <CardFooter className="text-sm text-muted-foreground">
-        <p>Your complaint will be reviewed within 24-48 hours.</p>
-      </CardFooter>
-    </Card>
+            </Button>
+          </div>
+        </form>
+      </Form>
+    </div>
   );
 }

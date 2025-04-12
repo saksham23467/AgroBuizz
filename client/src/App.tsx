@@ -20,7 +20,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { AuthProvider } from "@/hooks/use-auth";
 import { ThemeProvider } from "@/contexts/ThemeContext";
-import { ProtectedRoute, AdminRoute } from "@/components/protected-route";
+import { ProtectedRoute, AdminRoute, VendorRoute, FarmerRoute } from "@/components/protected-route";
 import { CartProvider } from "@/contexts/CartContext";
 import AnimatedPage from "@/components/AnimatedPage";
 import { pageTransitionVariants, hardwareAcceleratedProps } from "@/lib/utils";
@@ -125,7 +125,8 @@ function Router() {
             {/* Protected routes that require authentication */}
             <ProtectedRoute path="/checkout" component={MotionCheckout} />
             <ProtectedRoute path="/settings" component={MotionSettings} />
-            <ProtectedRoute path="/vendor" component={MotionVendorDashboard} />
+            {/* Role-specific routes */}
+            <VendorRoute path="/vendor" component={MotionVendorDashboard} />
             {/* Admin dashboard route */}
             <AdminRoute path="/admin" component={MotionAdmin} />
             <Route component={MotionNotFound} />
