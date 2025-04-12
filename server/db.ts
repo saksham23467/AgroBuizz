@@ -1,6 +1,7 @@
-import { Pool, neonConfig } from '@neondatabase/serverless';
-import { drizzle } from 'drizzle-orm/neon-serverless';
-import ws from "ws";
+import pg from 'pg';
+import { drizzle } from 'drizzle-orm/node-postgres';
+
+const { Pool } = pg;
 import * as schema from "@shared/schema";
 import * as dotenv from 'dotenv';
 import path from 'path';
@@ -16,9 +17,6 @@ if (fs.existsSync(envPath)) {
   console.log("No .env file found, using environment variables");
 }
 
-// Configure Neon Database (works for both local and remote PostgreSQL)
-neonConfig.webSocketConstructor = ws;
-
 if (!process.env.DATABASE_URL) {
   throw new Error(
     "DATABASE_URL must be set in environment variables or .env file. Format should be: postgresql://username:password@localhost:5432/agrobuizz",
@@ -26,16 +24,18 @@ if (!process.env.DATABASE_URL) {
 }
 
 // Create database connection pool
+// Connection is established using pg directly for better local compatibility
 export const pool = new Pool({ 
   connectionString: process.env.DATABASE_URL,
   // Connection pool settings for better performance
   max: 20, // Maximum number of clients in the pool
   idleTimeoutMillis: 30000, // How long a client is allowed to remain idle before being closed
-  connectionTimeoutMillis: 2000, // How long to wait for a connection to become available
+  connectionTimeoutMillis: 5000, // How long to wait for a connection to become available
+  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
 });
 
-// Initialize Drizzle ORM
-export const db = drizzle({ client: pool, schema });
+// Initialize Drizzle ORM with the standard PostgreSQL adapter
+export const db = drizzle(pool, { schema });
 
 // Test the database connection
 pool.connect()

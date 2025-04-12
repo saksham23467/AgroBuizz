@@ -83,6 +83,33 @@ npm run dev
 
 The application will be available at http://localhost:5000
 
+### Troubleshooting Database Connection
+
+If you encounter database connection issues:
+
+1. **Verify PostgreSQL Service**: Ensure that PostgreSQL service is running on your machine
+2. **Check Credentials**: Verify your DATABASE_URL in .env file has the correct username, password, host, and port
+3. **SSL Settings**: For local development, ensure SSL is set to false by setting `NODE_ENV=development` in your .env file
+4. **Port Conflicts**: Confirm that port 5432 (default PostgreSQL port) is not blocked by firewall or used by another service
+5. **Database Creation**: Make sure you have created the 'agrobuizz' database in PostgreSQL
+
+Common Error Solutions:
+- `ECONNREFUSED`: Check that PostgreSQL is running and your host/port in DATABASE_URL are correct
+- `authentication failed`: Verify your PostgreSQL username and password
+- `database "agrobuizz" does not exist`: Run the create database command in PostgreSQL
+
+For Windows Users:
+```powershell
+# Install PostgreSQL driver if needed
+npm install pg @types/pg
+```
+
+For Linux/Mac Users:
+```bash
+# If you get permission errors when running setup-database.sh
+chmod +x setup-database.sh
+```
+
 ## Authentication
 
 The system supports different user types:

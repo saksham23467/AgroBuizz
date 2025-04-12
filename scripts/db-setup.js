@@ -39,12 +39,13 @@ async function setupDatabase() {
     console.log("🔍 Testing database connection...");
     try {
       await execAsync(`cd ${rootDir} && node -e "
-        import { Pool } from '@neondatabase/serverless';
-        import { config } from 'dotenv';
-        config();
+        const pg = require('pg');
+        const dotenv = require('dotenv');
+        dotenv.config();
         
-        const pool = new Pool({ 
-          connectionString: process.env.DATABASE_URL 
+        const pool = new pg.Pool({ 
+          connectionString: process.env.DATABASE_URL,
+          ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
         });
         
         pool.connect()
