@@ -250,14 +250,7 @@ export default function Header() {
             </span>
           </Link>
           
-          {isHomePage && (
-            <button 
-              onClick={() => scrollToSection('waitlist')} 
-              className={`block py-2 font-medium w-full text-left ${isDarkMode ? 'text-gray-300 hover:text-[#8BC34A]' : 'text-gray-600 hover:text-[#4CAF50]'}`}
-            >
-              Join Waitlist
-            </button>
-          )}
+          {/* Mobile waitlist button removed */}
           
           <Link href="/checkout" onClick={() => handleNavAction('')}>
             <div className={`flex items-center justify-between py-2 font-medium w-full ${isDarkMode ? 'text-gray-300 hover:text-[#8BC34A]' : 'text-gray-600 hover:text-[#4CAF50]'}`}>
