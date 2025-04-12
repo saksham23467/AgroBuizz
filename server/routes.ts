@@ -173,14 +173,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }));
     }
     
-    ws.on('message', (message) => {
+    ws.on('message', async (message) => {
       try {
         const data = JSON.parse(message.toString());
         
         // Handle different message types
         if (data.type === 'search') {
           // Send back search suggestions based on the query
-          const suggestions = handleSearchQuery(data.query);
+          const suggestions = await handleSearchQuery(data.query);
           if (ws.readyState === WebSocket.OPEN) {
             ws.send(JSON.stringify({
               type: 'search_results',
@@ -203,16 +203,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
         }
         else if (data.type === 'market_price_request') {
-          // Simulate getting real-time market prices for products
+          // Get real-time market prices for products from database
+          const products = await generateMarketPrices(data.categoryId);
           if (ws.readyState === WebSocket.OPEN) {
             ws.send(JSON.stringify({
               type: 'market_price_update',
-              products: generateMarketPrices(data.categoryId)
+              products
             }));
           }
         }
       } catch (error) {
-        console.error('Error processing WebSocket message:', error);
+        console.error('[WEBSOCKET ERROR] Error processing message:', error);
       }
     });
     
@@ -225,31 +226,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
   return httpServer;
 }
 
-// Helper function to generate search suggestions
-function handleSearchQuery(query: string): string[] {
-  // This is a simple implementation. In a real app, you would:
-  // 1. Query your database for matching items
-  // 2. Return the results
+// Helper function to generate search suggestions from database products
+async function handleSearchQuery(query: string): Promise<string[]> {
+  console.log(`[SEARCH] Searching database for: "${query}"`);
   
-  const allItems = [
-    'Organic Seeds', 'Heirloom Seeds', 'GMO-Free Seeds', 
-    'Farm Equipment', 'Tractors', 'Harvesting Tools',
-    'Fresh Produce', 'Organic Vegetables', 'Locally Grown Fruits',
-    'Corn Seeds', 'Wheat Seeds', 'Tomato Seeds', 'Potato Seeds',
-    'Irrigation Equipment', 'Fertilizer Spreaders', 'Sprayers',
-    'Apples', 'Oranges', 'Bananas', 'Strawberries', 'Lettuce',
-    'Carrots', 'Onions', 'Garlic'
-  ];
+  if (!query || query.trim() === '') return [];
   
-  if (!query) return [];
-  
-  // Filter items that contain the query (case insensitive)
-  return allItems.filter(item => 
-    item.toLowerCase().includes(query.toLowerCase())
-  );
+  try {
+    // Get matching products from the database
+    const matchingProducts = await storage.searchProducts(query);
+    console.log(`[SEARCH] Found ${matchingProducts.length} matching products in database`);
+    
+    // Extract product names
+    const suggestions = matchingProducts.map(product => product.name);
+    return suggestions;
+  } catch (error) {
+    console.error('[SEARCH ERROR] Database search failed:', error);
+    return [];
+  }
 }
 
-// Function to generate simulated market prices
+// Function to generate market prices from database products
 interface ProductPrice {
   id: number;
   name: string;
@@ -258,66 +255,63 @@ interface ProductPrice {
   availability: 'high' | 'medium' | 'low';
 }
 
-function generateMarketPrices(categoryId?: string): ProductPrice[] {
-  // Sample product data by category
-  const seedProducts = [
-    { id: 101, name: 'Organic Corn Seeds', basePrice: 5.99 },
-    { id: 102, name: 'Heirloom Tomato Seeds', basePrice: 4.50 },
-    { id: 103, name: 'GMO-Free Wheat Seeds', basePrice: 6.75 },
-    { id: 104, name: 'Potato Seeds', basePrice: 3.99 },
-    { id: 105, name: 'Sunflower Seeds', basePrice: 5.25 },
-  ];
+async function generateMarketPrices(categoryId?: string): Promise<ProductPrice[]> {
+  console.log(`[MARKET] Fetching products from database for category: ${categoryId || 'mixed'}`);
   
-  const equipmentProducts = [
-    { id: 201, name: 'Small Tractor', basePrice: 12000 },
-    { id: 202, name: 'Harvesting Combine', basePrice: 25000 },
-    { id: 203, name: 'Irrigation System', basePrice: 8500 },
-    { id: 204, name: 'Fertilizer Spreader', basePrice: 3000 },
-    { id: 205, name: 'Sprayer', basePrice: 1500 },
-  ];
-  
-  const produceProducts = [
-    { id: 301, name: 'Organic Apples (5kg)', basePrice: 12.99 },
-    { id: 302, name: 'Vine-ripened Tomatoes (2kg)', basePrice: 8.50 },
-    { id: 303, name: 'Fresh Lettuce (500g)', basePrice: 3.99 },
-    { id: 304, name: 'Organic Potatoes (10kg)', basePrice: 15.75 },
-    { id: 305, name: 'Sweet Corn (dozen)', basePrice: 7.25 },
-  ];
-  
-  // Select products based on category
-  let products;
-  switch(categoryId) {
-    case 'seeds':
-      products = seedProducts;
-      break;
-    case 'equipment':
-      products = equipmentProducts;
-      break;
-    case 'produce':
-      products = produceProducts;
-      break;
-    default:
-      // If no category specified, return a mix
-      products = [...seedProducts.slice(0, 2), ...equipmentProducts.slice(0, 2), ...produceProducts.slice(0, 2)];
+  try {
+    // Get products from database
+    const allProducts = await storage.getProducts();
+    console.log(`[MARKET] Retrieved ${allProducts.length} products from database`);
+    
+    if (allProducts.length === 0) {
+      console.log('[MARKET] No products found in database');
+      return [];
+    }
+    
+    // Filter by category if specified
+    let filteredProducts = [...allProducts];
+    if (categoryId) {
+      filteredProducts = allProducts.filter(product => {
+        if (categoryId === 'seeds' && product.type.toLowerCase().includes('seed')) {
+          return true;
+        } else if (categoryId === 'equipment' && product.type.toLowerCase().includes('equipment')) {
+          return true;
+        } else if (categoryId === 'produce' && product.type.toLowerCase().includes('produce')) {
+          return true;
+        }
+        return false;
+      });
+      console.log(`[MARKET] Filtered to ${filteredProducts.length} products for category: ${categoryId}`);
+    }
+    
+    // Limit to a reasonable number of products (max 10)
+    const limitedProducts = filteredProducts.slice(0, 10);
+    
+    // Generate availability and price fluctuations
+    const availabilityOptions: ('high' | 'medium' | 'low')[] = ['high', 'medium', 'low'];
+    
+    return limitedProducts.map(product => {
+      // Create a numeric ID from the string product ID
+      const numericId = parseInt(product.productId.replace(/\D/g, '')) || Math.floor(Math.random() * 1000);
+      
+      // Generate random price fluctuation between -8% and +8%
+      const fluctuation = (Math.random() * 16 - 8) / 100;
+      const basePrice = typeof product.price === 'number' ? product.price : parseFloat(product.price as string) || 10.0;
+      const newPrice = basePrice * (1 + fluctuation);
+      
+      // Random availability
+      const availability = availabilityOptions[Math.floor(Math.random() * availabilityOptions.length)];
+      
+      return {
+        id: numericId,
+        name: product.name,
+        price: parseFloat(newPrice.toFixed(2)),
+        change: parseFloat((fluctuation * 100).toFixed(2)),
+        availability
+      };
+    });
+  } catch (error) {
+    console.error('[MARKET ERROR] Failed to generate market prices:', error);
+    return [];
   }
-  
-  // Add random price fluctuations and availability
-  const availabilityOptions: ('high' | 'medium' | 'low')[] = ['high', 'medium', 'low'];
-  
-  return products.map(product => {
-    // Generate random price fluctuation between -8% and +8%
-    const fluctuation = (Math.random() * 16 - 8) / 100;
-    const newPrice = product.basePrice * (1 + fluctuation);
-    
-    // Random availability
-    const availability = availabilityOptions[Math.floor(Math.random() * availabilityOptions.length)];
-    
-    return {
-      id: product.id,
-      name: product.name,
-      price: parseFloat(newPrice.toFixed(2)),
-      change: parseFloat((fluctuation * 100).toFixed(2)),
-      availability
-    };
-  });
 }

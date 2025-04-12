@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { useLocation } from "wouter";
 import SearchBar from "@/components/SearchBar";
 import LiveMarketPrices from "@/components/LiveMarketPrices";
+import { useAuth } from "@/hooks/use-auth";
 
 export default function HeroSection() {
   const [_, navigate] = useLocation();
