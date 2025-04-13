@@ -121,7 +121,7 @@ export default function AdminDashboard() {
     error: cropSalesError,
   } = useQuery<CropSale[]>({
     queryKey: ["/api/admin/crop-sales"],
-    queryFn: getQueryFn(),
+    queryFn: getQueryFn({}),
     enabled: activeTab === "crop-sales" || activeTab === "overview",
   });
 
@@ -132,7 +132,7 @@ export default function AdminDashboard() {
     error: yearOrdersError,
   } = useQuery<YearOrder[]>({
     queryKey: ["/api/admin/orders-by-year", selectedYear],
-    queryFn: getQueryFn(),
+    queryFn: getQueryFn({}),
     enabled: activeTab === "year-orders" || activeTab === "overview",
   });
 
@@ -502,7 +502,7 @@ export default function AdminDashboard() {
                   <TableRow className={isDarkMode ? 'border-[#333] hover:bg-[#242424]' : ''}>
                     <TableHead className={isDarkMode ? 'text-gray-400' : ''}>Crop Name</TableHead>
                     <TableHead className={isDarkMode ? 'text-gray-400' : ''}>Farmer</TableHead>
-                    <TableHead className="text-right" className={isDarkMode ? 'text-gray-400' : ''}>Total Sales</TableHead>
+                    <TableHead className={`text-right ${isDarkMode ? 'text-gray-400' : ''}`}>Total Sales</TableHead>
                     <TableHead className="text-right" className={isDarkMode ? 'text-gray-400' : ''}>Revenue</TableHead>
                   </TableRow>
                 </TableHeader>
