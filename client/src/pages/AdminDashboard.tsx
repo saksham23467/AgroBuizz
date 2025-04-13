@@ -121,7 +121,7 @@ export default function AdminDashboard() {
     error: cropSalesError,
   } = useQuery<CropSale[]>({
     queryKey: ["/api/admin/crop-sales"],
-    queryFn: getQueryFn({}),
+    queryFn: getQueryFn({ on401: 'throw' }),
     enabled: activeTab === "crop-sales" || activeTab === "overview",
   });
 
@@ -132,7 +132,7 @@ export default function AdminDashboard() {
     error: yearOrdersError,
   } = useQuery<YearOrder[]>({
     queryKey: ["/api/admin/orders-by-year", selectedYear],
-    queryFn: getQueryFn({}),
+    queryFn: getQueryFn({ on401: 'throw' }),
     enabled: activeTab === "year-orders" || activeTab === "overview",
   });
 
@@ -143,7 +143,7 @@ export default function AdminDashboard() {
     error: topSellingItemsError,
   } = useQuery<TopSellingItem[]>({
     queryKey: ["/api/admin/most-sold-items"],
-    queryFn: getQueryFn(),
+    queryFn: getQueryFn({ on401: 'throw' }),
     enabled: activeTab === "top-selling" || activeTab === "overview",
   });
 
@@ -154,7 +154,7 @@ export default function AdminDashboard() {
     error: frequentCustomersError,
   } = useQuery<FrequentCustomer[]>({
     queryKey: ["/api/admin/customers-with-multiple-orders"],
-    queryFn: getQueryFn(),
+    queryFn: getQueryFn({ on401: 'throw' }),
     enabled: activeTab === "frequent-customers" || activeTab === "overview",
   });
 
@@ -165,7 +165,7 @@ export default function AdminDashboard() {
     error: farmersWithCropsError,
   } = useQuery<FarmerWithCrops[]>({
     queryKey: ["/api/admin/farmers-with-crops"],
-    queryFn: getQueryFn(),
+    queryFn: getQueryFn({ on401: 'throw' }),
     enabled: activeTab === "farmers-crops" || activeTab === "overview",
   });
 
@@ -176,7 +176,7 @@ export default function AdminDashboard() {
     error: disputesError,
   } = useQuery<Dispute[]>({
     queryKey: ["/api/admin/disputes"],
-    queryFn: getQueryFn(),
+    queryFn: getQueryFn({ on401: 'throw' }),
     enabled: activeTab === "disputes" || activeTab === "overview",
   });
 
@@ -187,7 +187,7 @@ export default function AdminDashboard() {
     error: farmerOrdersError,
   } = useQuery<FarmerOrder[]>({
     queryKey: ["/api/admin/farmer-orders"],
-    queryFn: getQueryFn(),
+    queryFn: getQueryFn({ on401: 'throw' }),
     enabled: activeTab === "farmer-orders" || activeTab === "overview",
   });
 
@@ -198,7 +198,7 @@ export default function AdminDashboard() {
     error: vendorProductsError,
   } = useQuery<VendorProducts[]>({
     queryKey: ["/api/admin/vendor-product-counts"],
-    queryFn: getQueryFn(),
+    queryFn: getQueryFn({ on401: 'throw' }),
     enabled: activeTab === "vendor-products" || activeTab === "overview",
   });
 
@@ -449,7 +449,7 @@ export default function AdminDashboard() {
                       <TableHead className={isDarkMode ? 'text-gray-400' : ''}>Customer</TableHead>
                       <TableHead className={isDarkMode ? 'text-gray-400' : ''}>Date</TableHead>
                       <TableHead className={isDarkMode ? 'text-gray-400' : ''}>Status</TableHead>
-                      <TableHead className="text-right" className={isDarkMode ? 'text-gray-400' : ''}>Amount</TableHead>
+                      <TableHead className={`text-right ${isDarkMode ? 'text-gray-400' : ''}`}>Amount</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
