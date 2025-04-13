@@ -6,7 +6,8 @@ import {
   vendors, type Vendor, type InsertVendor,
   vendorProducts,
   crops, type Crop, type InsertCrop,
-  farmerCrops
+  farmerCrops,
+  farmerDisputes, type FarmerDispute, type InsertFarmerDispute
 } from "@shared/schema";
 import bcrypt from "bcryptjs";
 import { eq, and, desc, inArray } from 'drizzle-orm';
@@ -53,14 +54,14 @@ export interface IStorage {
   addVendorResponse(complaintId: number, response: string): Promise<ProductComplaint | undefined>;
   
   // Farmer Dispute related methods
-  createFarmerDispute(dispute: any): Promise<any>; // Will update with proper types once defined
-  getVendorFarmerDisputes(vendorId: number): Promise<any[]>;
-  getFarmerDisputes(farmerId: number): Promise<any[]>;
-  getAllFarmerDisputes(): Promise<any[]>; // For admin view
-  updateFarmerDisputeStatus(disputeId: number, status: string): Promise<any>;
-  addFarmerResponse(disputeId: number, response: string): Promise<any>;
-  addAdminNotes(disputeId: number, notes: string): Promise<any>;
-  resolveFarmerDispute(disputeId: number, resolution: string): Promise<any>;
+  createFarmerDispute(dispute: InsertFarmerDispute): Promise<FarmerDispute>;
+  getVendorFarmerDisputes(vendorId: number): Promise<FarmerDispute[]>;
+  getFarmerDisputes(farmerId: number): Promise<FarmerDispute[]>;
+  getAllFarmerDisputes(): Promise<FarmerDispute[]>; // For admin view
+  updateFarmerDisputeStatus(disputeId: number, status: string): Promise<FarmerDispute | undefined>;
+  addFarmerResponse(disputeId: number, response: string): Promise<FarmerDispute | undefined>;
+  addAdminNotes(disputeId: number, notes: string): Promise<FarmerDispute | undefined>;
+  resolveFarmerDispute(disputeId: number, resolution: string): Promise<FarmerDispute | undefined>;
   
   sessionStore: session.Store;
 }

@@ -385,6 +385,254 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Farmer Dispute API (for vendors to raise disputes against farmers)
+  // 1. Create a new dispute
+  app.post("/api/vendor/disputes", ensureVendor, async (req: Request, res: Response) => {
+    try {
+      // User is guaranteed to exist due to ensureVendor middleware
+      const user = req.user!;
+      
+      // Validate request body
+      const validatedData = insertFarmerDisputeSchema.safeParse({
+        ...req.body,
+        vendorId: user.id, // Use the authenticated vendor's ID
+        status: "open",
+      });
+      
+      if (!validatedData.success) {
+        const errorMessage = fromZodError(validatedData.error).message;
+        return res.status(400).json({ 
+          success: false, 
+          message: errorMessage 
+        });
+      }
+      
+      // Create the dispute
+      const dispute = await storage.createFarmerDispute(validatedData.data);
+      
+      return res.status(201).json({
+        success: true, 
+        message: "Dispute submitted successfully",
+        dispute
+      });
+    } catch (error) {
+      console.error("Error submitting dispute:", error);
+      return res.status(500).json({ 
+        success: false, 
+        message: "Server error processing your dispute" 
+      });
+    }
+  });
+  
+  // 2. Get all disputes created by this vendor
+  app.get("/api/vendor/disputes", ensureVendor, async (req: Request, res: Response) => {
+    try {
+      // User is guaranteed to exist due to ensureVendor middleware
+      const user = req.user!;
+      const disputes = await storage.getVendorFarmerDisputes(user.id);
+      
+      return res.status(200).json({
+        success: true,
+        disputes
+      });
+    } catch (error) {
+      console.error("Error fetching vendor disputes:", error);
+      return res.status(500).json({ 
+        success: false, 
+        message: "Server error fetching disputes" 
+      });
+    }
+  });
+  
+  // 3. Get disputes filed against this farmer
+  app.get("/api/farmer/disputes", ensureFarmer, async (req: Request, res: Response) => {
+    try {
+      // User is guaranteed to exist due to ensureFarmer middleware
+      const user = req.user!;
+      const disputes = await storage.getFarmerDisputes(user.id);
+      
+      return res.status(200).json({
+        success: true,
+        disputes
+      });
+    } catch (error) {
+      console.error("Error fetching farmer disputes:", error);
+      return res.status(500).json({ 
+        success: false, 
+        message: "Server error fetching disputes" 
+      });
+    }
+  });
+  
+  // 4. Add a farmer response to a dispute
+  app.post("/api/farmer/disputes/:id/respond", ensureFarmer, async (req: Request, res: Response) => {
+    try {
+      // User is guaranteed to exist due to ensureFarmer middleware
+      const user = req.user!;
+      const disputeId = parseInt(req.params.id);
+      const { response } = req.body;
+      
+      if (!response) {
+        return res.status(400).json({ 
+          success: false, 
+          message: "Response text is required" 
+        });
+      }
+      
+      // First verify this dispute is against this farmer
+      const disputes = await storage.getFarmerDisputes(user.id);
+      const isDisputeAgainstFarmer = disputes.some(d => d.id === disputeId);
+      
+      if (!isDisputeAgainstFarmer) {
+        return res.status(403).json({ 
+          success: false, 
+          message: "Access denied. This dispute is not against your account." 
+        });
+      }
+      
+      // Add the farmer's response
+      const updatedDispute = await storage.addFarmerResponse(disputeId, response);
+      
+      return res.status(200).json({
+        success: true,
+        message: "Response added successfully",
+        dispute: updatedDispute
+      });
+    } catch (error) {
+      console.error("Error adding response:", error);
+      return res.status(500).json({ 
+        success: false, 
+        message: "Server error adding your response" 
+      });
+    }
+  });
+  
+  // 5. Admin API to get all disputes
+  app.get("/api/admin/disputes", ensureAdmin, async (_req: Request, res: Response) => {
+    try {
+      const disputes = await storage.getAllFarmerDisputes();
+      
+      return res.status(200).json({
+        success: true,
+        disputes
+      });
+    } catch (error) {
+      console.error("Error fetching all disputes:", error);
+      return res.status(500).json({ 
+        success: false, 
+        message: "Server error fetching disputes" 
+      });
+    }
+  });
+  
+  // 6. Admin API to update dispute status
+  app.post("/api/admin/disputes/:id/status", ensureAdmin, async (req: Request, res: Response) => {
+    try {
+      const disputeId = parseInt(req.params.id);
+      const { status } = req.body;
+      
+      if (!status) {
+        return res.status(400).json({ 
+          success: false, 
+          message: "Status is required" 
+        });
+      }
+      
+      const updatedDispute = await storage.updateFarmerDisputeStatus(disputeId, status);
+      
+      if (!updatedDispute) {
+        return res.status(404).json({ 
+          success: false, 
+          message: "Dispute not found" 
+        });
+      }
+      
+      return res.status(200).json({
+        success: true,
+        message: "Dispute status updated successfully",
+        dispute: updatedDispute
+      });
+    } catch (error) {
+      console.error("Error updating dispute status:", error);
+      return res.status(500).json({ 
+        success: false, 
+        message: "Server error updating dispute status" 
+      });
+    }
+  });
+  
+  // 7. Admin API to add notes to a dispute
+  app.post("/api/admin/disputes/:id/notes", ensureAdmin, async (req: Request, res: Response) => {
+    try {
+      const disputeId = parseInt(req.params.id);
+      const { notes } = req.body;
+      
+      if (!notes) {
+        return res.status(400).json({ 
+          success: false, 
+          message: "Notes are required" 
+        });
+      }
+      
+      const updatedDispute = await storage.addAdminNotes(disputeId, notes);
+      
+      if (!updatedDispute) {
+        return res.status(404).json({ 
+          success: false, 
+          message: "Dispute not found" 
+        });
+      }
+      
+      return res.status(200).json({
+        success: true,
+        message: "Admin notes added successfully",
+        dispute: updatedDispute
+      });
+    } catch (error) {
+      console.error("Error adding admin notes:", error);
+      return res.status(500).json({ 
+        success: false, 
+        message: "Server error adding admin notes" 
+      });
+    }
+  });
+  
+  // 8. Admin API to resolve a dispute
+  app.post("/api/admin/disputes/:id/resolve", ensureAdmin, async (req: Request, res: Response) => {
+    try {
+      const disputeId = parseInt(req.params.id);
+      const { resolution } = req.body;
+      
+      if (!resolution) {
+        return res.status(400).json({ 
+          success: false, 
+          message: "Resolution is required" 
+        });
+      }
+      
+      const resolvedDispute = await storage.resolveFarmerDispute(disputeId, resolution);
+      
+      if (!resolvedDispute) {
+        return res.status(404).json({ 
+          success: false, 
+          message: "Dispute not found" 
+        });
+      }
+      
+      return res.status(200).json({
+        success: true,
+        message: "Dispute resolved successfully",
+        dispute: resolvedDispute
+      });
+    } catch (error) {
+      console.error("Error resolving dispute:", error);
+      return res.status(500).json({ 
+        success: false, 
+        message: "Server error resolving dispute" 
+      });
+    }
+  });
+
   // Market prices API
   app.get("/api/market/prices", ensureAuthenticated, async (req: Request, res: Response) => {
     try {
