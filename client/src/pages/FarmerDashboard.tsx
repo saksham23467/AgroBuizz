@@ -1,25 +1,39 @@
-import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
-import { useAuth } from "@/hooks/use-auth";
-import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardFooter, 
+import { useState, useEffect } from 'react';
+import { useQuery, useMutation } from '@tanstack/react-query';
+import { getQueryFn, apiRequest, queryClient } from '@/lib/queryClient';
+import { useAuth } from '@/hooks/use-auth';
+import { useToast } from '@/hooks/use-toast';
+import { motion } from 'framer-motion';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
+import {
+  Calendar,
+  Leaf,
+  Edit,
+  Trash,
+  TrendingUp,
+  PlusCircle,
+  FileText
+} from 'lucide-react';
+
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
   CardHeader,
-  CardTitle 
-} from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Button } from "@/components/ui/button";
+  CardTitle,
+} from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+} from '@/components/ui/dialog';
 import {
   Form,
   FormControl,
@@ -28,54 +42,35 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { 
+} from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { 
-  Loader2, 
-  PlusCircle, 
-  Leaf, 
-  ShoppingBag, 
-  TrendingUp, 
-  FileText,
-  Calendar,
-  Save,
-  Edit,
-  Trash
-} from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getQueryFn, apiRequest, queryClient } from "@/lib/queryClient";
-import AnimatedPage from "@/components/AnimatedPage";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-
-interface Product {
-  id: number;
-  name: string;
-  description: string;
-  price: number;
-  inventory: number;
-  createdAt: string;
-  imageUrl?: string;
-}
+} from '@/components/ui/select';
+import AnimatedPage from '@/components/AnimatedPage';
+import { Link, useLocation } from 'wouter';
 
 interface Crop {
-  id: number;
+  cropId: string;
   name: string;
-  status: "growing" | "harvested" | "ready";
-  plantedDate: string;
-  harvestDate?: string;
+  type: string;
   quantity: number;
-  notes?: string;
+  price: string | number;
+  description?: string;
+  imagePath?: string;
+  season?: string;
+  growthPeriod?: number;
+  farmerId: number;
+  status?: "growing" | "harvested" | "ready"; // Custom frontend status
+  plantedDate?: string; // Custom frontend field
+  harvestDate?: string; // Custom frontend field
+  notes?: string; // Equivalent to description
+  createdAt: string;
+  updatedAt: string;
 }
 
 // Form schema for adding/editing crops
@@ -92,12 +87,28 @@ const cropFormSchema = z.object({
 
 type CropFormValues = z.infer<typeof cropFormSchema>;
 
+// Helper function to determine status based on creation date for UI purposes
+function getDefaultStatus(createdDate: string): "growing" | "harvested" | "ready" {
+  const created = new Date(createdDate);
+  const now = new Date();
+  const daysDifference = Math.floor((now.getTime() - created.getTime()) / (1000 * 60 * 60 * 24));
+  
+  if (daysDifference < 30) {
+    return "growing";
+  } else if (daysDifference < 60) {
+    return "ready";
+  } else {
+    return "harvested";
+  }
+}
+
 export default function FarmerDashboard() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [showAddCropDialog, setShowAddCropDialog] = useState(false);
   const [editingCrop, setEditingCrop] = useState<Crop | null>(null);
+  const [location, setLocation] = useLocation();
   
   // Get the current date for the calendar
   const today = new Date();
@@ -108,36 +119,120 @@ export default function FarmerDashboard() {
     day: 'numeric'
   });
   
-  // Sample farmer crops data (would come from API)
-  const [crops, setCrops] = useState<Crop[]>([
-    {
-      id: 1,
-      name: "Organic Tomatoes",
-      status: "growing",
-      plantedDate: "2025-03-10",
-      harvestDate: "2025-05-15",
-      quantity: 500,
-      notes: "Growing well, expected high yield"
+  // Query for getting crops from API
+  const cropsQuery = useQuery<{crops: Crop[]}>({
+    queryKey: ['/api/farmer/crops'],
+    queryFn: getQueryFn(),
+    retry: 1,
+    enabled: !!user
+  });
+  
+  // Use the fetched crops data, or an empty array if it's loading or there's an error
+  const crops: Crop[] = (cropsQuery.data?.crops || []).map((crop: Crop) => ({
+    ...crop,
+    // Set default status based on creation date (for display purposes)
+    status: crop.status || getDefaultStatus(crop.createdAt || new Date().toISOString()),
+    // Use description as notes
+    notes: crop.description
+  }));
+
+  // Create a mutation for adding crops
+  const createCropMutation = useMutation({
+    mutationFn: async (newCrop: CropFormValues) => {
+      const res = await apiRequest('POST', '/api/farmer/crops', {
+        name: newCrop.name,
+        type: 'vegetable', // Default type
+        quantity: newCrop.quantity,
+        price: 0, // Default price
+        description: newCrop.notes,
+        farmerId: user?.id
+      });
+      return await res.json();
     },
-    {
-      id: 2,
-      name: "Sweet Corn",
-      status: "ready",
-      plantedDate: "2025-02-01",
-      harvestDate: "2025-04-05",
-      quantity: 1200,
-      notes: "Ready for harvest"
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/farmer/crops'] });
+      toast({
+        title: "Crop added",
+        description: "Your crop has been added successfully.",
+      });
+      setShowAddCropDialog(false);
+      resetForm();
     },
-    {
-      id: 3,
-      name: "Potatoes",
-      status: "harvested",
-      plantedDate: "2025-01-15",
-      harvestDate: "2025-04-01",
-      quantity: 800,
-      notes: "Good quality crop"
+    onError: (error: Error) => {
+      console.error("Error adding crop:", error);
+      toast({
+        title: "Error",
+        description: "There was a problem adding your crop.",
+        variant: "destructive",
+      });
     }
-  ]);
+  });
+
+  // Create a mutation for updating crops
+  const updateCropMutation = useMutation({
+    mutationFn: async ({ cropId, updates }: { cropId: string, updates: Partial<CropFormValues> }) => {
+      const res = await apiRequest('PUT', `/api/farmer/crops/${cropId}`, {
+        name: updates.name,
+        quantity: updates.quantity,
+        description: updates.notes
+      });
+      return await res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/farmer/crops'] });
+      toast({
+        title: "Crop updated",
+        description: "Your crop has been updated successfully.",
+      });
+      setShowAddCropDialog(false);
+      resetForm();
+    },
+    onError: (error: Error) => {
+      console.error("Error updating crop:", error);
+      toast({
+        title: "Error",
+        description: "There was a problem updating your crop.",
+        variant: "destructive",
+      });
+    }
+  });
+
+  // Create a mutation for deleting crops
+  const deleteCropMutation = useMutation({
+    mutationFn: async (cropId: string) => {
+      const res = await apiRequest('DELETE', `/api/farmer/crops/${cropId}`);
+      return await res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/farmer/crops'] });
+      toast({
+        title: "Crop deleted",
+        description: "Your crop has been removed.",
+      });
+    },
+    onError: (error: Error) => {
+      console.error("Error deleting crop:", error);
+      toast({
+        title: "Error",
+        description: "There was a problem deleting your crop.",
+        variant: "destructive",
+      });
+    }
+  });
+  
+  // Market prices data from WebSocket and API
+  const marketPricesQuery = useQuery<{prices: any[]}>({
+    queryKey: ['/api/market/prices'],
+    queryFn: getQueryFn(),
+    retry: 1
+  });
+  
+  // Use market prices data from API or default values if not loaded yet
+  const marketPrices = marketPricesQuery.data?.prices || [
+    { id: 1, name: "Tomatoes", price: 2.99, change: 0.15, availability: "high" },
+    { id: 2, name: "Sweet Corn", price: 1.79, change: -0.08, availability: "medium" },
+    { id: 3, name: "Potatoes", price: 0.99, change: 0.02, availability: "high" }
+  ];
   
   // Form setup for adding/editing crops
   const form = useForm<CropFormValues>({
@@ -170,11 +265,11 @@ export default function FarmerDashboard() {
     setEditingCrop(crop);
     form.reset({
       name: crop.name,
-      status: crop.status,
-      plantedDate: crop.plantedDate,
+      status: crop.status || "growing",
+      plantedDate: crop.plantedDate || new Date().toISOString().split('T')[0],
       harvestDate: crop.harvestDate || "",
       quantity: crop.quantity,
-      notes: crop.notes || "",
+      notes: crop.notes || crop.description || "",
     });
     setShowAddCropDialog(true);
   };
@@ -185,32 +280,15 @@ export default function FarmerDashboard() {
     
     try {
       if (editingCrop) {
-        // Update existing crop
-        const updatedCrops = crops.map(crop => 
-          crop.id === editingCrop.id 
-            ? { ...values, id: crop.id } as Crop
-            : crop
-        );
-        setCrops(updatedCrops);
-        toast({
-          title: "Crop updated",
-          description: `${values.name} has been updated successfully.`,
+        // Update existing crop using mutation
+        updateCropMutation.mutate({
+          cropId: editingCrop.cropId,
+          updates: values
         });
       } else {
-        // Add new crop
-        const newCrop: Crop = {
-          ...values,
-          id: Math.max(0, ...crops.map(crop => crop.id)) + 1,
-        };
-        setCrops([...crops, newCrop]);
-        toast({
-          title: "Crop added",
-          description: `${values.name} has been added to your crops.`,
-        });
+        // Add new crop using mutation
+        createCropMutation.mutate(values);
       }
-      
-      setShowAddCropDialog(false);
-      resetForm();
     } catch (error) {
       console.error("Error saving crop:", error);
       toast({
@@ -224,23 +302,11 @@ export default function FarmerDashboard() {
   };
   
   // Handle deleting a crop
-  const handleDeleteCrop = (cropId: number) => {
+  const handleDeleteCrop = (cropId: string) => {
     if (confirm("Are you sure you want to delete this crop?")) {
-      const updatedCrops = crops.filter(crop => crop.id !== cropId);
-      setCrops(updatedCrops);
-      toast({
-        title: "Crop deleted",
-        description: "The crop has been removed.",
-      });
+      deleteCropMutation.mutate(cropId);
     }
   };
-  
-  // Sample market price data (would come from API/WebSocket)
-  const [marketPrices, setMarketPrices] = useState([
-    { product: "Tomatoes", price: 2.99, change: 0.15 },
-    { product: "Sweet Corn", price: 1.79, change: -0.08 },
-    { product: "Potatoes", price: 0.99, change: 0.02 }
-  ]);
   
   // Sample weather data (would come from API)
   const [weatherData, setWeatherData] = useState({
@@ -262,6 +328,22 @@ export default function FarmerDashboard() {
     { date: "2025-04-18", activity: "Equipment maintenance" },
     { date: "2025-04-20", activity: "Market delivery" }
   ]);
+
+  // Handle "Manage Crops" button click
+  const handleManageCrops = () => {
+    const tabsTrigger = document.querySelector('[data-state="active"][role="tab"]');
+    if (tabsTrigger) {
+      const cropsTabTrigger = document.querySelector('[value="crops"][role="tab"]');
+      if (cropsTabTrigger) {
+        (cropsTabTrigger as HTMLElement).click();
+      }
+    }
+  };
+
+  // Handle "View Market" button click
+  const handleViewMarket = () => {
+    setLocation("/market");
+  };
   
   return (
     <AnimatedPage>
@@ -325,7 +407,7 @@ export default function FarmerDashboard() {
               </div>
             </CardContent>
             <CardFooter className="pt-0">
-              <Button variant="outline" className="w-full">
+              <Button variant="outline" className="w-full" onClick={handleManageCrops}>
                 <Leaf className="h-4 w-4 mr-2" />
                 Manage Crops
               </Button>
@@ -342,7 +424,7 @@ export default function FarmerDashboard() {
               <div className="space-y-2">
                 {marketPrices.map((item, i) => (
                   <div key={i} className="flex justify-between">
-                    <span>{item.product}:</span>
+                    <span>{item.name}:</span>
                     <div className="flex items-center">
                       <span className="font-medium mr-2">${item.price.toFixed(2)}</span>
                       <span className={item.change >= 0 ? "text-green-500" : "text-red-500"}>
@@ -354,7 +436,7 @@ export default function FarmerDashboard() {
               </div>
             </CardContent>
             <CardFooter className="pt-0">
-              <Button variant="outline" className="w-full">
+              <Button variant="outline" className="w-full" onClick={handleViewMarket}>
                 <TrendingUp className="h-4 w-4 mr-2" />
                 View Market
               </Button>
@@ -388,65 +470,86 @@ export default function FarmerDashboard() {
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {crops.map(crop => (
-                    <Card key={crop.id} className="overflow-hidden">
-                      <div className={`h-2 ${
-                        crop.status === "growing" ? "bg-blue-500" : 
-                        crop.status === "ready" ? "bg-green-500" : 
-                        "bg-amber-500"
-                      }`} />
-                      <CardHeader className="p-4 pb-2">
-                        <CardTitle className="text-lg">{crop.name}</CardTitle>
-                        <CardDescription className="capitalize">
-                          Status: {crop.status}
-                        </CardDescription>
-                      </CardHeader>
-                      <CardContent className="p-4 pt-0">
-                        <div className="grid grid-cols-2 gap-2 text-sm">
-                          <div>
-                            <p className="text-muted-foreground">Planted</p>
-                            <p>{new Date(crop.plantedDate).toLocaleDateString()}</p>
+                {cropsQuery.isLoading ? (
+                  <div className="text-center py-8">
+                    <p className="text-muted-foreground">Loading your crops...</p>
+                  </div>
+                ) : crops.length === 0 ? (
+                  <div className="text-center py-8">
+                    <p className="text-muted-foreground">You haven't added any crops yet.</p>
+                    <Button 
+                      variant="outline" 
+                      className="mt-4"
+                      onClick={() => {
+                        resetForm();
+                        setShowAddCropDialog(true);
+                      }}
+                    >
+                      <PlusCircle className="h-4 w-4 mr-2" />
+                      Add Your First Crop
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {crops.map(crop => (
+                      <Card key={crop.cropId} className="overflow-hidden">
+                        <div className={`h-2 ${
+                          crop.status === "growing" ? "bg-blue-500" : 
+                          crop.status === "ready" ? "bg-green-500" : 
+                          "bg-amber-500"
+                        }`} />
+                        <CardHeader className="p-4 pb-2">
+                          <CardTitle className="text-lg">{crop.name}</CardTitle>
+                          <CardDescription className="capitalize">
+                            Status: {crop.status}
+                          </CardDescription>
+                        </CardHeader>
+                        <CardContent className="p-4 pt-0">
+                          <div className="grid grid-cols-2 gap-2 text-sm">
+                            <div>
+                              <p className="text-muted-foreground">Planted</p>
+                              <p>{crop.plantedDate ? new Date(crop.plantedDate).toLocaleDateString() : "N/A"}</p>
+                            </div>
+                            <div>
+                              <p className="text-muted-foreground">Harvest</p>
+                              <p>{crop.harvestDate ? new Date(crop.harvestDate).toLocaleDateString() : "N/A"}</p>
+                            </div>
+                            <div>
+                              <p className="text-muted-foreground">Quantity</p>
+                              <p>{crop.quantity} units</p>
+                            </div>
                           </div>
-                          <div>
-                            <p className="text-muted-foreground">Harvest</p>
-                            <p>{crop.harvestDate ? new Date(crop.harvestDate).toLocaleDateString() : "N/A"}</p>
-                          </div>
-                          <div>
-                            <p className="text-muted-foreground">Quantity</p>
-                            <p>{crop.quantity} units</p>
-                          </div>
-                        </div>
-                        {crop.notes && (
-                          <div className="mt-2 text-sm">
-                            <p className="text-muted-foreground">Notes</p>
-                            <p>{crop.notes}</p>
-                          </div>
-                        )}
-                      </CardContent>
-                      <CardFooter className="p-4 pt-0 flex justify-between space-x-2">
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          className="flex-1"
-                          onClick={() => handleEditCrop(crop)}
-                        >
-                          <Edit className="h-4 w-4 mr-2" />
-                          Edit
-                        </Button>
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          className="flex-1"
-                          onClick={() => handleDeleteCrop(crop.id)}
-                        >
-                          <Trash className="h-4 w-4 mr-2" />
-                          Delete
-                        </Button>
-                      </CardFooter>
-                    </Card>
-                  ))}
-                </div>
+                          {crop.notes && (
+                            <div className="mt-2 text-sm">
+                              <p className="text-muted-foreground">Notes</p>
+                              <p>{crop.notes}</p>
+                            </div>
+                          )}
+                        </CardContent>
+                        <CardFooter className="p-4 pt-0 flex justify-between space-x-2">
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="flex-1"
+                            onClick={() => handleEditCrop(crop)}
+                          >
+                            <Edit className="h-4 w-4 mr-2" />
+                            Edit
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="flex-1"
+                            onClick={() => handleDeleteCrop(crop.cropId)}
+                          >
+                            <Trash className="h-4 w-4 mr-2" />
+                            Delete
+                          </Button>
+                        </CardFooter>
+                      </Card>
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
@@ -521,6 +624,7 @@ export default function FarmerDashboard() {
             </Card>
           </TabsContent>
         </Tabs>
+        
         {/* Add/Edit Crop Dialog */}
         <Dialog open={showAddCropDialog} onOpenChange={setShowAddCropDialog}>
           <DialogContent className="sm:max-w-[500px]">
@@ -623,34 +727,33 @@ export default function FarmerDashboard() {
                     <FormItem>
                       <FormLabel>Notes</FormLabel>
                       <FormControl>
-                        <Textarea 
-                          placeholder="Add any additional notes about this crop"
-                          {...field}
-                        />
+                        <Input placeholder="Optional notes about this crop" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
                 
-                <DialogFooter>
-                  <Button type="button" variant="outline" onClick={() => setShowAddCropDialog(false)}>
+                <div className="flex justify-end space-x-2 pt-4">
+                  <Button 
+                    variant="outline" 
+                    type="button" 
+                    onClick={() => setShowAddCropDialog(false)}
+                  >
                     Cancel
                   </Button>
-                  <Button type="submit" disabled={isLoading}>
-                    {isLoading ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        {editingCrop ? 'Updating...' : 'Adding...'}
-                      </>
-                    ) : (
-                      <>
-                        <Save className="mr-2 h-4 w-4" />
-                        {editingCrop ? 'Update Crop' : 'Add Crop'}
-                      </>
-                    )}
+                  <Button 
+                    type="submit" 
+                    disabled={isLoading || createCropMutation.isPending || updateCropMutation.isPending}
+                  >
+                    {isLoading || createCropMutation.isPending || updateCropMutation.isPending 
+                      ? 'Saving...' 
+                      : editingCrop 
+                        ? 'Update Crop' 
+                        : 'Add Crop'
+                    }
                   </Button>
-                </DialogFooter>
+                </div>
               </form>
             </Form>
           </DialogContent>

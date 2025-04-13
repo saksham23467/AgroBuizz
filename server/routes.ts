@@ -149,9 +149,226 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Waitlist signup route removed
-
-  // Waitlist entries route removed
+  // Farmer Crop Management APIs
+  app.get("/api/farmer/crops", ensureFarmer, async (req: Request, res: Response) => {
+    try {
+      // User is guaranteed to exist due to ensureFarmer middleware
+      const user = req.user!;
+      const crops = await storage.getFarmerCrops(user.id);
+      
+      return res.status(200).json({
+        success: true,
+        crops
+      });
+    } catch (error) {
+      console.error("Error fetching farmer crops:", error);
+      return res.status(500).json({ 
+        success: false, 
+        message: "Server error fetching crops" 
+      });
+    }
+  });
+  
+  app.post("/api/farmer/crops", ensureFarmer, async (req: Request, res: Response) => {
+    try {
+      // User is guaranteed to exist due to ensureFarmer middleware
+      const user = req.user!;
+      
+      // Create a unique cropId
+      const cropId = `crop_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+      
+      // Add farmer ID to the crop data
+      const cropData = {
+        ...req.body,
+        cropId,
+        farmerId: user.id
+      };
+      
+      // Create the crop
+      const newCrop = await storage.createCrop(cropData);
+      
+      return res.status(201).json({
+        success: true,
+        message: "Crop created successfully",
+        crop: newCrop
+      });
+    } catch (error) {
+      console.error("Error creating crop:", error);
+      return res.status(500).json({ 
+        success: false, 
+        message: "Server error creating crop" 
+      });
+    }
+  });
+  
+  app.get("/api/farmer/crops/:cropId", ensureFarmer, async (req: Request, res: Response) => {
+    try {
+      // User is guaranteed to exist due to ensureFarmer middleware
+      const user = req.user!;
+      const cropId = req.params.cropId;
+      
+      // Get the crop
+      const crop = await storage.getCropById(cropId);
+      
+      if (!crop) {
+        return res.status(404).json({ 
+          success: false, 
+          message: "Crop not found" 
+        });
+      }
+      
+      // Ensure the crop belongs to this farmer
+      if (crop.farmerId !== user.id) {
+        return res.status(403).json({ 
+          success: false, 
+          message: "Access denied. This crop does not belong to your account." 
+        });
+      }
+      
+      return res.status(200).json({
+        success: true,
+        crop
+      });
+    } catch (error) {
+      console.error("Error fetching crop details:", error);
+      return res.status(500).json({ 
+        success: false, 
+        message: "Server error fetching crop details" 
+      });
+    }
+  });
+  
+  app.put("/api/farmer/crops/:cropId", ensureFarmer, async (req: Request, res: Response) => {
+    try {
+      // User is guaranteed to exist due to ensureFarmer middleware
+      const user = req.user!;
+      const cropId = req.params.cropId;
+      
+      // First check if the crop exists and belongs to this farmer
+      const existingCrop = await storage.getCropById(cropId);
+      
+      if (!existingCrop) {
+        return res.status(404).json({ 
+          success: false, 
+          message: "Crop not found" 
+        });
+      }
+      
+      if (existingCrop.farmerId !== user.id) {
+        return res.status(403).json({ 
+          success: false, 
+          message: "Access denied. This crop does not belong to your account." 
+        });
+      }
+      
+      // Update the crop
+      const updatedCrop = await storage.updateCrop(cropId, req.body);
+      
+      return res.status(200).json({
+        success: true,
+        message: "Crop updated successfully",
+        crop: updatedCrop
+      });
+    } catch (error) {
+      console.error("Error updating crop:", error);
+      return res.status(500).json({ 
+        success: false, 
+        message: "Server error updating crop" 
+      });
+    }
+  });
+  
+  app.delete("/api/farmer/crops/:cropId", ensureFarmer, async (req: Request, res: Response) => {
+    try {
+      // User is guaranteed to exist due to ensureFarmer middleware
+      const user = req.user!;
+      const cropId = req.params.cropId;
+      
+      // First check if the crop exists and belongs to this farmer
+      const existingCrop = await storage.getCropById(cropId);
+      
+      if (!existingCrop) {
+        return res.status(404).json({ 
+          success: false, 
+          message: "Crop not found" 
+        });
+      }
+      
+      if (existingCrop.farmerId !== user.id) {
+        return res.status(403).json({ 
+          success: false, 
+          message: "Access denied. This crop does not belong to your account." 
+        });
+      }
+      
+      // Delete the crop
+      const success = await storage.deleteCrop(cropId);
+      
+      if (!success) {
+        return res.status(500).json({ 
+          success: false, 
+          message: "Failed to delete crop" 
+        });
+      }
+      
+      return res.status(200).json({
+        success: true,
+        message: "Crop deleted successfully"
+      });
+    } catch (error) {
+      console.error("Error deleting crop:", error);
+      return res.status(500).json({ 
+        success: false, 
+        message: "Server error deleting crop" 
+      });
+    }
+  });
+  
+  // General crop search API accessible to all authenticated users
+  app.get("/api/crops/search", ensureAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const query = req.query.q as string;
+      
+      if (!query || query.trim() === '') {
+        return res.status(400).json({ 
+          success: false, 
+          message: "Search query is required" 
+        });
+      }
+      
+      const results = await storage.searchCrops(query);
+      
+      return res.status(200).json({
+        success: true,
+        results
+      });
+    } catch (error) {
+      console.error("Error searching crops:", error);
+      return res.status(500).json({ 
+        success: false, 
+        message: "Server error searching crops" 
+      });
+    }
+  });
+  
+  // Market prices API
+  app.get("/api/market/prices", ensureAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const category = req.query.category as string;
+      const prices = await generateMarketPrices(category);
+      
+      return res.status(200).json({
+        success: true,
+        prices
+      });
+    } catch (error) {
+      console.error("Error fetching market prices:", error);
+      return res.status(500).json({ 
+        success: false, 
+        message: "Server error fetching market prices" 
+      });
+    }
+  });
 
   const httpServer = createServer(app);
   
