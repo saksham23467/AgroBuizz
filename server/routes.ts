@@ -149,6 +149,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // API route for vendors to add products (seeds/equipment)
+  app.post("/api/vendor/products", ensureVendor, async (req: Request, res: Response) => {
+    try {
+      // User is guaranteed to exist due to ensureVendor middleware
+      const user = req.user!;
+      
+      // Create a unique productId
+      const productId = `product_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+      
+      // Add vendor ID to the product data
+      const productData = {
+        ...req.body,
+        productId,
+        vendorId: user.id.toString(),
+        createdAt: new Date()
+      };
+      
+      // Create the product
+      const newProduct = await storage.createProduct(productData);
+      
+      return res.status(201).json({
+        success: true,
+        message: "Product created successfully",
+        product: newProduct
+      });
+    } catch (error) {
+      console.error("Error creating product:", error);
+      return res.status(500).json({ 
+        success: false, 
+        message: "Server error creating product" 
+      });
+    }
+  });
+  
   // Farmer Crop Management APIs
   app.get("/api/farmer/crops", ensureFarmer, async (req: Request, res: Response) => {
     try {

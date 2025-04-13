@@ -80,14 +80,14 @@ export default function SeedMarket() {
   const { user, isLoading } = useAuth();
   
   // Check if the user is authorized to access this market
-  // Only farmers can buy seeds (or customers if explicitly allowed)
+  // Farmers can buy seeds, vendors can sell seeds, admins have full access
   useEffect(() => {
     if (!isLoading && user) {
-      // If user is neither a farmer nor admin, redirect to home with a message
-      if (user.userType !== 'farmer' && user.role !== 'admin') {
+      // Allow farmers, vendors and admins to access the seed market
+      if (user.userType !== 'farmer' && user.userType !== 'vendor' && user.role !== 'admin') {
         toast({
           title: "Access Restricted",
-          description: "Only farmers can purchase seeds. Please contact support if you need access.",
+          description: "Only farmers and vendors can access the seed market. Please contact support if you need access.",
           variant: "destructive"
         });
         setLocation("/");
