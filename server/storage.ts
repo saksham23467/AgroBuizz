@@ -38,6 +38,7 @@ export interface IStorage {
   getProducts(): Promise<Product[]>; 
   getProductById(productId: string): Promise<Product | undefined>;
   searchProducts(query: string): Promise<Product[]>;
+  createProduct(product: InsertProduct): Promise<Product>;
   
   // Vendor related methods
   getVendorById(vendorId: string): Promise<Vendor | undefined>;
@@ -340,6 +341,41 @@ export class DatabaseStorage implements IStorage {
       return results;
     } catch (error) {
       console.error(`[DATABASE ERROR] Failed to search products with query: ${query}`, error);
+      throw error;
+    }
+  }
+  
+  async createProduct(product: InsertProduct): Promise<Product> {
+    try {
+      console.log(`[DATABASE] Creating new product: ${product.name}`);
+      const [newProduct] = await db.insert(products)
+        .values({
+          ...product,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        })
+        .returning();
+      
+      console.log(`[DATABASE] Product created successfully with ID: ${newProduct.productId}`);
+      
+      // If the product has a vendorId, create the relationship in the vendorProducts table
+      if (product.vendorId) {
+        try {
+          await db.insert(vendorProducts)
+            .values({
+              vendorId: product.vendorId,
+              productId: newProduct.productId
+            });
+          console.log(`[DATABASE] Created vendor-product relationship for vendor: ${product.vendorId}, product: ${newProduct.productId}`);
+        } catch (relationError) {
+          console.error(`[DATABASE WARNING] Failed to create vendor-product relationship: ${relationError instanceof Error ? relationError.message : relationError}`);
+          // Continue even if relationship creation fails
+        }
+      }
+      
+      return newProduct;
+    } catch (error) {
+      console.error(`[DATABASE ERROR] Failed to create product: ${error instanceof Error ? error.message : error}`);
       throw error;
     }
   }
