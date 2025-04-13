@@ -1,14 +1,42 @@
 import { useState, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { getQueryFn, apiRequest } from "@/lib/queryClient";
+import { getQueryFn, apiRequest, queryClient } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/use-auth";
 import { Loader2, Users, ShoppingBag, AlertCircle, PlusCircle, Edit, Trash } from "lucide-react";
 import ComplaintsList from "@/components/ComplaintsList";
 import AnimatedPage from "@/components/AnimatedPage";
 import { useToast } from "@/hooks/use-toast";
+import { z } from "zod";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 // Types for API responses
 interface Product {
@@ -21,11 +49,41 @@ interface Product {
   classification?: string;
 }
 
+// Form schema for adding/editing products
+const productFormSchema = z.object({
+  name: z.string().min(2, { message: "Product name must be at least 2 characters." }),
+  type: z.enum(["seeds", "equipment", "fertilizer", "pesticide", "other"], {
+    required_error: "Please select a product type.",
+  }),
+  description: z.string().optional(),
+  price: z.coerce.number().min(0.01, { message: "Price must be at least 0.01." }),
+  quantity: z.coerce.number().min(1, { message: "Quantity must be at least 1." }),
+  classification: z.string().optional(),
+});
+
+type ProductFormValues = z.infer<typeof productFormSchema>;
+
 export default function VendorDashboard() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("overview");
   const [isInit, setIsInit] = useState(false);
+  const [showAddProductDialog, setShowAddProductDialog] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  
+  // Form setup for adding/editing products
+  const form = useForm<ProductFormValues>({
+    resolver: zodResolver(productFormSchema),
+    defaultValues: {
+      name: "",
+      type: "seeds",
+      description: "",
+      price: 0.99,
+      quantity: 1,
+      classification: "",
+    },
+  });
   
   useEffect(() => {
     // Set isInit to true after first render to ensure user data is loaded
@@ -102,26 +160,167 @@ export default function VendorDashboard() {
     0
   ) || 0;
   
-  // Demo functions for vendor actions
+  // Reset form for new product entry
+  const resetForm = () => {
+    form.reset({
+      name: "",
+      type: "seeds",
+      description: "",
+      price: 0.99,
+      quantity: 1,
+      classification: "",
+    });
+    setEditingProduct(null);
+  };
+  
+  // Create a mutation for adding products
+  const createProductMutation = useMutation({
+    mutationFn: async (newProduct: ProductFormValues) => {
+      const res = await apiRequest('POST', '/api/vendor/products', {
+        name: newProduct.name,
+        type: newProduct.type,
+        description: newProduct.description,
+        price: newProduct.price,
+        quantity: newProduct.quantity,
+        classification: newProduct.classification || undefined,
+      });
+      return await res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/vendor/products'] });
+      toast({
+        title: "Product added",
+        description: "Your product has been added successfully.",
+      });
+      setShowAddProductDialog(false);
+      resetForm();
+    },
+    onError: (error: Error) => {
+      console.error("Error adding product:", error);
+      toast({
+        title: "Error",
+        description: "There was a problem adding your product.",
+        variant: "destructive",
+      });
+    }
+  });
+  
+  // Create a mutation for updating products
+  const updateProductMutation = useMutation({
+    mutationFn: async ({ productId, updates }: { productId: string, updates: Partial<ProductFormValues> }) => {
+      const res = await apiRequest('PUT', `/api/vendor/products/${productId}`, {
+        name: updates.name,
+        type: updates.type,
+        description: updates.description,
+        price: updates.price,
+        quantity: updates.quantity,
+        classification: updates.classification || undefined,
+      });
+      return await res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/vendor/products'] });
+      toast({
+        title: "Product updated",
+        description: "Your product has been updated successfully.",
+      });
+      setShowAddProductDialog(false);
+      resetForm();
+    },
+    onError: (error: Error) => {
+      console.error("Error updating product:", error);
+      toast({
+        title: "Error",
+        description: "There was a problem updating your product.",
+        variant: "destructive",
+      });
+    }
+  });
+  
+  // Create a mutation for deleting products
+  const deleteProductMutation = useMutation({
+    mutationFn: async (productId: string) => {
+      const res = await apiRequest('DELETE', `/api/vendor/products/${productId}`);
+      return await res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/vendor/products'] });
+      toast({
+        title: "Product deleted",
+        description: "Your product has been removed.",
+      });
+    },
+    onError: (error: Error) => {
+      console.error("Error deleting product:", error);
+      toast({
+        title: "Error",
+        description: "There was a problem deleting your product.",
+        variant: "destructive",
+      });
+    }
+  });
+  
+  // Handle form submission for adding/editing a product
+  const onSubmit = (values: ProductFormValues) => {
+    setIsLoading(true);
+    
+    try {
+      if (editingProduct) {
+        // Update existing product using mutation
+        updateProductMutation.mutate({
+          productId: editingProduct.productId,
+          updates: values
+        });
+      } else {
+        // Add new product using mutation
+        createProductMutation.mutate(values);
+      }
+    } catch (error) {
+      console.error("Error saving product:", error);
+      toast({
+        title: "Error",
+        description: "There was a problem saving your product.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  // Open dialog for adding a new product
   const handleAddProduct = () => {
-    toast({
-      title: "Add Product",
-      description: "Product creation functionality will be available soon.",
-    });
+    resetForm();
+    setShowAddProductDialog(true);
   };
   
+  // Open dialog for editing a product
   const handleEditProduct = (productId: string) => {
-    toast({
-      title: "Edit Product",
-      description: `Editing product ${productId} will be available soon.`,
-    });
+    const product = products.find(p => p.productId === productId);
+    if (product) {
+      setEditingProduct(product);
+      form.reset({
+        name: product.name,
+        type: product.type as any, // Type casting needed for type safety
+        description: product.description || "",
+        price: product.price,
+        quantity: product.quantity,
+        classification: product.classification || "",
+      });
+      setShowAddProductDialog(true);
+    } else {
+      toast({
+        title: "Error",
+        description: "Could not find the product to edit.",
+        variant: "destructive",
+      });
+    }
   };
   
+  // Handle deleting a product
   const handleDeleteProduct = (productId: string) => {
-    toast({
-      title: "Delete Product",
-      description: `Deleting product ${productId} will be available soon.`,
-    });
+    if (confirm("Are you sure you want to delete this product?")) {
+      deleteProductMutation.mutate(productId);
+    }
   };
   
   if (!user || user.userType !== "vendor") {
@@ -371,6 +570,149 @@ export default function VendorDashboard() {
             <ComplaintsList userType="vendor" />
           </TabsContent>
         </Tabs>
+        
+        {/* Add/Edit Product Dialog */}
+        <Dialog open={showAddProductDialog} onOpenChange={setShowAddProductDialog}>
+          <DialogContent className="sm:max-w-[500px]">
+            <DialogHeader>
+              <DialogTitle>{editingProduct ? 'Edit Product' : 'Add New Product'}</DialogTitle>
+              <DialogDescription>
+                {editingProduct 
+                  ? 'Update the details of your existing product.' 
+                  : 'Add details about your new product to list it for sale.'}
+              </DialogDescription>
+            </DialogHeader>
+            
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Product Name</FormLabel>
+                      <FormControl>
+                        <Input placeholder="e.g., Organic Tomato Seeds" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="type"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Product Type</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select a product type" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="seeds">Seeds</SelectItem>
+                          <SelectItem value="equipment">Equipment</SelectItem>
+                          <SelectItem value="fertilizer">Fertilizer</SelectItem>
+                          <SelectItem value="pesticide">Pesticide</SelectItem>
+                          <SelectItem value="other">Other</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="price"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Price ($)</FormLabel>
+                        <FormControl>
+                          <Input type="number" min="0.01" step="0.01" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="quantity"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Quantity</FormLabel>
+                        <FormControl>
+                          <Input type="number" min="1" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                
+                <FormField
+                  control={form.control}
+                  name="classification"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Classification (Optional)</FormLabel>
+                      <FormControl>
+                        <Input placeholder="e.g., organic, hybrid, etc." {...field} />
+                      </FormControl>
+                      <FormDescription>
+                        Additional categorization to help customers find your product.
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="description"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Description</FormLabel>
+                      <FormControl>
+                        <Textarea 
+                          placeholder="Add detailed information about your product..." 
+                          className="min-h-[120px]" 
+                          {...field} 
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <div className="flex justify-end space-x-2 pt-4">
+                  <Button 
+                    variant="outline" 
+                    type="button" 
+                    onClick={() => setShowAddProductDialog(false)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button 
+                    type="submit" 
+                    disabled={isLoading || createProductMutation.isPending || updateProductMutation.isPending}
+                  >
+                    {isLoading || createProductMutation.isPending || updateProductMutation.isPending 
+                      ? 'Saving...' 
+                      : editingProduct 
+                        ? 'Update Product' 
+                        : 'Add Product'
+                    }
+                  </Button>
+                </div>
+              </form>
+            </Form>
+          </DialogContent>
+        </Dialog>
       </div>
     </AnimatedPage>
   );
