@@ -59,7 +59,7 @@ router.get("/farmers-with-crops", ensureAdmin, async (_req: Request, res: Respon
     ];
     
     res.json(farmersWithCrops);
-  } catch (error) {
+  } catch (error: unknown) {
     console.error("Error fetching farmers with crops:", error);
     res.status(500).json({ success: false, message: "Internal server error" });
   }
@@ -105,7 +105,7 @@ router.get("/customers-with-multiple-orders", ensureAdmin, async (_req: Request,
     ];
     
     res.json(customers);
-  } catch (error) {
+  } catch (error: unknown) {
     console.error("Error fetching frequent customers:", error);
     res.status(500).json({ success: false, message: "Internal server error" });
   }
@@ -148,7 +148,7 @@ router.get("/products-by-type/:type", ensureAdmin, async (req: Request, res: Res
     ].filter(p => p.type === type);
     
     res.json(products);
-  } catch (error) {
+  } catch (error: unknown) {
     console.error(`Error fetching products of type ${req.params.type}:`, error);
     res.status(500).json({ success: false, message: "Internal server error" });
   }
@@ -192,7 +192,7 @@ router.get("/products-by-price-range", ensureAdmin, async (req: Request, res: Re
     ].filter(p => p.price >= min && p.price <= max);
     
     res.json(products);
-  } catch (error) {
+  } catch (error: unknown) {
     console.error(`Error fetching products by price range:`, error);
     res.status(500).json({ success: false, message: "Internal server error" });
   }
@@ -233,7 +233,7 @@ router.get("/available-products", ensureAdmin, async (_req: Request, res: Respon
     ].filter(p => p.stock > 0);
     
     res.json(products);
-  } catch (error) {
+  } catch (error: unknown) {
     console.error("Error fetching available products:", error);
     res.status(500).json({ success: false, message: "Internal server error" });
   }
@@ -274,7 +274,7 @@ router.get("/products-by-vendor-ratings", ensureAdmin, async (_req: Request, res
     ].sort((a, b) => b.vendorRating - a.vendorRating);
     
     res.json(products);
-  } catch (error) {
+  } catch (error: unknown) {
     console.error("Error fetching products by vendor ratings:", error);
     res.status(500).json({ success: false, message: "Internal server error" });
   }
@@ -328,7 +328,7 @@ router.get("/crop-sales", ensureAdmin, async (_req: Request, res: Response) => {
     ];
     
     res.json(cropSales);
-  } catch (error) {
+  } catch (error: unknown) {
     console.error("Error fetching crop sales:", error);
     res.status(500).json({ success: false, message: "Internal server error" });
   }
@@ -377,7 +377,7 @@ router.get("/vendor-product-counts", ensureAdmin, async (_req: Request, res: Res
     ];
     
     res.json(vendorProducts);
-  } catch (error) {
+  } catch (error: unknown) {
     console.error("Error fetching vendor product counts:", error);
     res.status(500).json({ success: false, message: "Internal server error" });
   }
@@ -435,7 +435,7 @@ router.get("/farmer-orders", ensureAdmin, async (_req: Request, res: Response) =
     ];
     
     res.json(farmerOrders);
-  } catch (error) {
+  } catch (error: unknown) {
     console.error("Error fetching farmer orders:", error);
     res.status(500).json({ success: false, message: "Internal server error" });
   }
@@ -497,7 +497,7 @@ router.get("/disputes", ensureAdmin, async (_req: Request, res: Response) => {
     ];
     
     res.json(disputes);
-  } catch (error) {
+  } catch (error: unknown) {
     console.error("Error fetching disputes:", error);
     res.status(500).json({ success: false, message: "Internal server error" });
   }
@@ -535,7 +535,7 @@ router.get("/highly-rated-vendors", ensureAdmin, async (_req: Request, res: Resp
     ];
     
     res.json(vendors);
-  } catch (error) {
+  } catch (error: unknown) {
     console.error("Error fetching highly rated vendors:", error);
     res.status(500).json({ success: false, message: "Internal server error" });
   }
@@ -599,7 +599,7 @@ router.get("/orders-by-year/:year?", ensureAdmin, async (req: Request, res: Resp
     ].filter(order => new Date(order.orderDate).getFullYear().toString() === year);
     
     res.json(yearOrders);
-  } catch (error) {
+  } catch (error: unknown) {
     console.error(`Error fetching orders for year ${req.params.year}:`, error);
     res.status(500).json({ success: false, message: "Internal server error" });
   }
@@ -629,7 +629,7 @@ router.get("/farmers-with-multiple-disputes", ensureAdmin, async (_req: Request,
     ];
     
     res.json(farmerDisputes);
-  } catch (error) {
+  } catch (error: unknown) {
     console.error("Error fetching farmers with multiple disputes:", error);
     res.status(500).json({ success: false, message: "Internal server error" });
   }
@@ -719,7 +719,7 @@ router.get("/most-sold-items", ensureAdmin, async (_req: Request, res: Response)
     }
     
     res.json(topSellingItems);
-  } catch (error) {
+  } catch (error: unknown) {
     console.error("Error fetching most sold items:", error);
     res.status(500).json({ success: false, message: "Internal server error" });
   }
@@ -756,12 +756,13 @@ router.post("/execute-query", ensureAdmin, async (req: Request, res: Response) =
       success: true,
       result
     });
-  } catch (error) {
+  } catch (error: unknown) {
     console.error("Error executing custom query:", error);
+    const errorMsg = error instanceof Error ? error.message : 'Unknown error occurred';
     res.status(500).json({ 
       success: false, 
       message: "Error executing query", 
-      error: error.message 
+      error: errorMsg 
     });
   }
 });
