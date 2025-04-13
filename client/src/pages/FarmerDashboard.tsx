@@ -11,6 +11,33 @@ import {
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { 
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { 
   Loader2, 
   PlusCircle, 
@@ -18,12 +45,18 @@ import {
   ShoppingBag, 
   TrendingUp, 
   FileText,
-  Calendar
+  Calendar,
+  Save,
+  Edit,
+  Trash
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { useQuery } from "@tanstack/react-query";
-import { getQueryFn } from "@/lib/queryClient";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { getQueryFn, apiRequest, queryClient } from "@/lib/queryClient";
 import AnimatedPage from "@/components/AnimatedPage";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 
 interface Product {
   id: number;
@@ -45,10 +78,26 @@ interface Crop {
   notes?: string;
 }
 
+// Form schema for adding/editing crops
+const cropFormSchema = z.object({
+  name: z.string().min(2, { message: "Crop name must be at least 2 characters." }),
+  status: z.enum(["growing", "harvested", "ready"], {
+    required_error: "Please select a crop status.",
+  }),
+  plantedDate: z.string().min(1, { message: "Please select a planting date." }),
+  harvestDate: z.string().optional(),
+  quantity: z.coerce.number().min(1, { message: "Quantity must be at least 1." }),
+  notes: z.string().optional(),
+});
+
+type CropFormValues = z.infer<typeof cropFormSchema>;
+
 export default function FarmerDashboard() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const [showAddCropDialog, setShowAddCropDialog] = useState(false);
+  const [editingCrop, setEditingCrop] = useState<Crop | null>(null);
   
   // Get the current date for the calendar
   const today = new Date();
@@ -89,6 +138,102 @@ export default function FarmerDashboard() {
       notes: "Good quality crop"
     }
   ]);
+  
+  // Form setup for adding/editing crops
+  const form = useForm<CropFormValues>({
+    resolver: zodResolver(cropFormSchema),
+    defaultValues: {
+      name: "",
+      status: "growing",
+      plantedDate: new Date().toISOString().split('T')[0],
+      harvestDate: "",
+      quantity: 100,
+      notes: "",
+    },
+  });
+  
+  // Reset form for new crop entry
+  const resetForm = () => {
+    form.reset({
+      name: "",
+      status: "growing",
+      plantedDate: new Date().toISOString().split('T')[0],
+      harvestDate: "",
+      quantity: 100,
+      notes: "",
+    });
+    setEditingCrop(null);
+  };
+  
+  // Open dialog for editing a crop
+  const handleEditCrop = (crop: Crop) => {
+    setEditingCrop(crop);
+    form.reset({
+      name: crop.name,
+      status: crop.status,
+      plantedDate: crop.plantedDate,
+      harvestDate: crop.harvestDate || "",
+      quantity: crop.quantity,
+      notes: crop.notes || "",
+    });
+    setShowAddCropDialog(true);
+  };
+  
+  // Handle form submission for adding/editing a crop
+  const onSubmit = (values: CropFormValues) => {
+    setIsLoading(true);
+    
+    try {
+      if (editingCrop) {
+        // Update existing crop
+        const updatedCrops = crops.map(crop => 
+          crop.id === editingCrop.id 
+            ? { ...values, id: crop.id } as Crop
+            : crop
+        );
+        setCrops(updatedCrops);
+        toast({
+          title: "Crop updated",
+          description: `${values.name} has been updated successfully.`,
+        });
+      } else {
+        // Add new crop
+        const newCrop: Crop = {
+          ...values,
+          id: Math.max(0, ...crops.map(crop => crop.id)) + 1,
+        };
+        setCrops([...crops, newCrop]);
+        toast({
+          title: "Crop added",
+          description: `${values.name} has been added to your crops.`,
+        });
+      }
+      
+      setShowAddCropDialog(false);
+      resetForm();
+    } catch (error) {
+      console.error("Error saving crop:", error);
+      toast({
+        title: "Error",
+        description: "There was a problem saving your crop.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  // Handle deleting a crop
+  const handleDeleteCrop = (cropId: number) => {
+    if (confirm("Are you sure you want to delete this crop?")) {
+      const updatedCrops = crops.filter(crop => crop.id !== cropId);
+      setCrops(updatedCrops);
+      toast({
+        title: "Crop deleted",
+        description: "The crop has been removed.",
+      });
+    }
+  };
   
   // Sample market price data (would come from API/WebSocket)
   const [marketPrices, setMarketPrices] = useState([
@@ -233,7 +378,10 @@ export default function FarmerDashboard() {
                     <CardTitle>My Crops</CardTitle>
                     <CardDescription>Manage your active crops</CardDescription>
                   </div>
-                  <Button>
+                  <Button onClick={() => {
+                    resetForm();
+                    setShowAddCropDialog(true);
+                  }}>
                     <PlusCircle className="h-4 w-4 mr-2" />
                     Add Crop
                   </Button>
@@ -276,9 +424,24 @@ export default function FarmerDashboard() {
                           </div>
                         )}
                       </CardContent>
-                      <CardFooter className="p-4 pt-0">
-                        <Button variant="outline" size="sm" className="w-full">
-                          Manage
+                      <CardFooter className="p-4 pt-0 flex justify-between space-x-2">
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="flex-1"
+                          onClick={() => handleEditCrop(crop)}
+                        >
+                          <Edit className="h-4 w-4 mr-2" />
+                          Edit
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="flex-1"
+                          onClick={() => handleDeleteCrop(crop.id)}
+                        >
+                          <Trash className="h-4 w-4 mr-2" />
+                          Delete
                         </Button>
                       </CardFooter>
                     </Card>
@@ -358,6 +521,140 @@ export default function FarmerDashboard() {
             </Card>
           </TabsContent>
         </Tabs>
+        {/* Add/Edit Crop Dialog */}
+        <Dialog open={showAddCropDialog} onOpenChange={setShowAddCropDialog}>
+          <DialogContent className="sm:max-w-[500px]">
+            <DialogHeader>
+              <DialogTitle>{editingCrop ? 'Edit Crop' : 'Add New Crop'}</DialogTitle>
+              <DialogDescription>
+                {editingCrop 
+                  ? 'Update the details of your existing crop.' 
+                  : 'Add details about your new crop to keep track of it.'}
+              </DialogDescription>
+            </DialogHeader>
+            
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Crop Name</FormLabel>
+                      <FormControl>
+                        <Input placeholder="e.g., Organic Tomatoes" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="status"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Status</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select a status" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="growing">Growing</SelectItem>
+                          <SelectItem value="ready">Ready to Harvest</SelectItem>
+                          <SelectItem value="harvested">Harvested</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="plantedDate"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Planted Date</FormLabel>
+                        <FormControl>
+                          <Input type="date" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="harvestDate"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Harvest Date (Est.)</FormLabel>
+                        <FormControl>
+                          <Input type="date" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                
+                <FormField
+                  control={form.control}
+                  name="quantity"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Quantity (units)</FormLabel>
+                      <FormControl>
+                        <Input type="number" min="1" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="notes"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Notes</FormLabel>
+                      <FormControl>
+                        <Textarea 
+                          placeholder="Add any additional notes about this crop"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <DialogFooter>
+                  <Button type="button" variant="outline" onClick={() => setShowAddCropDialog(false)}>
+                    Cancel
+                  </Button>
+                  <Button type="submit" disabled={isLoading}>
+                    {isLoading ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        {editingCrop ? 'Updating...' : 'Adding...'}
+                      </>
+                    ) : (
+                      <>
+                        <Save className="mr-2 h-4 w-4" />
+                        {editingCrop ? 'Update Crop' : 'Add Crop'}
+                      </>
+                    )}
+                  </Button>
+                </DialogFooter>
+              </form>
+            </Form>
+          </DialogContent>
+        </Dialog>
       </div>
     </AnimatedPage>
   );
