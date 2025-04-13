@@ -706,7 +706,7 @@ router.get("/most-sold-items", ensureAdmin, async (_req: Request, res: Response)
       }
     ];
     
-    if (req.query.format === 'csv') {
+    if (_req.query.format === 'csv') {
       // Generate CSV output
       let csv = "Item ID,Item Name,Category,Total Sold,Revenue,Percentage of Sales\n";
       topSellingItems.forEach(item => {

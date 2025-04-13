@@ -503,7 +503,7 @@ export default function AdminDashboard() {
                     <TableHead className={isDarkMode ? 'text-gray-400' : ''}>Crop Name</TableHead>
                     <TableHead className={isDarkMode ? 'text-gray-400' : ''}>Farmer</TableHead>
                     <TableHead className={`text-right ${isDarkMode ? 'text-gray-400' : ''}`}>Total Sales</TableHead>
-                    <TableHead className="text-right" className={isDarkMode ? 'text-gray-400' : ''}>Revenue</TableHead>
+                    <TableHead className={`text-right ${isDarkMode ? 'text-gray-400' : ''}`}>Revenue</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -569,7 +569,7 @@ export default function AdminDashboard() {
                     <TableHead className={isDarkMode ? 'text-gray-400' : ''}>Date</TableHead>
                     <TableHead className={isDarkMode ? 'text-gray-400' : ''}>Items</TableHead>
                     <TableHead className={isDarkMode ? 'text-gray-400' : ''}>Status</TableHead>
-                    <TableHead className="text-right" className={isDarkMode ? 'text-gray-400' : ''}>Amount</TableHead>
+                    <TableHead className={`text-right ${isDarkMode ? 'text-gray-400' : ''}`}>Amount</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -639,9 +639,9 @@ export default function AdminDashboard() {
                   <TableRow className={isDarkMode ? 'border-[#333] hover:bg-[#242424]' : ''}>
                     <TableHead className={isDarkMode ? 'text-gray-400' : ''}>Item Name</TableHead>
                     <TableHead className={isDarkMode ? 'text-gray-400' : ''}>Category</TableHead>
-                    <TableHead className="text-right" className={isDarkMode ? 'text-gray-400' : ''}>Quantity Sold</TableHead>
-                    <TableHead className="text-right" className={isDarkMode ? 'text-gray-400' : ''}>Revenue</TableHead>
-                    <TableHead className="text-right" className={isDarkMode ? 'text-gray-400' : ''}>% of Sales</TableHead>
+                    <TableHead className={`text-right ${isDarkMode ? 'text-gray-400' : ''}`}>Quantity Sold</TableHead>
+                    <TableHead className={`text-right ${isDarkMode ? 'text-gray-400' : ''}`}>Revenue</TableHead>
+                    <TableHead className={`text-right ${isDarkMode ? 'text-gray-400' : ''}`}>% of Sales</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -707,8 +707,8 @@ export default function AdminDashboard() {
                   <TableRow className={isDarkMode ? 'border-[#333] hover:bg-[#242424]' : ''}>
                     <TableHead className={isDarkMode ? 'text-gray-400' : ''}>Customer</TableHead>
                     <TableHead className={isDarkMode ? 'text-gray-400' : ''}>Email</TableHead>
-                    <TableHead className="text-right" className={isDarkMode ? 'text-gray-400' : ''}>Orders</TableHead>
-                    <TableHead className="text-right" className={isDarkMode ? 'text-gray-400' : ''}>Total Spent</TableHead>
+                    <TableHead className={`text-right ${isDarkMode ? 'text-gray-400' : ''}`}>Orders</TableHead>
+                    <TableHead className={`text-right ${isDarkMode ? 'text-gray-400' : ''}`}>Total Spent</TableHead>
                     <TableHead className={isDarkMode ? 'text-gray-400' : ''}>Last Order</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -770,7 +770,7 @@ export default function AdminDashboard() {
                   </div>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                    {farmer.cropsList.map((crop) => (
+                    {farmer.cropsList.map((crop: { id: string; name: string; quantity: number; price: number }) => (
                       <Card key={crop.id} className={`${isDarkMode ? 'bg-[#242424] border-[#333]' : 'bg-gray-50'}`}>
                         <CardContent className="p-3">
                           <div className="flex justify-between">
@@ -901,8 +901,8 @@ export default function AdminDashboard() {
                   <TableRow className={isDarkMode ? 'border-[#333] hover:bg-[#242424]' : ''}>
                     <TableHead className={isDarkMode ? 'text-gray-400' : ''}>Vendor</TableHead>
                     <TableHead className={isDarkMode ? 'text-gray-400' : ''}>Email</TableHead>
-                    <TableHead className="text-right" className={isDarkMode ? 'text-gray-400' : ''}>Products</TableHead>
-                    <TableHead className="text-right" className={isDarkMode ? 'text-gray-400' : ''}>Avg. Rating</TableHead>
+                    <TableHead className={`text-right ${isDarkMode ? 'text-gray-400' : ''}`}>Products</TableHead>
+                    <TableHead className={`text-right ${isDarkMode ? 'text-gray-400' : ''}`}>Avg. Rating</TableHead>
                     <TableHead className={isDarkMode ? 'text-gray-400' : ''}>Performance</TableHead>
                   </TableRow>
                 </TableHeader>
