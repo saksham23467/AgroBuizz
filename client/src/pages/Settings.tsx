@@ -71,7 +71,7 @@ const passwordFormSchema = z.object({
 type PasswordFormValues = z.infer<typeof passwordFormSchema>;
 
 export default function SettingsPage() {
-  const { user, updateDarkModeMutation } = useAuth();
+  const { user, updateDarkModeMutation, updateUserTypeMutation } = useAuth();
   const { toast } = useToast();
   const { isDarkMode } = useTheme();
   const [activeTab, setActiveTab] = useState("account");
@@ -98,19 +98,20 @@ export default function SettingsPage() {
 
   const onProfileSubmit = async (data: ProfileFormValues) => {
     try {
-      // We would normally update the user profile here
-      // For now, just show a success toast
-      toast({
-        title: "Profile updated",
-        description: "Your profile has been successfully updated.",
-      });
+      // If the user type has changed, update it via mutation
+      if (data.userType !== user?.userType) {
+        await updateUserTypeMutation.mutateAsync(data.userType);
+        // The mutation's onSuccess handler will show toast and reload the page
+      } else {
+        // Just for other profile fields, show success toast
+        toast({
+          title: "Profile updated",
+          description: "Your profile has been successfully updated.",
+        });
+      }
     } catch (error) {
+      // Error is handled by mutation onError handler
       console.error("Failed to update profile:", error);
-      toast({
-        title: "Error",
-        description: "Failed to update profile. Please try again.",
-        variant: "destructive",
-      });
     }
   };
 

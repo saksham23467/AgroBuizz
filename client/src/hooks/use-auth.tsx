@@ -38,6 +38,7 @@ type AuthContextType = {
   logoutMutation: UseMutationResult<void, Error, void>;
   registerMutation: UseMutationResult<User, Error, RegisterData>;
   updateDarkModeMutation: UseMutationResult<User, Error, boolean>;
+  updateUserTypeMutation: UseMutationResult<User, Error, 'farmer' | 'customer' | 'vendor'>;
 };
 
 export const AuthContext = createContext<AuthContextType | null>(null);
@@ -227,6 +228,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         logoutMutation,
         registerMutation,
         updateDarkModeMutation,
+        updateUserTypeMutation,
       }}
     >
       {children}
