@@ -164,7 +164,7 @@ export default function About() {
                 <CardContent className="text-center p-4">
                   <h3 className="text-xl font-bold text-[#2E7D32] mb-1">Rahul Agarwal</h3>
                   <p className="text-[#558B2F] mb-4">Co-Founder & CEO</p>
-                  <p className="text-gray-600 text-sm">With over 15 years of experience in sustainable farming, Rahul co-founded AgroBuizz to bridge the gap between farmers and modern technology.</p>
+                  <p className="text-gray-600 text-sm">BTech CSAM 2027 (2023418) - With experience in sustainable farming, Rahul co-founded AgroBuizz to bridge the gap between farmers and modern technology.</p>
                 </CardContent>
               </Card>
             </motion.div>
@@ -179,7 +179,7 @@ export default function About() {
                 <CardContent className="text-center p-4">
                   <h3 className="text-xl font-bold text-[#2E7D32] mb-1">Vansh Jain</h3>
                   <p className="text-[#558B2F] mb-4">Chief Technology Officer</p>
-                  <p className="text-gray-600 text-sm">Vansh brings her extensive background in tech innovation to help develop cutting-edge solutions for agricultural challenges.</p>
+                  <p className="text-gray-600 text-sm">BTech CSB (2023578) - Vansh brings his strong technical background to develop cutting-edge solutions for agricultural challenges.</p>
                 </CardContent>
               </Card>
             </motion.div>
@@ -193,8 +193,8 @@ export default function About() {
                 </div>
                 <CardContent className="text-center p-4">
                   <h3 className="text-xl font-bold text-[#2E7D32] mb-1">Tanish Bachas</h3>
-                  <p className="text-[#558B2F] mb-4">Cheer Leader</p>
-                  <p className="text-gray-600 text-sm">Relieves our stress with his cheer leading.</p>
+                  <p className="text-[#558B2F] mb-4">Chief Wellness Officer</p>
+                  <p className="text-gray-600 text-sm">BTech CSB (2023545) - Tanish ensures team morale and productivity through his innovative approach to agricultural technology.</p>
                 </CardContent>
               </Card>
               </motion.div>
@@ -210,7 +210,7 @@ export default function About() {
                 <CardContent className="text-center p-4">
                   <h3 className="text-xl font-bold text-[#2E7D32] mb-1">Saksham Bansal</h3>
                   <p className="text-[#558B2F] mb-4">Agricultural Marketplace Expert</p>
-                  <p className="text-gray-600 text-sm">Saksham's deep understanding of agricultural markets helps ensure fair pricing and efficient distribution for all AgroBuizz participants.</p>
+                  <p className="text-gray-600 text-sm">BTech CSAM (2023467) - Saksham's understanding of agricultural markets helps ensure fair pricing and efficient distribution for all AgroBuizz participants.</p>
                 </CardContent>
               </Card>
             </motion.div>

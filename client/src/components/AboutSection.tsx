@@ -42,7 +42,7 @@ export default function AboutSection() {
               </div>
               <div>
                 <p className="font-medium text-[#33691E]">Rahul Agarwal</p>
-                <p className="text-[#558B2F] text-sm">Co-founder & CEO</p>
+                <p className="text-[#558B2F] text-sm">Co-founder & CEO | BTech CSAM 2027 (2023418)</p>
               </div>
             </div>
           </motion.div>
