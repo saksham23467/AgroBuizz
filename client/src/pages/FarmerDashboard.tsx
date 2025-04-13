@@ -122,7 +122,7 @@ export default function FarmerDashboard() {
   // Query for getting crops from API
   const cropsQuery = useQuery<{crops: Crop[]}>({
     queryKey: ['/api/farmer/crops'],
-    queryFn: getQueryFn(),
+    queryFn: getQueryFn({ on401: "returnNull" }),
     retry: 1,
     enabled: !!user
   });
@@ -223,7 +223,7 @@ export default function FarmerDashboard() {
   // Market prices data from WebSocket and API
   const marketPricesQuery = useQuery<{prices: any[]}>({
     queryKey: ['/api/market/prices'],
-    queryFn: getQueryFn(),
+    queryFn: getQueryFn({ on401: "returnNull" }),
     retry: 1
   });
   
