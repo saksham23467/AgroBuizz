@@ -71,38 +71,18 @@ export default function VendorDashboard() {
 
   // Query vendor products
   const { 
-    data: products, 
+    data: productsResponse, 
     isLoading: isLoadingProducts, 
     error: productsError 
-  } = useQuery<Product[]>({
+  } = useQuery<{success: boolean, products: Product[]}>({
     queryKey: ["/api/vendor/products"],
-    queryFn: async ({ signal }) => {
-      try {
-        const response = await fetch("/api/vendor/products", { signal });
-        
-        // If the response is 401, throw an unauthorized error
-        if (response.status === 401) {
-          throw new Error("Unauthorized");
-        }
-        
-        // If the response is successful, return the data
-        if (response.ok) {
-          const data = await response.json();
-          return data;
-        }
-        
-        // For any other errors, use the sample data
-        console.log("API error, using sample product data");
-        return sampleProducts;
-      } catch (error) {
-        // For network errors or any other errors, use the sample data
-        console.log("Error fetching products:", error);
-        return sampleProducts;
-      }
-    },
+    queryFn: getQueryFn({ on401: "returnNull" }),
     enabled: isInit && !!user,
-    retry: false, // Don't retry failed requests
+    retry: 1,
   });
+  
+  // Extract products from response
+  const products = productsResponse?.products || [];
   
   // Helper function to count products by type
   const countProductsByType = (products: Product[] | undefined) => {
