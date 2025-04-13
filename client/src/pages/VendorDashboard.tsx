@@ -5,9 +5,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Button } from "@/components/ui/button";
 import { getQueryFn, apiRequest, queryClient } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/use-auth";
-import { Loader2, Users, ShoppingBag, AlertCircle, PlusCircle, Edit, Trash } from "lucide-react";
+import { Loader2, Users, ShoppingBag, AlertCircle, PlusCircle, Edit, Trash, FileWarning } from "lucide-react";
 import ComplaintsList from "@/components/ComplaintsList";
 import AnimatedPage from "@/components/AnimatedPage";
+import { DisputeTabs } from "@/components/DisputeTabs";
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
@@ -357,10 +358,11 @@ export default function VendorDashboard() {
         </div>
         
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid grid-cols-3 w-full max-w-md">
+          <TabsList className="grid grid-cols-4 w-full max-w-md">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="products">Products</TabsTrigger>
             <TabsTrigger value="complaints">Complaints</TabsTrigger>
+            <TabsTrigger value="disputes">Disputes</TabsTrigger>
           </TabsList>
           
           {/* Overview Tab */}
@@ -568,6 +570,28 @@ export default function VendorDashboard() {
           {/* Complaints Tab */}
           <TabsContent value="complaints" className="space-y-4">
             <ComplaintsList userType="vendor" />
+          </TabsContent>
+          
+          {/* Disputes Tab */}
+          <TabsContent value="disputes" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-2">
+                  <div>
+                    <CardTitle className="flex items-center gap-2">
+                      <FileWarning className="h-5 w-5 text-amber-500" />
+                      Farmer Disputes
+                    </CardTitle>
+                    <CardDescription>
+                      Report and manage issues with farmers
+                    </CardDescription>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <DisputeTabs />
+              </CardContent>
+            </Card>
           </TabsContent>
         </Tabs>
         
