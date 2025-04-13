@@ -44,6 +44,7 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import {
   Select,
   SelectContent,
@@ -727,7 +728,11 @@ export default function FarmerDashboard() {
                     <FormItem>
                       <FormLabel>Notes</FormLabel>
                       <FormControl>
-                        <Input placeholder="Optional notes about this crop" {...field} />
+                        <Textarea 
+                          placeholder="Optional notes about this crop" 
+                          className="min-h-[120px]" 
+                          {...field} 
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
