@@ -94,19 +94,34 @@ export default function LiveMarketPrices({
   }, [categoryId, limit, toast]);
 
   // Function to refresh prices
-  const refreshPrices = () => {
-    if (socket && socket.readyState === WebSocket.OPEN) {
-      setIsRefreshing(true);
-      socket.send(JSON.stringify({
-        type: 'market_price_request',
-        categoryId: categoryId
-      }));
-    } else {
+  const refreshPrices = async () => {
+    setIsRefreshing(true);
+    try {
+      // Using fetch directly to get fresh prices instead of relying on WebSocket
+      const response = await fetch(`/api/market/prices${categoryId ? `?category=${categoryId}` : ''}`);
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch market prices');
+      }
+      
+      const data = await response.json();
+      if (data.success) {
+        setPrices(data.prices.slice(0, limit));
+        toast({
+          title: "Prices Updated",
+          description: "Market prices have been refreshed",
+        });
+      } else {
+        throw new Error(data.message || 'Failed to fetch prices');
+      }
+    } catch (error) {
       toast({
-        title: "Connection Error",
-        description: "Cannot refresh prices. Connection to market service lost.",
+        title: "Refresh Failed",
+        description: error instanceof Error ? error.message : "Could not update market prices",
         variant: "destructive",
       });
+    } finally {
+      setIsRefreshing(false);
     }
   };
 

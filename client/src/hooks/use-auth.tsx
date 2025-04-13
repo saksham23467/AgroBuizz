@@ -152,7 +152,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
   });
   
-  // Update dark mode preference
+  // Update user preferences
   const updateDarkModeMutation = useMutation({
     mutationFn: async (darkMode: boolean) => {
       const res = await apiRequest("POST", "/api/user/preferences", { darkMode });
@@ -172,6 +172,41 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         title: "Preferences updated",
         description: `Dark mode ${user.darkMode ? 'enabled' : 'disabled'}.`,
       });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Update failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+  
+  // Update user type
+  const updateUserTypeMutation = useMutation({
+    mutationFn: async (userType: 'farmer' | 'customer' | 'vendor') => {
+      const res = await apiRequest("POST", "/api/user/preferences", { userType });
+      const data = await res.json();
+      
+      if (!data.success) {
+        throw new Error(data.message || "Failed to update user type");
+      }
+      
+      return data.user;
+    },
+    onSuccess: (user: User) => {
+      // Update the user data in cache
+      queryClient.setQueryData(["/api/user"], { success: true, user });
+      
+      toast({
+        title: "User Type Updated",
+        description: `Your account type is now: ${user.userType}.`,
+      });
+      
+      // Reload the page to apply new permissions and UI changes
+      setTimeout(() => {
+        window.location.href = '/';
+      }, 1500);
     },
     onError: (error: Error) => {
       toast({

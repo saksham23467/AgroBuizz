@@ -24,6 +24,7 @@ export interface IStorage {
   validateUserCredentials(username: string, password: string): Promise<User | null>;
   updateUserDarkMode(id: number, darkMode: boolean): Promise<User | undefined>;
   updateUserLastLogin(id: number): Promise<User | undefined>;
+  updateUserType(id: number, userType: string): Promise<User | undefined>;
   
   // Crop related methods
   getCrops(): Promise<Crop[]>;
@@ -153,6 +154,34 @@ export class DatabaseStorage implements IStorage {
       .returning();
     
     return updatedUser;
+  }
+  
+  async updateUserType(id: number, userType: string): Promise<User | undefined> {
+    try {
+      console.log(`[DATABASE] Updating user type for user ID: ${id} to type: ${userType}`);
+      
+      // First check if the user exists
+      const user = await this.getUser(id);
+      if (!user) {
+        console.log(`[DATABASE] User with ID ${id} not found, cannot update type`);
+        return undefined;
+      }
+      
+      // Update the user's type
+      const [updatedUser] = await db.update(users)
+        .set({ 
+          userType: userType as any, // Type assertion needed for enum compatibility
+          updatedAt: new Date()
+        })
+        .where(eq(users.id, id))
+        .returning();
+      
+      console.log(`[DATABASE] User type update ${updatedUser ? 'successful' : 'failed'}`);
+      return updatedUser;
+    } catch (error) {
+      console.error(`[DATABASE ERROR] Failed to update user type for ID: ${id}`, error);
+      throw error;
+    }
   }
 
   // Crop related methods

@@ -192,7 +192,7 @@ export function setupAuth(app: Express) {
     });
   });
   
-  // Route to update user preferences like dark mode
+  // Route to update user preferences like dark mode and user type
   app.post("/api/user/preferences", async (req, res) => {
     if (!req.isAuthenticated()) {
       return res.status(401).json({ 
@@ -202,35 +202,75 @@ export function setupAuth(app: Express) {
     }
     
     try {
-      const { darkMode } = req.body;
+      const { darkMode, userType } = req.body;
+      let updatedUser = req.user;
       
-      if (typeof darkMode !== 'boolean') {
+      // Update dark mode if provided
+      if (typeof darkMode === 'boolean') {
+        const result = await storage.updateUserDarkMode(req.user.id, darkMode);
+        if (!result) {
+          return res.status(404).json({
+            success: false,
+            message: "User not found"
+          });
+        }
+        updatedUser = result;
+      }
+      
+      // Update user type if provided
+      if (userType && ['farmer', 'customer', 'vendor'].includes(userType)) {
+        // Call storage method to update user type
+        const result = await storage.updateUserType(req.user.id, userType);
+        if (!result) {
+          return res.status(404).json({
+            success: false,
+            message: "User not found"
+          });
+        }
+        updatedUser = result;
+        
+        // Update session user data
+        req.login(updatedUser, (err) => {
+          if (err) {
+            console.error("Error updating session after user type change:", err);
+            return res.status(500).json({
+              success: false,
+              message: "Error updating session"
+            });
+          }
+          
+          // Return updated user data
+          res.json({ 
+            success: true, 
+            user: { 
+              id: updatedUser.id, 
+              username: updatedUser.username, 
+              email: updatedUser.email,
+              role: updatedUser.role,
+              userType: updatedUser.userType,
+              darkMode: updatedUser.darkMode
+            } 
+          });
+        });
+      } else if (!userType) {
+        // Just return the updated user if only dark mode was changed
+        res.json({ 
+          success: true, 
+          user: { 
+            id: updatedUser.id, 
+            username: updatedUser.username, 
+            email: updatedUser.email,
+            role: updatedUser.role,
+            userType: updatedUser.userType,
+            darkMode: updatedUser.darkMode
+          } 
+        });
+      } else {
         return res.status(400).json({
           success: false,
-          message: "Invalid dark mode value"
+          message: "Invalid user type"
         });
       }
-      
-      const updatedUser = await storage.updateUserDarkMode(req.user.id, darkMode);
-      
-      if (!updatedUser) {
-        return res.status(404).json({
-          success: false,
-          message: "User not found"
-        });
-      }
-      
-      res.json({ 
-        success: true, 
-        user: { 
-          id: updatedUser.id, 
-          username: updatedUser.username, 
-          email: updatedUser.email,
-          role: updatedUser.role,
-          userType: updatedUser.userType,
-          darkMode: updatedUser.darkMode
-        } 
-      });
     } catch (error) {
       console.error("Error updating preferences:", error);
       res.status(500).json({
