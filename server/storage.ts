@@ -52,6 +52,16 @@ export interface IStorage {
   updateComplaintStatus(complaintId: number, status: string): Promise<ProductComplaint | undefined>;
   addVendorResponse(complaintId: number, response: string): Promise<ProductComplaint | undefined>;
   
+  // Farmer Dispute related methods
+  createFarmerDispute(dispute: any): Promise<any>; // Will update with proper types once defined
+  getVendorFarmerDisputes(vendorId: number): Promise<any[]>;
+  getFarmerDisputes(farmerId: number): Promise<any[]>;
+  getAllFarmerDisputes(): Promise<any[]>; // For admin view
+  updateFarmerDisputeStatus(disputeId: number, status: string): Promise<any>;
+  addFarmerResponse(disputeId: number, response: string): Promise<any>;
+  addAdminNotes(disputeId: number, notes: string): Promise<any>;
+  resolveFarmerDispute(disputeId: number, resolution: string): Promise<any>;
+  
   sessionStore: session.Store;
 }
 
@@ -541,6 +551,155 @@ export class DatabaseStorage implements IStorage {
       return updatedComplaint;
     } catch (error) {
       console.error(`[DATABASE ERROR] Failed to add vendor response for complaint ID: ${complaintId}`, error);
+      throw error;
+    }
+  }
+  
+  // Farmer Dispute related methods
+  async createFarmerDispute(dispute: InsertFarmerDispute): Promise<FarmerDispute> {
+    try {
+      console.log(`[DATABASE] Creating new farmer dispute from vendor ID: ${dispute.vendorId} against farmer ID: ${dispute.farmerId}`);
+      
+      const [newDispute] = await db.insert(farmerDisputes)
+        .values({
+          ...dispute,
+          status: "open",
+        })
+        .returning();
+      
+      console.log(`[DATABASE] Farmer dispute created successfully with ID: ${newDispute.id}`);
+      return newDispute;
+    } catch (error) {
+      console.error(`[DATABASE ERROR] Failed to create farmer dispute: ${error instanceof Error ? error.message : error}`);
+      throw error;
+    }
+  }
+
+  async getVendorFarmerDisputes(vendorId: number): Promise<FarmerDispute[]> {
+    try {
+      console.log(`[DATABASE] Fetching disputes created by vendor ID: ${vendorId}`);
+      
+      const disputes = await db.select()
+        .from(farmerDisputes)
+        .where(eq(farmerDisputes.vendorId, vendorId));
+      
+      console.log(`[DATABASE] Retrieved ${disputes.length} disputes for vendor ID: ${vendorId}`);
+      return disputes;
+    } catch (error) {
+      console.error(`[DATABASE ERROR] Failed to fetch disputes for vendor ID: ${vendorId}`, error);
+      return []; // Return empty array on error
+    }
+  }
+
+  async getFarmerDisputes(farmerId: number): Promise<FarmerDispute[]> {
+    try {
+      console.log(`[DATABASE] Fetching disputes against farmer ID: ${farmerId}`);
+      
+      const disputes = await db.select()
+        .from(farmerDisputes)
+        .where(eq(farmerDisputes.farmerId, farmerId));
+      
+      console.log(`[DATABASE] Retrieved ${disputes.length} disputes against farmer ID: ${farmerId}`);
+      return disputes;
+    } catch (error) {
+      console.error(`[DATABASE ERROR] Failed to fetch disputes against farmer ID: ${farmerId}`, error);
+      return []; // Return empty array on error
+    }
+  }
+
+  async getAllFarmerDisputes(): Promise<FarmerDispute[]> {
+    try {
+      console.log('[DATABASE] Fetching all farmer disputes');
+      
+      const disputes = await db.select().from(farmerDisputes);
+      
+      console.log(`[DATABASE] Retrieved ${disputes.length} farmer disputes`);
+      return disputes;
+    } catch (error) {
+      console.error('[DATABASE ERROR] Failed to fetch all farmer disputes', error);
+      return []; // Return empty array on error
+    }
+  }
+
+  async updateFarmerDisputeStatus(disputeId: number, status: string): Promise<FarmerDispute | undefined> {
+    try {
+      console.log(`[DATABASE] Updating farmer dispute status for ID: ${disputeId} to: ${status}`);
+      
+      const [updatedDispute] = await db.update(farmerDisputes)
+        .set({
+          status: status as any, // Type assertion needed for enum compatibility
+          updatedAt: new Date()
+        })
+        .where(eq(farmerDisputes.id, disputeId))
+        .returning();
+      
+      console.log(`[DATABASE] Farmer dispute status update ${updatedDispute ? 'successful' : 'failed'}`);
+      return updatedDispute;
+    } catch (error) {
+      console.error(`[DATABASE ERROR] Failed to update farmer dispute status for ID: ${disputeId}`, error);
+      throw error;
+    }
+  }
+
+  async addFarmerResponse(disputeId: number, response: string): Promise<FarmerDispute | undefined> {
+    try {
+      console.log(`[DATABASE] Adding farmer response to dispute ID: ${disputeId}`);
+      
+      const [updatedDispute] = await db.update(farmerDisputes)
+        .set({
+          farmerResponse: response,
+          responseDate: new Date(),
+          updatedAt: new Date()
+        })
+        .where(eq(farmerDisputes.id, disputeId))
+        .returning();
+      
+      console.log(`[DATABASE] Farmer response added to dispute: ${updatedDispute ? 'Yes' : 'No'}`);
+      return updatedDispute;
+    } catch (error) {
+      console.error(`[DATABASE ERROR] Failed to add farmer response to dispute ID: ${disputeId}`, error);
+      throw error;
+    }
+  }
+
+  async addAdminNotes(disputeId: number, notes: string): Promise<FarmerDispute | undefined> {
+    try {
+      console.log(`[DATABASE] Adding admin notes to dispute ID: ${disputeId}`);
+      
+      const [updatedDispute] = await db.update(farmerDisputes)
+        .set({
+          adminNotes: notes,
+          updatedAt: new Date()
+        })
+        .where(eq(farmerDisputes.id, disputeId))
+        .returning();
+      
+      console.log(`[DATABASE] Admin notes added to dispute: ${updatedDispute ? 'Yes' : 'No'}`);
+      return updatedDispute;
+    } catch (error) {
+      console.error(`[DATABASE ERROR] Failed to add admin notes to dispute ID: ${disputeId}`, error);
+      throw error;
+    }
+  }
+
+  async resolveFarmerDispute(disputeId: number, resolution: string): Promise<FarmerDispute | undefined> {
+    try {
+      console.log(`[DATABASE] Resolving dispute ID: ${disputeId}`);
+      
+      const [resolvedDispute] = await db.update(farmerDisputes)
+        .set({
+          resolution: resolution,
+          status: "resolved" as any,
+          resolvedAt: new Date(),
+          updatedAt: new Date()
+        })
+        .where(eq(farmerDisputes.id, disputeId))
+        .returning();
+      
+      console.log(`[DATABASE] Dispute resolution ${resolvedDispute ? 'successful' : 'failed'}`);
+      return resolvedDispute;
+    } catch (error) {
+      console.error(`[DATABASE ERROR] Failed to resolve dispute ID: ${disputeId}`, error);
       throw error;
     }
   }

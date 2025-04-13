@@ -410,6 +410,9 @@ export const queryStatusEnum = pgEnum('query_status', ['unsolved', 'in_progress'
   
   export type InsertProductComplaint = z.infer<typeof insertProductComplaintSchema>;
   export type ProductComplaint = typeof productComplaints.$inferSelect;
+  
+  export type InsertFarmerDispute = z.infer<typeof insertFarmerDisputeSchema>;
+  export type FarmerDispute = typeof farmerDisputes.$inferSelect;
 
   // Waitlist types removed
   
