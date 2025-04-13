@@ -245,6 +245,24 @@ export const queryStatusEnum = pgEnum('query_status', ['unsolved', 'in_progress'
     vendorResponse: text("vendor_response"),
     responseDate: timestamp("response_date"),
   });
+  
+  // Farmer Disputes Table (for vendors to raise disputes against farmers)
+  export const farmerDisputes = pgTable("farmer_disputes", {
+    id: serial("id").primaryKey(),
+    vendorId: integer("vendor_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+    farmerId: integer("farmer_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+    title: varchar("title", { length: 100 }).notNull(),
+    description: text("description").notNull(),
+    status: disputeStatusEnum("status").notNull().default("open"),
+    category: disputeTypeEnum("category").notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+    farmerResponse: text("farmer_response"),
+    responseDate: timestamp("response_date"),
+    adminNotes: text("admin_notes"),
+    resolution: text("resolution"),
+    resolvedAt: timestamp("resolved_at"),
+  });
 
   // Waitlist entries removed - no longer needed
   
@@ -318,6 +336,17 @@ export const queryStatusEnum = pgEnum('query_status', ['unsolved', 'in_progress'
     status: true,
     vendorResponse: true,
     responseDate: true 
+  });
+  
+  export const insertFarmerDisputeSchema = createInsertSchema(farmerDisputes).omit({
+    createdAt: true,
+    updatedAt: true,
+    status: true,
+    farmerResponse: true,
+    responseDate: true,
+    adminNotes: true,
+    resolution: true,
+    resolvedAt: true
   });
   // Waitlist schema removed
   
