@@ -564,7 +564,7 @@ export class DatabaseStorage implements IStorage {
       const [newDispute] = await db.insert(farmerDisputes)
         .values({
           ...dispute,
-          status: "open",
+          status: dispute.status || "open",
         })
         .returning();
       
