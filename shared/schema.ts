@@ -34,13 +34,23 @@ export const queryStatusEnum = pgEnum('query_status', ['unsolved', 'in_progress'
     role: roleEnum("role").notNull(),
   });
   
+  // Crop Types
+  export const cropTypeEnum = pgEnum('crop_type', ['vegetable', 'fruit', 'grain', 'herb', 'spice', 'other']);
+  
   // Crop Table
   export const crops = pgTable("crops", {
     cropId: varchar("crop_id", { length: 50 }).primaryKey(),
-    type: varchar("type", { length: 50 }).notNull(),
+    name: varchar("name", { length: 100 }).notNull(),
+    type: cropTypeEnum("type").notNull().default("other"),
     quantity: integer("quantity").notNull().default(0),
     price: numeric("price", { precision: 10, scale: 2 }).notNull().default("0"),
     description: text("description"),
+    imagePath: text("image_path"),
+    season: varchar("season", { length: 50 }),
+    growthPeriod: integer("growth_period"),
+    farmerId: integer("farmer_id").references(() => users.id),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
   });
   
   // Customer Table

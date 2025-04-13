@@ -4,7 +4,9 @@ import {
   productComplaints, type ProductComplaint, type InsertProductComplaint,
   products, type Product, type InsertProduct,
   vendors, type Vendor, type InsertVendor,
-  vendorProducts
+  vendorProducts,
+  crops, type Crop, type InsertCrop,
+  farmerCrops
 } from "@shared/schema";
 import bcrypt from "bcryptjs";
 import { eq, and, desc, inArray } from 'drizzle-orm';
@@ -23,7 +25,14 @@ export interface IStorage {
   updateUserDarkMode(id: number, darkMode: boolean): Promise<User | undefined>;
   updateUserLastLogin(id: number): Promise<User | undefined>;
   
-  // Waitlist methods removed
+  // Crop related methods
+  getCrops(): Promise<Crop[]>;
+  getCropById(cropId: string): Promise<Crop | undefined>;
+  getFarmerCrops(farmerId: number): Promise<Crop[]>;
+  createCrop(crop: InsertCrop): Promise<Crop>;
+  updateCrop(cropId: string, crop: Partial<InsertCrop>): Promise<Crop | undefined>;
+  deleteCrop(cropId: string): Promise<boolean>;
+  searchCrops(query: string): Promise<Crop[]>;
   
   // Product related methods
   getProducts(): Promise<Product[]>; 
@@ -145,7 +154,142 @@ export class DatabaseStorage implements IStorage {
     return updatedUser;
   }
 
-  // Waitlist methods implementation removed
+  // Crop related methods
+  async getCrops(): Promise<Crop[]> {
+    try {
+      console.log('[DATABASE] Fetching all crops');
+      const result = await pool.query(`SELECT * FROM crops`);
+      const cropList = result.rows || [];
+      
+      console.log(`[DATABASE] Retrieved ${cropList.length} crops`);
+      return cropList;
+    } catch (error) {
+      console.error('[DATABASE ERROR] Failed to fetch crops', error);
+      // Return empty array instead of throwing error
+      return [];
+    }
+  }
+
+  async getCropById(cropId: string): Promise<Crop | undefined> {
+    try {
+      console.log(`[DATABASE] Looking up crop by ID: ${cropId}`);
+      const [crop] = await db.select().from(crops).where(eq(crops.cropId, cropId));
+      console.log(`[DATABASE] Crop with ID "${cropId}" found: ${crop ? 'Yes' : 'No'}`);
+      return crop;
+    } catch (error) {
+      console.error(`[DATABASE ERROR] Failed to get crop by ID: ${cropId}`, error);
+      throw error;
+    }
+  }
+
+  async getFarmerCrops(farmerId: number): Promise<Crop[]> {
+    try {
+      console.log(`[DATABASE] Fetching crops for farmer ID: ${farmerId}`);
+      
+      // Get crops directly associated with the user
+      const farmerCropsList = await db.select()
+        .from(crops)
+        .where(eq(crops.farmerId, farmerId));
+      
+      console.log(`[DATABASE] Retrieved ${farmerCropsList.length} crops for farmer ID: ${farmerId}`);
+      return farmerCropsList;
+    } catch (error) {
+      console.error(`[DATABASE ERROR] Failed to fetch crops for farmer ID: ${farmerId}`, error);
+      return []; // Return empty array on error
+    }
+  }
+
+  async createCrop(crop: InsertCrop): Promise<Crop> {
+    try {
+      console.log(`[DATABASE] Creating new crop: ${crop.name}`);
+      const [newCrop] = await db.insert(crops)
+        .values({
+          ...crop,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        })
+        .returning();
+      
+      console.log(`[DATABASE] Crop created successfully with ID: ${newCrop.cropId}`);
+      return newCrop;
+    } catch (error) {
+      console.error(`[DATABASE ERROR] Failed to create crop: ${error instanceof Error ? error.message : error}`);
+      throw error;
+    }
+  }
+
+  async updateCrop(cropId: string, cropUpdates: Partial<InsertCrop>): Promise<Crop | undefined> {
+    try {
+      console.log(`[DATABASE] Updating crop with ID: ${cropId}`);
+      
+      // Add updatedAt timestamp to the updates
+      const updates = {
+        ...cropUpdates,
+        updatedAt: new Date()
+      };
+      
+      const [updatedCrop] = await db.update(crops)
+        .set(updates)
+        .where(eq(crops.cropId, cropId))
+        .returning();
+      
+      console.log(`[DATABASE] Crop update ${updatedCrop ? 'successful' : 'failed'}`);
+      return updatedCrop;
+    } catch (error) {
+      console.error(`[DATABASE ERROR] Failed to update crop with ID: ${cropId}`, error);
+      throw error;
+    }
+  }
+
+  async deleteCrop(cropId: string): Promise<boolean> {
+    try {
+      console.log(`[DATABASE] Deleting crop with ID: ${cropId}`);
+      
+      // First check if the crop exists
+      const cropExists = await this.getCropById(cropId);
+      if (!cropExists) {
+        console.log(`[DATABASE] Crop with ID "${cropId}" not found, cannot delete`);
+        return false;
+      }
+      
+      // Delete the crop
+      const result = await db.delete(crops)
+        .where(eq(crops.cropId, cropId))
+        .returning();
+      
+      const success = result.length > 0;
+      console.log(`[DATABASE] Crop deletion ${success ? 'successful' : 'failed'}`);
+      return success;
+    } catch (error) {
+      console.error(`[DATABASE ERROR] Failed to delete crop with ID: ${cropId}`, error);
+      throw error;
+    }
+  }
+
+  async searchCrops(query: string): Promise<Crop[]> {
+    try {
+      console.log(`[DATABASE] Searching for crops with query: "${query}"`);
+      
+      // Convert query to lowercase for case-insensitive search
+      const lowercasedQuery = query.toLowerCase();
+      
+      // Get all crops - in a real app, we'd use a more efficient SQL query with LIKE or full-text search
+      const allCrops = await this.getCrops();
+      
+      // Filter crops that match the query in name, type, or description
+      const results = allCrops.filter(crop => 
+        crop.name.toLowerCase().includes(lowercasedQuery) ||
+        crop.type.toLowerCase().includes(lowercasedQuery) ||
+        (crop.description && crop.description.toLowerCase().includes(lowercasedQuery))
+      );
+      
+      console.log(`[DATABASE] Found ${results.length} crops matching "${query}"`);
+      return results;
+    } catch (error) {
+      console.error(`[DATABASE ERROR] Failed to search crops with query: ${query}`, error);
+      throw error;
+    }
+  }
 
   // Product related methods
   async getProducts(): Promise<Product[]> {
