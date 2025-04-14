@@ -26,7 +26,7 @@ export interface IStorage {
   updateUserDarkMode(id: number, darkMode: boolean): Promise<User | undefined>;
   updateUserLastLogin(id: number): Promise<User | undefined>;
   updateUserType(id: number, userType: string): Promise<User | undefined>;
-  
+
   // Crop related methods
   getCrops(): Promise<Crop[]>;
   getCropById(cropId: string): Promise<Crop | undefined>;
@@ -35,24 +35,24 @@ export interface IStorage {
   updateCrop(cropId: string, crop: Partial<InsertCrop>): Promise<Crop | undefined>;
   deleteCrop(cropId: string): Promise<boolean>;
   searchCrops(query: string): Promise<Crop[]>;
-  
+
   // Product related methods
   getProducts(): Promise<Product[]>; 
   getProductById(productId: string): Promise<Product | undefined>;
   searchProducts(query: string): Promise<Product[]>;
   createProduct(product: InsertProduct): Promise<Product>;
-  
+
   // Vendor related methods
   getVendorById(vendorId: string): Promise<Vendor | undefined>;
   getVendorProducts(vendorId: string): Promise<Product[]>;
-  
+
   // Product Complaint related methods
   createProductComplaint(complaint: InsertProductComplaint): Promise<ProductComplaint>;
   getProductComplaints(userId: number): Promise<ProductComplaint[]>;
   getVendorComplaints(vendorId: string): Promise<ProductComplaint[]>;
   updateComplaintStatus(complaintId: number, status: string): Promise<ProductComplaint | undefined>;
   addVendorResponse(complaintId: number, response: string): Promise<ProductComplaint | undefined>;
-  
+
   // Farmer Dispute related methods
   createFarmerDispute(dispute: InsertFarmerDispute): Promise<FarmerDispute>;
   getVendorFarmerDisputes(vendorId: number): Promise<FarmerDispute[]>;
@@ -62,7 +62,7 @@ export interface IStorage {
   addFarmerResponse(disputeId: number, response: string): Promise<FarmerDispute | undefined>;
   addAdminNotes(disputeId: number, notes: string): Promise<FarmerDispute | undefined>;
   resolveFarmerDispute(disputeId: number, resolution: string): Promise<FarmerDispute | undefined>;
-  
+
   sessionStore: session.Store;
 }
 
@@ -102,7 +102,7 @@ export class DatabaseStorage implements IStorage {
       throw error;
     }
   }
-  
+
   async getUserByEmail(email: string): Promise<User | undefined> {
     try {
       console.log(`[DATABASE] Looking up user by email: ${email}`);
@@ -120,7 +120,7 @@ export class DatabaseStorage implements IStorage {
       console.log(`[DATABASE] Creating new user with username: ${insertUser.username}, type: ${insertUser.userType || 'customer'}`);
       // Hash password before storing
       const hashedPassword = await bcrypt.hash(insertUser.password, 10);
-      
+
       const [user] = await db.insert(users)
         .values({
           ...insertUser,
@@ -130,7 +130,7 @@ export class DatabaseStorage implements IStorage {
           darkMode: insertUser.darkMode ?? false
         })
         .returning();
-      
+
       console.log(`[DATABASE] User created successfully with ID: ${user.id}`);
       return user;
     } catch (error) {
@@ -138,25 +138,25 @@ export class DatabaseStorage implements IStorage {
       throw error;
     }
   }
-  
+
   async validateUserCredentials(username: string, password: string): Promise<User | null> {
     const user = await this.getUserByUsername(username);
     if (!user) return null;
-    
+
     try {
       // Try bcrypt comparison first (for regular user accounts)
       if (user.password.startsWith('$2b$')) {
         const isValid = await bcrypt.compare(password, user.password);
         if (isValid) return user;
       } 
-      
+
       // For special seeded accounts with custom hash
       // Admin123, vendor123, farmer123, customer123
       if (username === 'admin' && password === 'admin123') return user;
       if (username === 'vendor' && password === 'vendor123') return user;
       if (username === 'farmer' && password === 'farmer123') return user;
       if (username === 'customer' && password === 'customer123') return user;
-      
+
       // Password doesn't match either method
       return null;
     } catch (error) {
@@ -164,36 +164,36 @@ export class DatabaseStorage implements IStorage {
       return null;
     }
   }
-  
+
   async updateUserDarkMode(id: number, darkMode: boolean): Promise<User | undefined> {
     const [updatedUser] = await db.update(users)
       .set({ darkMode })
       .where(eq(users.id, id))
       .returning();
-    
+
     return updatedUser;
   }
-  
+
   async updateUserLastLogin(id: number): Promise<User | undefined> {
     const [updatedUser] = await db.update(users)
       .set({ lastLogin: new Date() })
       .where(eq(users.id, id))
       .returning();
-    
+
     return updatedUser;
   }
-  
+
   async updateUserType(id: number, userType: string): Promise<User | undefined> {
     try {
       console.log(`[DATABASE] Updating user type for user ID: ${id} to type: ${userType}`);
-      
+
       // First check if the user exists
       const user = await this.getUser(id);
       if (!user) {
         console.log(`[DATABASE] User with ID ${id} not found, cannot update type`);
         return undefined;
       }
-      
+
       // Update the user's type
       const [updatedUser] = await db.update(users)
         .set({ 
@@ -202,7 +202,7 @@ export class DatabaseStorage implements IStorage {
         })
         .where(eq(users.id, id))
         .returning();
-      
+
       console.log(`[DATABASE] User type update ${updatedUser ? 'successful' : 'failed'}`);
       return updatedUser;
     } catch (error) {
@@ -217,7 +217,7 @@ export class DatabaseStorage implements IStorage {
       console.log('[DATABASE] Fetching all crops');
       const result = await pool.query(`SELECT * FROM crops`);
       const cropList = result.rows || [];
-      
+
       console.log(`[DATABASE] Retrieved ${cropList.length} crops`);
       return cropList;
     } catch (error) {
@@ -242,12 +242,12 @@ export class DatabaseStorage implements IStorage {
   async getFarmerCrops(farmerId: number): Promise<Crop[]> {
     try {
       console.log(`[DATABASE] Fetching crops for farmer ID: ${farmerId}`);
-      
+
       // Get crops directly associated with the user
       const farmerCropsList = await db.select()
         .from(crops)
         .where(eq(crops.farmerId, farmerId));
-      
+
       console.log(`[DATABASE] Retrieved ${farmerCropsList.length} crops for farmer ID: ${farmerId}`);
       return farmerCropsList;
     } catch (error) {
@@ -266,7 +266,7 @@ export class DatabaseStorage implements IStorage {
           updatedAt: new Date()
         })
         .returning();
-      
+
       console.log(`[DATABASE] Crop created successfully with ID: ${newCrop.cropId}`);
       return newCrop;
     } catch (error) {
@@ -278,18 +278,18 @@ export class DatabaseStorage implements IStorage {
   async updateCrop(cropId: string, cropUpdates: Partial<InsertCrop>): Promise<Crop | undefined> {
     try {
       console.log(`[DATABASE] Updating crop with ID: ${cropId}`);
-      
+
       // Add updatedAt timestamp to the updates
       const updates = {
         ...cropUpdates,
         updatedAt: new Date()
       };
-      
+
       const [updatedCrop] = await db.update(crops)
         .set(updates)
         .where(eq(crops.cropId, cropId))
         .returning();
-      
+
       console.log(`[DATABASE] Crop update ${updatedCrop ? 'successful' : 'failed'}`);
       return updatedCrop;
     } catch (error) {
@@ -301,19 +301,19 @@ export class DatabaseStorage implements IStorage {
   async deleteCrop(cropId: string): Promise<boolean> {
     try {
       console.log(`[DATABASE] Deleting crop with ID: ${cropId}`);
-      
+
       // First check if the crop exists
       const cropExists = await this.getCropById(cropId);
       if (!cropExists) {
         console.log(`[DATABASE] Crop with ID "${cropId}" not found, cannot delete`);
         return false;
       }
-      
+
       // Delete the crop
       const result = await db.delete(crops)
         .where(eq(crops.cropId, cropId))
         .returning();
-      
+
       const success = result.length > 0;
       console.log(`[DATABASE] Crop deletion ${success ? 'successful' : 'failed'}`);
       return success;
@@ -326,20 +326,20 @@ export class DatabaseStorage implements IStorage {
   async searchCrops(query: string): Promise<Crop[]> {
     try {
       console.log(`[DATABASE] Searching for crops with query: "${query}"`);
-      
+
       // Convert query to lowercase for case-insensitive search
       const lowercasedQuery = query.toLowerCase();
-      
+
       // Get all crops - in a real app, we'd use a more efficient SQL query with LIKE or full-text search
       const allCrops = await this.getCrops();
-      
+
       // Filter crops that match the query in name, type, or description
       const results = allCrops.filter(crop => 
         crop.name.toLowerCase().includes(lowercasedQuery) ||
         crop.type.toLowerCase().includes(lowercasedQuery) ||
         (crop.description && crop.description.toLowerCase().includes(lowercasedQuery))
       );
-      
+
       console.log(`[DATABASE] Found ${results.length} crops matching "${query}"`);
       return results;
     } catch (error) {
@@ -355,7 +355,7 @@ export class DatabaseStorage implements IStorage {
       // Use a simplified query to avoid schema issues
       const result = await pool.query(`SELECT * FROM products`);
       const productList = result.rows || [];
-      
+
       console.log(`[DATABASE] Retrieved ${productList.length} products`);
       return productList;
     } catch (error) {
@@ -382,17 +382,17 @@ export class DatabaseStorage implements IStorage {
       console.log(`[DATABASE] Searching for products with query: "${query}"`);
       // Convert query to lowercase for case-insensitive search
       const lowercasedQuery = query.toLowerCase();
-      
+
       // Get all products - in a real app, we'd use a more efficient SQL query with LIKE or full-text search
       const allProducts = await this.getProducts();
-      
+
       // Filter products that match the query in name, type, or description
       const results = allProducts.filter(product => 
         product.name.toLowerCase().includes(lowercasedQuery) ||
         product.type.toLowerCase().includes(lowercasedQuery) ||
         (product.description && product.description.toLowerCase().includes(lowercasedQuery))
       );
-      
+
       console.log(`[DATABASE] Found ${results.length} products matching "${query}"`);
       return results;
     } catch (error) {
@@ -400,7 +400,7 @@ export class DatabaseStorage implements IStorage {
       throw error;
     }
   }
-  
+
   async createProduct(product: InsertProduct): Promise<Product> {
     try {
       console.log(`[DATABASE] Creating new product: ${product.name}`);
@@ -411,9 +411,9 @@ export class DatabaseStorage implements IStorage {
           updatedAt: new Date()
         })
         .returning();
-      
+
       console.log(`[DATABASE] Product created successfully with ID: ${newProduct.productId}`);
-      
+
       // If the product has a vendorId, create the relationship in the vendorProducts table
       if (product.vendorId) {
         try {
@@ -428,7 +428,7 @@ export class DatabaseStorage implements IStorage {
           // Continue even if relationship creation fails
         }
       }
-      
+
       return newProduct;
     } catch (error) {
       console.error(`[DATABASE ERROR] Failed to create product: ${error instanceof Error ? error.message : error}`);
@@ -452,29 +452,29 @@ export class DatabaseStorage implements IStorage {
   async getVendorProducts(vendorId: string): Promise<Product[]> {
     try {
       console.log(`[DATABASE] Fetching products for vendor: ${vendorId}`);
-      
+
       // Use the join table to get all products for this vendor
       // Since we don't have a direct vendorId in products table yet
       const vendorProductEntries = await db.select()
         .from(vendorProducts)
         .where(eq(vendorProducts.vendorId, vendorId));
-      
+
       console.log(`[DATABASE] Found ${vendorProductEntries.length} product-vendor relationships for vendor: ${vendorId}`);
-      
+
       // If we found matching products in the join table
       if (vendorProductEntries.length > 0) {
         // Get the product IDs
         const productIds = vendorProductEntries.map(entry => entry.productId);
-        
+
         // Fetch the actual products
         const productList = await db.select()
           .from(products)
           .where(inArray(products.productId, productIds));
-          
+
         console.log(`[DATABASE] Retrieved ${productList.length} products for vendor: ${vendorId}`);
         return productList;
       }
-      
+
       console.log(`[DATABASE] No products found for vendor: ${vendorId}, falling back to all products`);
       // Fallback: return all products for now
       return await this.getProducts();
@@ -491,7 +491,7 @@ export class DatabaseStorage implements IStorage {
       const [newComplaint] = await db.insert(productComplaints)
         .values(complaint)
         .returning();
-      
+
       console.log(`[DATABASE] Complaint created successfully with ID: ${newComplaint.id}`);
       return newComplaint;
     } catch (error) {
@@ -507,7 +507,7 @@ export class DatabaseStorage implements IStorage {
         .from(productComplaints)
         .where(eq(productComplaints.userId, userId))
         .orderBy(desc(productComplaints.createdAt));
-      
+
       console.log(`[DATABASE] Retrieved ${complaints.length} complaints for user: ${userId}`);
       return complaints;
     } catch (error) {
@@ -523,7 +523,7 @@ export class DatabaseStorage implements IStorage {
         .from(productComplaints)
         .where(eq(productComplaints.vendorId, vendorId))
         .orderBy(desc(productComplaints.createdAt));
-      
+
       console.log(`[DATABASE] Retrieved ${complaints.length} complaints for vendor: ${vendorId}`);
       return complaints;
     } catch (error) {
@@ -542,7 +542,7 @@ export class DatabaseStorage implements IStorage {
         })
         .where(eq(productComplaints.id, complaintId))
         .returning();
-      
+
       console.log(`[DATABASE] Complaint status update ${updatedComplaint ? 'successful' : 'failed'}`);
       return updatedComplaint;
     } catch (error) {
@@ -563,7 +563,7 @@ export class DatabaseStorage implements IStorage {
         })
         .where(eq(productComplaints.id, complaintId))
         .returning();
-      
+
       console.log(`[DATABASE] Vendor response added ${updatedComplaint ? 'successfully' : 'failed'}`);
       return updatedComplaint;
     } catch (error) {
@@ -571,19 +571,19 @@ export class DatabaseStorage implements IStorage {
       throw error;
     }
   }
-  
+
   // Farmer Dispute related methods
   async createFarmerDispute(dispute: InsertFarmerDispute): Promise<FarmerDispute> {
     try {
       console.log(`[DATABASE] Creating new farmer dispute from vendor ID: ${dispute.vendorId} against farmer ID: ${dispute.farmerId}`);
-      
+
       const [newDispute] = await db.insert(farmerDisputes)
         .values({
           ...dispute,
           status: dispute.status || "open",
         })
         .returning();
-      
+
       console.log(`[DATABASE] Farmer dispute created successfully with ID: ${newDispute.id}`);
       return newDispute;
     } catch (error) {
@@ -595,11 +595,11 @@ export class DatabaseStorage implements IStorage {
   async getVendorFarmerDisputes(vendorId: number): Promise<FarmerDispute[]> {
     try {
       console.log(`[DATABASE] Fetching disputes created by vendor ID: ${vendorId}`);
-      
+
       const disputes = await db.select()
         .from(farmerDisputes)
         .where(eq(farmerDisputes.vendorId, vendorId));
-      
+
       console.log(`[DATABASE] Retrieved ${disputes.length} disputes for vendor ID: ${vendorId}`);
       return disputes;
     } catch (error) {
@@ -611,11 +611,11 @@ export class DatabaseStorage implements IStorage {
   async getFarmerDisputes(farmerId: number): Promise<FarmerDispute[]> {
     try {
       console.log(`[DATABASE] Fetching disputes against farmer ID: ${farmerId}`);
-      
+
       const disputes = await db.select()
         .from(farmerDisputes)
         .where(eq(farmerDisputes.farmerId, farmerId));
-      
+
       console.log(`[DATABASE] Retrieved ${disputes.length} disputes against farmer ID: ${farmerId}`);
       return disputes;
     } catch (error) {
@@ -627,9 +627,9 @@ export class DatabaseStorage implements IStorage {
   async getAllFarmerDisputes(): Promise<FarmerDispute[]> {
     try {
       console.log('[DATABASE] Fetching all farmer disputes');
-      
+
       const disputes = await db.select().from(farmerDisputes);
-      
+
       console.log(`[DATABASE] Retrieved ${disputes.length} farmer disputes`);
       return disputes;
     } catch (error) {
@@ -641,7 +641,7 @@ export class DatabaseStorage implements IStorage {
   async updateFarmerDisputeStatus(disputeId: number, status: string): Promise<FarmerDispute | undefined> {
     try {
       console.log(`[DATABASE] Updating farmer dispute status for ID: ${disputeId} to: ${status}`);
-      
+
       const [updatedDispute] = await db.update(farmerDisputes)
         .set({
           status: status as any, // Type assertion needed for enum compatibility
@@ -649,7 +649,7 @@ export class DatabaseStorage implements IStorage {
         })
         .where(eq(farmerDisputes.id, disputeId))
         .returning();
-      
+
       console.log(`[DATABASE] Farmer dispute status update ${updatedDispute ? 'successful' : 'failed'}`);
       return updatedDispute;
     } catch (error) {
@@ -661,7 +661,7 @@ export class DatabaseStorage implements IStorage {
   async addFarmerResponse(disputeId: number, response: string): Promise<FarmerDispute | undefined> {
     try {
       console.log(`[DATABASE] Adding farmer response to dispute ID: ${disputeId}`);
-      
+
       const [updatedDispute] = await db.update(farmerDisputes)
         .set({
           farmerResponse: response,
@@ -670,7 +670,7 @@ export class DatabaseStorage implements IStorage {
         })
         .where(eq(farmerDisputes.id, disputeId))
         .returning();
-      
+
       console.log(`[DATABASE] Farmer response added to dispute: ${updatedDispute ? 'Yes' : 'No'}`);
       return updatedDispute;
     } catch (error) {
@@ -682,7 +682,7 @@ export class DatabaseStorage implements IStorage {
   async addAdminNotes(disputeId: number, notes: string): Promise<FarmerDispute | undefined> {
     try {
       console.log(`[DATABASE] Adding admin notes to dispute ID: ${disputeId}`);
-      
+
       const [updatedDispute] = await db.update(farmerDisputes)
         .set({
           adminNotes: notes,
@@ -690,7 +690,7 @@ export class DatabaseStorage implements IStorage {
         })
         .where(eq(farmerDisputes.id, disputeId))
         .returning();
-      
+
       console.log(`[DATABASE] Admin notes added to dispute: ${updatedDispute ? 'Yes' : 'No'}`);
       return updatedDispute;
     } catch (error) {
@@ -702,7 +702,7 @@ export class DatabaseStorage implements IStorage {
   async resolveFarmerDispute(disputeId: number, resolution: string): Promise<FarmerDispute | undefined> {
     try {
       console.log(`[DATABASE] Resolving dispute ID: ${disputeId}`);
-      
+
       const [resolvedDispute] = await db.update(farmerDisputes)
         .set({
           resolution: resolution,
@@ -712,7 +712,7 @@ export class DatabaseStorage implements IStorage {
         })
         .where(eq(farmerDisputes.id, disputeId))
         .returning();
-      
+
       console.log(`[DATABASE] Dispute resolution ${resolvedDispute ? 'successful' : 'failed'}`);
       return resolvedDispute;
     } catch (error) {
