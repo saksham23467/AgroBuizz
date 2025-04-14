@@ -32,36 +32,6 @@ import {
 import InventoryManagement from "./InventoryManagement";
 import Analytics from "./Analytics";
 
-// Mock data for products
-const seedProducts = [
-  { id: 1, name: "Organic Tomato Seeds", category: "vegetable", price: 25, stock: 150, description: "High yield, disease-resistant tomato seeds perfect for small to medium-sized farms." },
-  { id: 2, name: "Premium Corn Seeds", category: "grain", price: 30, stock: 200, description: "Drought-resistant corn seeds that provide excellent harvest in various climate conditions." },
-  { id: 3, name: "Organic Lettuce Seeds", category: "vegetable", price: 15, stock: 100, description: "Fast-growing lettuce seeds that are perfect for successive planting throughout the season." },
-  { id: 4, name: "Premium Rice Seeds", category: "grain", price: 35, stock: 250, description: "High-yielding rice variety suitable for both irrigated and rainfed conditions." },
-  { id: 5, name: "Organic Carrot Seeds", category: "vegetable", price: 18, stock: 120, description: "Sweet, crunchy carrots that are perfect for market gardeners." },
-  { id: 6, name: "Wheat Seeds", category: "grain", price: 28, stock: 180, description: "Premium wheat seeds with excellent disease resistance and high yield potential." },
-];
-
-const equipmentProducts = [
-  { id: 1, name: "Basic Tractor", category: "machinery", price: 2500, stock: 10, description: "Efficient small-scale tractor suitable for most farming operations." },
-  { id: 2, name: "Irrigation System", category: "irrigation", price: 450, stock: 30, description: "Water-efficient drip irrigation system for optimal crop watering." },
-  { id: 3, name: "Harvester", category: "machinery", price: 1800, stock: 8, description: "Multi-crop harvester that saves time and labor costs." },
-];
-
-const produceProducts = [
-  { id: 1, name: "Fresh Tomatoes", category: "vegetable", price: 5, stock: 500, description: "Organically grown tomatoes, harvested at peak ripeness." },
-  { id: 2, name: "Premium Corn", category: "grain", price: 3, stock: 800, description: "Sweet corn grown using sustainable farming practices." },
-  { id: 3, name: "Organic Lettuce", category: "vegetable", price: 4, stock: 350, description: "Crisp, fresh lettuce perfect for salads and sandwiches." },
-];
-
-// Mock user data
-const users = [
-  { id: 1, username: "john_farmer", email: "john@example.com", role: "user", userType: "farmer", createdAt: "2023-05-10", lastLogin: "2023-09-15" },
-  { id: 2, username: "sara_vendor", email: "sara@example.com", role: "user", userType: "vendor", createdAt: "2023-06-20", lastLogin: "2023-09-14" },
-  { id: 3, username: "mike_customer", email: "mike@example.com", role: "user", userType: "customer", createdAt: "2023-07-15", lastLogin: "2023-09-10" },
-  { id: 4, username: "admin", email: "admin@agrobuizz.com", role: "admin", userType: "admin", createdAt: "2023-01-01", lastLogin: "2023-09-15" },
-];
-
 // Product categories
 const productCategories = {
   seeds: ["vegetable", "grain", "fruit", "herb"],
@@ -85,6 +55,89 @@ export default function AdminDashboard() {
     price: 0,
     stock: 0,
     description: "",
+  });
+  
+  // Fetch all users from the database
+  const {
+    data: usersData = [],
+    isLoading: isLoadingUsers,
+    error: usersError,
+    refetch: refetchUsers
+  } = useQuery({
+    queryKey: ['/api/admin/users'],
+    queryFn: async () => {
+      try {
+        // Use a custom query that gets all users with their most recent login time
+        const res = await apiRequest('GET', '/api/admin/users');
+        const data = await res.json();
+        console.log('Fetched users data:', data);
+        return data || [];
+      } catch (error) {
+        console.error('Error fetching users:', error);
+        return [];
+      }
+    }
+  });
+  
+  // Fetch all products from the database
+  const {
+    data: seedProducts = [],
+    isLoading: isLoadingSeeds,
+    error: seedsError,
+    refetch: refetchSeeds
+  } = useQuery({
+    queryKey: ['/api/admin/products', 'seeds'],
+    queryFn: async () => {
+      try {
+        const res = await apiRequest('GET', '/api/admin/products-by-type/seeds');
+        const data = await res.json();
+        console.log('Fetched seed products:', data);
+        return data || [];
+      } catch (error) {
+        console.error('Error fetching seed products:', error);
+        return [];
+      }
+    }
+  });
+  
+  const {
+    data: equipmentProducts = [],
+    isLoading: isLoadingEquipment,
+    error: equipmentError,
+    refetch: refetchEquipment
+  } = useQuery({
+    queryKey: ['/api/admin/products', 'equipment'],
+    queryFn: async () => {
+      try {
+        const res = await apiRequest('GET', '/api/admin/products-by-type/equipment');
+        const data = await res.json();
+        console.log('Fetched equipment products:', data);
+        return data || [];
+      } catch (error) {
+        console.error('Error fetching equipment products:', error);
+        return [];
+      }
+    }
+  });
+  
+  const {
+    data: produceProducts = [],
+    isLoading: isLoadingProduce,
+    error: produceError,
+    refetch: refetchProduce
+  } = useQuery({
+    queryKey: ['/api/admin/products', 'produce'],
+    queryFn: async () => {
+      try {
+        const res = await apiRequest('GET', '/api/admin/products-by-type/produce');
+        const data = await res.json();
+        console.log('Fetched produce products:', data);
+        return data || [];
+      } catch (error) {
+        console.error('Error fetching produce products:', error);
+        return [];
+      }
+    }
   });
   
   // Database query state
@@ -166,12 +219,12 @@ export default function AdminDashboard() {
   };
 
   const getFilteredUsers = () => {
-    if (!searchQuery) return users;
+    if (!searchQuery) return usersData;
     
-    return users.filter(user => 
-      user.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      user.userType.toLowerCase().includes(searchQuery.toLowerCase())
+    return usersData.filter(user => 
+      user.username?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      user.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      user.userType?.toLowerCase().includes(searchQuery.toLowerCase())
     );
   };
 
