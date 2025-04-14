@@ -669,11 +669,7 @@ app.post("/api/orders", ensureAuthenticated, async (req: Request, res: Response)
       ) RETURNING *
     `;
     
-    const orderResult = await executeRawQuery(insertOrderQuery, [
-      orderId,
-      user.id,
-      totalAmount
-    ]);
+    const orderResult = await executeRawQuery(insertOrderQuery, [orderId, user.id, totalAmount]);
 
     // Insert order items
     for (const item of items) {

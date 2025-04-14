@@ -54,7 +54,7 @@ const transactionHistory = [
 ];
 
 export default function Checkout() {
-  const [cartItems, setCartItems] = useState(sampleCartItems);
+  const { cart: cartItems, placeOrder } = useCart();
   const [orderComplete, setOrderComplete] = useState(false);
   const [processingOrder, setProcessingOrder] = useState(false);
   const [progress, setProgress] = useState(0);

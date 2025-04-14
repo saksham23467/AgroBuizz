@@ -192,7 +192,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
         removeFromCart,
         clearCart,
         getTotalItems,
-        getSubtotal
+        getSubtotal,
+        placeOrder
       }}
     >
       {children}
