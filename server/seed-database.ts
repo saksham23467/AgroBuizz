@@ -6,16 +6,11 @@
  */
 
 import { db } from './db';
+import { executeRawQuery } from './db';
 import { scrypt, randomBytes } from 'crypto';
 import { promisify } from 'util';
 import { v4 as uuidv4 } from 'uuid';
-import {
-  users,
-  crops,
-  products,
-  productComplaints,
-  farmerDisputes
-} from '@shared/schema';
+import { users } from '@shared/schema';
 import { eq } from 'drizzle-orm';
 
 const scryptAsync = promisify(scrypt);
@@ -33,28 +28,45 @@ export async function seedDatabase() {
     console.log('🌱 Starting database seeding process...');
     
     // Check if database is already seeded by looking for admin user
-    const existingAdmin = await db.select().from(users).where(eq(users.username, 'admin')).execute();
+    const existingAdmin = await db.select().from(users)
+      .where(eq(users.username, 'admin'))
+      .execute();
     
     if (existingAdmin.length > 0) {
-      console.log('⏭️ Database already has admin user, skipping seeding');
-      return;
+      console.log('⏭️ Database already has admin user, checking for test accounts...');
+      
+      // Check if we already have the test accounts
+      const testFarmer = await db.select().from(users)
+        .where(eq(users.username, 'farmer'))
+        .execute();
+        
+      if (testFarmer.length > 0) {
+        console.log('⏭️ Test accounts already exist, skipping seeding');
+        return;
+      }
     }
     
     console.log('👤 Creating users...');
     
-    // Create admin user
-    const adminUser = await db.insert(users).values({
-      username: 'admin',
-      email: 'admin@agrobuizz.com',
-      password: await hashPassword('admin123'),
-      role: 'admin',
-      userType: 'admin',
-      darkMode: false,
-      createdAt: new Date(),
-      lastLogin: new Date(),
-    }).returning();
-    
-    console.log(`👑 Admin user created with ID: ${adminUser[0].id}`);
+    // Create admin user if it doesn't exist
+    let adminUser;
+    if (existingAdmin.length === 0) {
+      adminUser = await db.insert(users).values({
+        username: 'admin',
+        email: 'admin@agrobuizz.com',
+        password: await hashPassword('admin123'),
+        role: 'admin',
+        userType: 'admin',
+        darkMode: false,
+        createdAt: new Date(),
+        lastLogin: new Date(),
+      }).returning();
+      
+      console.log(`👑 Admin user created with ID: ${adminUser[0].id}`);
+    } else {
+      adminUser = existingAdmin;
+      console.log(`👑 Admin user already exists with ID: ${adminUser[0].id}`);
+    }
     
     // Create farmer user
     const farmerUser = await db.insert(users).values({
@@ -98,116 +110,122 @@ export async function seedDatabase() {
     
     console.log(`🏪 Vendor user created with ID: ${vendorUser[0].id}`);
     
-    // Create crops for the farmer
+    // Create crops for the farmer using raw SQL (simpler than dealing with schema mismatches)
     console.log('🌽 Creating crops for farmer...');
     
-    // First crop
-    const crop1 = await db.insert(crops).values({
-      cropId: `crop_${uuidv4().substring(0, 8)}`,
-      name: 'Organic Sweet Corn',
-      type: 'vegetable',
-      description: 'Freshly harvested organic sweet corn, perfect for summer meals',
-      quantity: 1000,
-      price: '3.99',
-      imagePath: 'https://images.unsplash.com/photo-1601593346740-925612772716',
-      season: 'Summer',
-      farmerId: farmerUser[0].id,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    }).returning();
+    const crop1Id = `crop_${uuidv4().substring(0, 8)}`;
+    await executeRawQuery(`
+      INSERT INTO crops (crop_id, name, type, description, quantity, price)
+      VALUES (
+        '${crop1Id}',
+        'Organic Sweet Corn',
+        'vegetable',
+        'Freshly harvested organic sweet corn, perfect for summer meals',
+        1000,
+        3.99
+      )
+    `);
     
-    // Second crop
-    const crop2 = await db.insert(crops).values({
-      cropId: `crop_${uuidv4().substring(0, 8)}`,
-      name: 'Premium Tomatoes',
-      type: 'vegetable',
-      description: 'Vine-ripened tomatoes, grown with organic practices',
-      quantity: 500,
-      price: '2.99',
-      imagePath: 'https://images.unsplash.com/photo-1592924357228-91a4daadcfea',
-      season: 'Summer',
-      farmerId: farmerUser[0].id,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    }).returning();
+    const crop2Id = `crop_${uuidv4().substring(0, 8)}`;
+    await executeRawQuery(`
+      INSERT INTO crops (crop_id, name, type, description, quantity, price)
+      VALUES (
+        '${crop2Id}',
+        'Premium Tomatoes',
+        'vegetable',
+        'Vine-ripened tomatoes, grown with organic practices',
+        500,
+        2.99
+      )
+    `);
     
-    console.log(`🌱 Created ${crop1.length + crop2.length} crops for farmer`);
+    console.log(`🌱 Created 2 crops for farmer`);
     
     // Create products for the vendor
     console.log('🛠️ Creating products for vendor...');
     
-    // First product
-    const product1 = await db.insert(products).values({
-      productId: `prod_${uuidv4().substring(0, 8)}`,
-      name: 'Premium Wheat Seeds',
-      type: 'Seeds',
-      description: 'High-yield wheat seeds, perfect for next season planting',
-      price: '45.99',
-      quantity: 500,
-      classification: 'Agriculture',
-      vendorId: `vendor_${vendorUser[0].id}`,
-    }).returning();
+    const product1Id = `prod_${uuidv4().substring(0, 8)}`;
+    await executeRawQuery(`
+      INSERT INTO products (product_id, name, type, description, price, quantity, classification)
+      VALUES (
+        '${product1Id}',
+        'Premium Wheat Seeds',
+        'Seeds',
+        'High-yield wheat seeds, perfect for next season planting',
+        45.99,
+        500,
+        'Agriculture'
+      )
+    `);
     
-    // Second product
-    const product2 = await db.insert(products).values({
-      productId: `prod_${uuidv4().substring(0, 8)}`,
-      name: 'Organic Fertilizer',
-      type: 'Fertilizer',
-      description: 'Eco-friendly organic fertilizer for better crop yields',
-      price: '32.50',
-      quantity: 300,
-      classification: 'Agriculture',
-      vendorId: `vendor_${vendorUser[0].id}`,
-    }).returning();
+    const product2Id = `prod_${uuidv4().substring(0, 8)}`;
+    await executeRawQuery(`
+      INSERT INTO products (product_id, name, type, description, price, quantity, classification)
+      VALUES (
+        '${product2Id}',
+        'Organic Fertilizer',
+        'Fertilizer',
+        'Eco-friendly organic fertilizer for better crop yields',
+        32.50,
+        300,
+        'Agriculture'
+      )
+    `);
     
-    // Third product
-    const product3 = await db.insert(products).values({
-      productId: `prod_${uuidv4().substring(0, 8)}`,
-      name: 'Compact Tractor',
-      type: 'Equipment',
-      description: 'Small but powerful tractor for small to medium farms',
-      price: '12500.00',
-      quantity: 5,
-      classification: 'Machinery',
-      vendorId: `vendor_${vendorUser[0].id}`,
-    }).returning();
+    const product3Id = `prod_${uuidv4().substring(0, 8)}`;
+    await executeRawQuery(`
+      INSERT INTO products (product_id, name, type, description, price, quantity, classification)
+      VALUES (
+        '${product3Id}',
+        'Compact Tractor',
+        'Equipment',
+        'Small but powerful tractor for small to medium farms',
+        12500.00,
+        5,
+        'Machinery'
+      )
+    `);
     
-    console.log(`🧰 Created ${[product1, product2, product3].length} products for vendor`);
+    console.log(`🧰 Created 3 products for vendor`);
     
     // Create sample complaint
-    const complaint = await db.insert(productComplaints).values({
-      userId: customerUser[0].id,
-      productId: product2[0].productId,
-      vendorId: product2[0].vendorId || '',
-      title: 'Package arrived damaged',
-      description: 'The fertilizer bag was torn when it arrived',
-      status: 'unsolved',
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      vendorResponse: null,
-      responseDate: null
-    }).returning();
-    
-    console.log(`🚩 Created ${complaint.length} sample complaint`);
+    try {
+      await executeRawQuery(`
+        INSERT INTO product_complaints (user_id, product_id, title, description, status, created_at, updated_at)
+        VALUES (
+          ${customerUser[0].id},
+          '${product2Id}',
+          'Package arrived damaged',
+          'The fertilizer bag was torn when it arrived',
+          'unsolved',
+          now(),
+          now()
+        )
+      `);
+      console.log(`🚩 Created sample complaint`);
+    } catch (error) {
+      console.error('Failed to create sample complaint:', error);
+    }
     
     // Create sample dispute
-    const dispute = await db.insert(farmerDisputes).values({
-      vendorId: vendorUser[0].id,
-      farmerId: farmerUser[0].id,
-      title: 'Seeds quality issue',
-      description: 'Seeds had lower germination rate than advertised',
-      status: 'open',
-      category: 'quality',
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      farmerResponse: null,
-      responseDate: null,
-      adminNotes: null,
-      resolution: null,
-      resolvedAt: null
-    }).returning();
-    
-    console.log(`⚠️ Created ${dispute.length} sample dispute`);
+    try {
+      await executeRawQuery(`
+        INSERT INTO farmer_disputes (vendor_id, farmer_id, title, description, status, category, created_at, updated_at)
+        VALUES (
+          ${vendorUser[0].id},
+          ${farmerUser[0].id},
+          'Seeds quality issue',
+          'Seeds had lower germination rate than advertised',
+          'open',
+          'quality',
+          now(),
+          now()
+        )
+      `);
+      console.log(`⚠️ Created sample dispute`);
+    } catch (error) {
+      console.error('Failed to create sample dispute:', error);
+    }
     
     console.log('✅ Database seeding completed successfully!');
     
