@@ -553,12 +553,13 @@ router.get("/orders-by-year/:year?", ensureAdmin, async (req: Request, res: Resp
         fco.order_date as "orderDate",
         fco.order_status as "status",
         fco.quantity,
-        c.name as "customerName",
-        cr.name as "itemName",
+        f.name as "farmerName",
+        'Customer' as "customerName",
+        cr.type as "itemName",
         cr.price,
         'farmer-customer' as "orderType"
       FROM farmer_customer_orders fco
-      LEFT JOIN customers c ON fco.customer_id = c.customer_id
+      LEFT JOIN farmers f ON fco.farmer_id = f.farmer_id
       LEFT JOIN crops cr ON fco.crop_id = cr.crop_id
       WHERE EXTRACT(YEAR FROM fco.order_date) = '${year}'
     `;
@@ -570,26 +571,24 @@ router.get("/orders-by-year/:year?", ensureAdmin, async (req: Request, res: Resp
         vfo.order_date as "orderDate",
         vfo.order_status as "status",
         vfo.quantity,
-        f.name as "customerName",
+        f.name as "farmerName",
+        v.name as "vendorName",
         p.name as "itemName",
         p.price,
         'vendor-farmer' as "orderType"
       FROM vendor_farmer_orders vfo
       LEFT JOIN farmers f ON vfo.farmer_id = f.farmer_id
+      LEFT JOIN vendors v ON vfo.vendor_id = v.vendor_id
       LEFT JOIN products p ON vfo.product_id = p.product_id
       WHERE EXTRACT(YEAR FROM vfo.order_date) = '${year}'
     `;
     
     // Execute the raw queries
-    const farmerCustomerOrdersRows = await executeRawQuery(farmerCustomerOrdersQuery);
-    const vendorFarmerOrdersRows = await executeRawQuery(vendorFarmerOrdersQuery);
+    const farmerCustomerOrdersResult = await executeRawQuery(farmerCustomerOrdersQuery);
+    const vendorFarmerOrdersResult = await executeRawQuery(vendorFarmerOrdersQuery);
     
-    // Create result objects to match the expected format
-    const farmerCustomerOrdersResult = { rows: farmerCustomerOrdersRows, rowCount: farmerCustomerOrdersRows.length };
-    const vendorFarmerOrdersResult = { rows: vendorFarmerOrdersRows, rowCount: vendorFarmerOrdersRows.length };
-    
-    console.log(`[ADMIN API] Found ${farmerCustomerOrdersResult.rowCount || 0} farmer-customer orders for year ${year}`);
-    console.log(`[ADMIN API] Found ${vendorFarmerOrdersResult.rowCount || 0} vendor-farmer orders for year ${year}`);
+    console.log(`[ADMIN API] Found ${farmerCustomerOrdersResult.rows.length || 0} farmer-customer orders for year ${year}`);
+    console.log(`[ADMIN API] Found ${vendorFarmerOrdersResult.rows.length || 0} vendor-farmer orders for year ${year}`);
     
     // Format the data for the frontend with proper type definitions
     const formatOrders = (rows: any[], orderType: string): any[] => {
@@ -631,6 +630,65 @@ router.get("/orders-by-year/:year?", ensureAdmin, async (req: Request, res: Resp
   } catch (error: unknown) {
     console.error("[ADMIN API ERROR] Error fetching orders by year:", error);
     res.status(500).json({ success: false, message: "Internal server error fetching orders" });
+  }
+});
+
+// Add endpoint to update order status
+router.post("/update-order-status/:orderId", ensureAdmin, async (req: Request, res: Response) => {
+  try {
+    const { orderId } = req.params;
+    const { status, orderType } = req.body;
+    
+    if (!orderId || !status || !orderType) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "Missing required parameters: orderId, status, or orderType" 
+      });
+    }
+    
+    console.log(`[ADMIN API] Updating order ${orderId} to status: ${status}`);
+    
+    // Determine which table to update based on orderType
+    let updateResult;
+    
+    if (orderType === 'farmer-customer') {
+      updateResult = await executeRawQuery(`
+        UPDATE farmer_customer_orders 
+        SET order_status = '${status}' 
+        WHERE order_id = '${orderId}'
+        RETURNING *
+      `);
+    } else if (orderType === 'vendor-farmer') {
+      updateResult = await executeRawQuery(`
+        UPDATE vendor_farmer_orders 
+        SET order_status = '${status}' 
+        WHERE order_id = '${orderId}'
+        RETURNING *
+      `);
+    } else {
+      return res.status(400).json({ 
+        success: false, 
+        message: "Invalid order type. Expected 'farmer-customer' or 'vendor-farmer'." 
+      });
+    }
+    
+    if (updateResult && updateResult.rows && updateResult.rows.length > 0) {
+      console.log(`[ADMIN API] Successfully updated order ${orderId} status to ${status}`);
+      return res.json({ 
+        success: true, 
+        message: "Order status updated successfully",
+        order: updateResult.rows[0]
+      });
+    } else {
+      console.log(`[ADMIN API] Order ${orderId} not found or not updated`);
+      return res.status(404).json({ 
+        success: false, 
+        message: `Order ${orderId} not found or could not be updated` 
+      });
+    }
+  } catch (error: unknown) {
+    console.error("[ADMIN API ERROR] Error updating order status:", error);
+    res.status(500).json({ success: false, message: "Internal server error" });
   }
 });
 
