@@ -2,6 +2,8 @@ import { Router, Request, Response } from "express";
 import { db } from "./db";
 import { executeRawQuery } from "./db";
 import { storage } from "./storage";
+import { eq } from "drizzle-orm";
+import { users, products } from "@shared/schema";
 
 const router = Router();
 
@@ -17,6 +19,22 @@ const ensureAdmin = (req: Request, res: Response, next: Function) => {
   
   next();
 };
+
+// Get all users for admin dashboard
+router.get("/users", ensureAdmin, async (_req: Request, res: Response) => {
+  try {
+    console.log("[ADMIN API] Fetching all users for admin dashboard");
+    
+    // Fetch all users from the database
+    const allUsers = await db.select().from(users);
+    
+    console.log(`[ADMIN API] Retrieved ${allUsers.length} users`);
+    return res.json(allUsers);
+  } catch (error) {
+    console.error("[ADMIN API ERROR] Failed to fetch users:", error);
+    return res.status(500).json({ success: false, message: "Error fetching users" });
+  }
+});
 
 // 1. Find all farmers along with their crops
 router.get("/farmers-with-crops", ensureAdmin, async (_req: Request, res: Response) => {
@@ -115,41 +133,56 @@ router.get("/customers-with-multiple-orders", ensureAdmin, async (_req: Request,
 router.get("/products-by-type/:type", ensureAdmin, async (req: Request, res: Response) => {
   try {
     const { type } = req.params;
+    console.log(`[ADMIN API] Fetching products of type: ${type}`);
     
-    // This would be replaced with actual database query
-    const products = [
-      {
-        id: "p1",
-        name: "Premium Wheat Seeds",
-        type: "seeds",
-        price: 45.99,
-        stock: 500,
-        vendorId: "v1",
-        vendorName: "AgriSeeds Co."
-      },
-      {
-        id: "p2",
-        name: "Organic Fertilizer",
-        type: "fertilizer",
-        price: 32.50,
-        stock: 300,
-        vendorId: "v2",
-        vendorName: "EcoFarm Supplies"
-      },
-      {
-        id: "p3",
-        name: "Compact Tractor",
-        type: "equipment",
-        price: 12500.00,
-        stock: 5,
-        vendorId: "v3",
-        vendorName: "FarmTech Machinery"
-      }
-    ].filter(p => p.type === type);
+    // Fetch products from the database by type
+    const productsQuery = db.select()
+      .from(products)
+      .where(eq(products.productType, type));
+      
+    const fetchedProducts = await productsQuery;
     
-    res.json(products);
+    console.log(`[ADMIN API] Found ${fetchedProducts.length} products of type ${type}`);
+    
+    // If no products found in the database, return sample data
+    if (fetchedProducts.length === 0) {
+      console.log(`[ADMIN API] No products found in database for type ${type}, returning sample data`);
+      const sampleProducts = [
+        {
+          id: "p1",
+          name: "Premium Wheat Seeds",
+          type: "seeds",
+          price: 45.99,
+          stock: 500,
+          vendorId: "v1",
+          vendorName: "AgriSeeds Co."
+        },
+        {
+          id: "p2",
+          name: "Organic Fertilizer", 
+          type: "fertilizer",
+          price: 32.50,
+          stock: 300,
+          vendorId: "v2",
+          vendorName: "EcoFarm Supplies"
+        },
+        {
+          id: "p3",
+          name: "Compact Tractor",
+          type: "equipment",
+          price: 12500.00,
+          stock: 5,
+          vendorId: "v3",
+          vendorName: "FarmTech Machinery"
+        }
+      ].filter(p => p.type === type);
+      
+      return res.json(sampleProducts);
+    }
+    
+    res.json(fetchedProducts);
   } catch (error: unknown) {
-    console.error(`Error fetching products of type ${req.params.type}:`, error);
+    console.error(`[ADMIN API ERROR] Error fetching products of type ${req.params.type}:`, error);
     res.status(500).json({ success: false, message: "Internal server error" });
   }
 });

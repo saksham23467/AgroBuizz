@@ -479,8 +479,17 @@ export default function AdminDashboard() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-3xl font-bold">{users.length}</p>
-                  <p className="text-sm text-gray-500">+12% from last month</p>
+                  {isLoadingUsers ? (
+                    <div className="flex items-center space-x-2">
+                      <RefreshCw className="h-4 w-4 animate-spin" />
+                      <span>Loading users...</span>
+                    </div>
+                  ) : (
+                    <>
+                      <p className="text-3xl font-bold">{usersData.length}</p>
+                      <p className="text-sm text-gray-500">Updated in real-time</p>
+                    </>
+                  )}
                 </CardContent>
               </Card>
               
@@ -491,8 +500,17 @@ export default function AdminDashboard() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-3xl font-bold">{seedProducts.length + equipmentProducts.length + produceProducts.length}</p>
-                  <p className="text-sm text-gray-500">Across all categories</p>
+                  {isLoadingSeeds || isLoadingEquipment || isLoadingProduce ? (
+                    <div className="flex items-center space-x-2">
+                      <RefreshCw className="h-4 w-4 animate-spin" />
+                      <span>Loading products...</span>
+                    </div>
+                  ) : (
+                    <>
+                      <p className="text-3xl font-bold">{seedProducts.length + equipmentProducts.length + produceProducts.length}</p>
+                      <p className="text-sm text-gray-500">Across all categories</p>
+                    </>
+                  )}
                 </CardContent>
               </Card>
               
@@ -525,17 +543,34 @@ export default function AdminDashboard() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {users.slice(0, 5).map(user => (
-                        <TableRow key={user.id}>
-                          <TableCell className="font-medium">{user.username}</TableCell>
-                          <TableCell>
-                            <Badge variant="outline" className="capitalize">
-                              {user.userType}
-                            </Badge>
+                      {isLoadingUsers ? (
+                        <TableRow>
+                          <TableCell colSpan={3} className="text-center">
+                            <div className="flex items-center justify-center space-x-2">
+                              <RefreshCw className="h-4 w-4 animate-spin" />
+                              <span>Loading user data...</span>
+                            </div>
                           </TableCell>
-                          <TableCell>{user.lastLogin}</TableCell>
                         </TableRow>
-                      ))}
+                      ) : usersData.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={3} className="text-center">No users found</TableCell>
+                        </TableRow>
+                      ) : (
+                        usersData.slice(0, 5).map((user: any) => (
+                          <TableRow key={user.id}>
+                            <TableCell className="font-medium">{user.username}</TableCell>
+                            <TableCell>
+                              <Badge variant="outline" className="capitalize">
+                                {user.userType || 'user'}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              {user.lastLogin ? new Date(user.lastLogin).toLocaleString() : 'Never'}
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      )}
                     </TableBody>
                   </Table>
                 </CardContent>
@@ -556,19 +591,36 @@ export default function AdminDashboard() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {[
-                        ...seedProducts.filter(p => p.stock < 120),
-                        ...equipmentProducts.filter(p => p.stock < 15),
-                        ...produceProducts.filter(p => p.stock < 300)
-                      ].slice(0, 5).map(product => (
-                        <TableRow key={product.id}>
-                          <TableCell className="font-medium">{product.name}</TableCell>
-                          <TableCell className="capitalize">{product.category}</TableCell>
-                          <TableCell className={product.stock < 100 ? "text-red-500 font-medium" : ""}>
-                            {product.stock} units
+                      {isLoadingSeeds || isLoadingEquipment || isLoadingProduce ? (
+                        <TableRow>
+                          <TableCell colSpan={3} className="text-center">
+                            <div className="flex items-center justify-center space-x-2">
+                              <RefreshCw className="h-4 w-4 animate-spin" />
+                              <span>Loading product data...</span>
+                            </div>
                           </TableCell>
                         </TableRow>
-                      ))}
+                      ) : (
+                        (seedProducts.length === 0 && equipmentProducts.length === 0 && produceProducts.length === 0) ? (
+                          <TableRow>
+                            <TableCell colSpan={3} className="text-center">No products found</TableCell>
+                          </TableRow>
+                        ) : (
+                          [
+                            ...seedProducts.filter((p: any) => p.stock < 120),
+                            ...equipmentProducts.filter((p: any) => p.stock < 15),
+                            ...produceProducts.filter((p: any) => p.stock < 300)
+                          ].slice(0, 5).map((product: any) => (
+                            <TableRow key={product.id}>
+                              <TableCell className="font-medium">{product.name}</TableCell>
+                              <TableCell className="capitalize">{product.category || product.type}</TableCell>
+                              <TableCell className={product.stock < 100 ? "text-red-500 font-medium" : ""}>
+                                {product.stock} units
+                              </TableCell>
+                            </TableRow>
+                          ))
+                        )
+                      )}
                     </TableBody>
                   </Table>
                 </CardContent>
