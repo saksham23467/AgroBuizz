@@ -89,24 +89,27 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   };
 
   const placeOrder = async () => {
-    if (!user || cart.length === 0) return false;
-
     try {
       const response = await fetch('/api/orders', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({
           items: cart,
           totalAmount: getSubtotal(),
-          userId: user.id,
-          userType: user.type, // Assuming user.type exists, otherwise adjust
+          userId: user?.id,
+          userType: user?.userType,
           status: 'pending'
-        }),
+        })
       });
 
-      if (response.ok) {
+      if (!response.ok) {
+        throw new Error('Failed to place order');
+      }
+
+      const data = await response.json();
+      if (data.success) {
         clearCart();
         return true;
       }

@@ -1,7 +1,8 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from "ws";
-import { storage, executeRawQuery } from "./storage";
+import { storage } from "./storage";
+import { executeRawQuery } from "./db";
 import { insertProductComplaintSchema, insertFarmerDisputeSchema } from "@shared/schema";
 import { fromZodError } from "zod-validation-error";
 import { setupAuth } from "./auth";

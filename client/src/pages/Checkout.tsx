@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { ShoppingCart, CheckCircle, Plus, Minus, X, CreditCard, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
@@ -53,6 +53,13 @@ const transactionHistory = [
   }
 ];
 
+const placeOrder = async () => {
+  // Replace with actual API call
+  await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API delay
+  return true; // Simulate successful order placement
+};
+
+
 export default function Checkout() {
   const [cartItems, setCartItems] = useState(sampleCartItems);
   const [orderComplete, setOrderComplete] = useState(false);
@@ -95,7 +102,7 @@ export default function Checkout() {
 
   const handleCheckout = async () => {
     const total = calculateSubtotal();
-    
+
     if (total > pointsBalance) {
       toast({
         title: "Insufficient points",
@@ -104,16 +111,16 @@ export default function Checkout() {
       });
       return;
     }
-    
+
     setProcessingOrder(true);
-    setProgress(25);
+    setProgress(20);
 
     try {
       const success = await placeOrder();
-      
+      setProgress(60);
+
       if (success) {
         setProgress(100);
-        setProcessingOrder(false);
         setOrderComplete(true);
         setPointsBalance(prev => prev - total);
         toast({
@@ -121,17 +128,21 @@ export default function Checkout() {
           description: `Your purchase of ${total} points has been processed.`,
         });
       } else {
-        throw new Error('Order placement failed');
+        toast({
+          title: "Error",
+          description: "Failed to place order. Please try again.",
+          variant: "destructive"
+        });
       }
     } catch (error) {
-      console.error('Error placing order:', error);
+      console.error('Checkout error:', error);
       toast({
-        title: "Order failed",
-        description: "There was an error processing your order. Please try again.",
+        title: "Error",
+        description: "An unexpected error occurred",
         variant: "destructive"
       });
+    } finally {
       setProcessingOrder(false);
-      setProgress(0);
     }
   };
 
@@ -148,7 +159,7 @@ export default function Checkout() {
   return (
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-3xl font-bold text-[#2E7D32] mb-8">Transaction Center</h1>
-      
+
       <Tabs defaultValue="cart" className="w-full">
         <TabsList className="grid grid-cols-2 w-full max-w-md mb-6">
           <TabsTrigger value="cart">
@@ -160,7 +171,7 @@ export default function Checkout() {
             Transaction History
           </TabsTrigger>
         </TabsList>
-        
+
         <TabsContent value="cart">
           {orderComplete ? (
             <motion.div 
@@ -184,9 +195,9 @@ export default function Checkout() {
                       <h3 className="font-medium text-gray-700">Order Summary</h3>
                       <p className="text-sm text-gray-500">{getFormattedDate()}</p>
                     </div>
-                    
+
                     <Separator />
-                    
+
                     <div className="space-y-2">
                       {cartItems.map(item => (
                         <div key={item.id} className="flex justify-between text-sm">
@@ -195,14 +206,14 @@ export default function Checkout() {
                         </div>
                       ))}
                     </div>
-                    
+
                     <Separator />
-                    
+
                     <div className="flex justify-between font-bold">
                       <span>Total</span>
                       <span className="text-[#2E7D32]">{calculateSubtotal()} points</span>
                     </div>
-                    
+
                     <div className="bg-[#F1F8E9] p-4 rounded-lg">
                       <p className="text-[#558B2F] font-medium">Points Balance</p>
                       <p className="text-[#33691E] text-xl font-bold">{pointsBalance} points</p>
@@ -296,7 +307,7 @@ export default function Checkout() {
                   </CardContent>
                 </Card>
               </div>
-              
+
               <div>
                 <Card className="border-[#8BC34A]/30 sticky top-4">
                   <CardHeader>
@@ -316,7 +327,7 @@ export default function Checkout() {
                       <p className="text-[#558B2F] font-medium">Points Balance</p>
                       <p className="text-[#33691E] text-xl font-bold">{pointsBalance} points</p>
                     </div>
-                    
+
                     {processingOrder && (
                       <div className="space-y-2">
                         <p className="text-sm text-gray-500 text-center">Processing your order...</p>
@@ -339,7 +350,7 @@ export default function Checkout() {
             </div>
           )}
         </TabsContent>
-        
+
         <TabsContent value="history">
           <div className="space-y-6">
             <div className="bg-[#F1F8E9] p-4 rounded-lg shadow-sm">
@@ -354,9 +365,9 @@ export default function Checkout() {
                 </div>
               </div>
             </div>
-            
+
             <h2 className="text-xl font-semibold text-[#2E7D32] mb-4">Transaction History</h2>
-            
+
             <div className="space-y-4">
               {transactionHistory.map(transaction => (
                 <Card key={transaction.id} className="border-[#8BC34A]/20 hover:border-[#8BC34A]/50 transition-all">
@@ -400,14 +411,14 @@ export default function Checkout() {
                                 </div>
                               ))}
                             </div>
-                            
+
                             <Separator />
-                            
+
                             <div className="flex justify-between font-bold">
                               <span>Total</span>
                               <span className="text-[#2E7D32]">{selectedTransaction?.totalAmount} points</span>
                             </div>
-                            
+
                             <div className="bg-green-50 p-3 rounded text-sm text-green-800">
                               Transaction completed successfully
                             </div>
