@@ -155,6 +155,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // User is guaranteed to exist due to ensureVendor middleware
       const user = req.user!;
       
+      console.log("[VENDOR API] Adding product with data:", JSON.stringify(req.body));
+      console.log("[VENDOR API] User ID:", user.id);
+      
       // Create a unique productId
       const productId = `product_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
       
@@ -162,12 +165,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const productData = {
         ...req.body,
         productId,
-        vendorId: user.id.toString(),
+        vendorId: `vendor_${user.id}`, // Use a predictable vendor ID format
         createdAt: new Date()
       };
       
+      console.log("[VENDOR API] Prepared product data:", JSON.stringify(productData));
+      
       // Create the product
       const newProduct = await storage.createProduct(productData);
+      
+      console.log("[VENDOR API] Product created successfully:", JSON.stringify(newProduct));
       
       return res.status(201).json({
         success: true,
@@ -175,7 +182,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         product: newProduct
       });
     } catch (error) {
-      console.error("Error creating product:", error);
+      console.error("[VENDOR API ERROR] Error creating product:", error);
       return res.status(500).json({ 
         success: false, 
         message: "Server error creating product" 
@@ -208,6 +215,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // User is guaranteed to exist due to ensureFarmer middleware
       const user = req.user!;
       
+      console.log("[FARMER API] Adding crop with data:", JSON.stringify(req.body));
+      console.log("[FARMER API] User ID:", user.id);
+      
       // Create a unique cropId
       const cropId = `crop_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
       
@@ -218,8 +228,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         farmerId: user.id
       };
       
+      console.log("[FARMER API] Prepared crop data:", JSON.stringify(cropData));
+      
       // Create the crop
       const newCrop = await storage.createCrop(cropData);
+      
+      console.log("[FARMER API] Crop created successfully:", JSON.stringify(newCrop));
       
       return res.status(201).json({
         success: true,
@@ -227,7 +241,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         crop: newCrop
       });
     } catch (error) {
-      console.error("Error creating crop:", error);
+      console.error("[FARMER API ERROR] Error creating crop:", error);
       return res.status(500).json({ 
         success: false, 
         message: "Server error creating crop" 
