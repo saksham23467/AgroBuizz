@@ -780,31 +780,10 @@ async function generateMarketPrices(categoryId?: string): Promise<ProductPrice[]
     console.log(`[MARKET] Retrieved ${allProducts.length} products from database`);
     
     if (allProducts.length === 0) {
-      console.log('[MARKET] No products found in database, generating sample data');
-      // Generate sample market prices when database is empty
-      const high: AvailabilityType = 'high';
-      const medium: AvailabilityType = 'medium';
-      const low: AvailabilityType = 'low';
-      
-      return [
-        { id: 1, name: 'Organic Wheat Seeds', price: 24.99, change: 2.3, availability: high },
-        { id: 2, name: 'Tomato Seedlings', price: 8.50, change: -1.5, availability: medium },
-        { id: 3, name: 'Corn Seeds (Premium)', price: 15.75, change: 0.8, availability: high },
-        { id: 4, name: 'Rice Seeds', price: 12.25, change: -0.5, availability: high },
-        { id: 5, name: 'Onion Sets', price: 5.99, change: 1.2, availability: medium },
-        { id: 6, name: 'Tractor (Small)', price: 12500, change: -2.1, availability: low },
-        { id: 7, name: 'Irrigation System', price: 850, change: 3.4, availability: medium },
-        { id: 8, name: 'Fresh Tomatoes', price: 3.99, change: 4.2, availability: high },
-        { id: 9, name: 'Organic Apples', price: 4.50, change: -1.8, availability: medium },
-        { id: 10, name: 'Fertilizer (20kg)', price: 35.00, change: 1.5, availability: high }
-      ].filter(item => {
-        // Filter by category if specified
-        if (!categoryId) return true;
-        if (categoryId === 'seeds' && (item.name.toLowerCase().includes('seed') || item.name.toLowerCase().includes('seedling'))) return true;
-        if (categoryId === 'equipment' && (item.name.toLowerCase().includes('tractor') || item.name.toLowerCase().includes('system'))) return true;
-        if (categoryId === 'produce' && (item.name.toLowerCase().includes('tomato') || item.name.toLowerCase().includes('apple'))) return true;
-        return false;
-      });
+      console.log('[MARKET] No products found in database');
+      // Instead of generating sample data, return an empty array
+      // This adheres to data integrity policy - only using real database data
+      return [];
     }
     
     // Filter by category if specified

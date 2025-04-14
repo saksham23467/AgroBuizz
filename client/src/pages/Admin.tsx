@@ -188,10 +188,15 @@ export default function AdminDashboard() {
 
   const handleSignOut = async () => {
     try {
-      await logoutMutation.mutateAsync();
-      navigate("/admin-login");
+      console.log("[ADMIN] Signing out admin user");
+      // Use the updated logout mutation that handles redirection
+      logoutMutation.mutate();
     } catch (error) {
-      console.error("Error signing out:", error);
+      console.error("[ADMIN] Error signing out:", error);
+      // Force redirect even if there's an error
+      setTimeout(() => {
+        window.location.href = "/";
+      }, 1000);
     }
   };
 

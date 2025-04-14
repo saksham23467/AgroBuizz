@@ -128,28 +128,57 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Logout mutation
   const logoutMutation = useMutation({
     mutationFn: async () => {
-      const res = await apiRequest("POST", "/api/logout");
-      const data = await res.json();
-      
-      if (!data.success) {
-        throw new Error(data.message || "Logout failed");
+      try {
+        console.log("[AUTH] Attempting to logout");
+        const res = await apiRequest("POST", "/api/logout");
+        const data = await res.json();
+        
+        console.log("[AUTH] Logout response:", data);
+        
+        if (!data.success) {
+          throw new Error(data.message || "Logout failed");
+        }
+        
+        return data;
+      } catch (error) {
+        console.error("[AUTH] Logout error:", error);
+        throw error;
       }
     },
     onSuccess: () => {
-      // Invalidate and refetch user data
+      // Clear user from cache completely
+      queryClient.setQueryData(["/api/user"], null);
       queryClient.invalidateQueries({ queryKey: ["/api/user"] });
       
+      // Clear any local storage related to user session
+      localStorage.removeItem("lastUserType");
+      
+      // Also clear cart data on logout
+      localStorage.removeItem("cart");
+      
+      // Dispatch event to update components
+      window.dispatchEvent(new Event("cartUpdated"));
+      
+      // Notify user
       toast({
         title: "Logout successful",
         description: "You have been logged out successfully.",
       });
+      
+      // Force redirect to home page
+      window.location.href = "/";
     },
     onError: (error: Error) => {
+      console.error("[AUTH] Logout error in handler:", error);
+      
       toast({
         title: "Logout failed",
-        description: error.message,
+        description: error.message || "Could not log out. Please try again.",
         variant: "destructive",
       });
+      
+      // Even if the server call fails, clear client-side data as a fallback
+      queryClient.setQueryData(["/api/user"], null);
     },
   });
   
