@@ -68,7 +68,16 @@ npm run dev
 
 7. **Access the application**:
    - Open http://localhost:5000 in your browser
-   - Default admin credentials: username `admin`, password `admin123` (change this immediately!)
+   - Test accounts (automatically created for demonstration):
+     
+     | User Type | Username | Password    | Description                                 |
+     |-----------|----------|-------------|---------------------------------------------|
+     | Admin     | `admin`  | `admin123`  | Access to all features and admin dashboard  |
+     | Farmer    | `farmer` | `farmer123` | Can sell crops and buy from vendors         |
+     | Vendor    | `vendor` | `vendor123` | Can sell seeds, equipment, and supplies     |
+     | Customer  | `customer` | `customer123` | Can purchase crops from farmers         |
+     
+   - **Note**: Change these passwords immediately in a production environment!
 
 ### Deployment Configuration
 
