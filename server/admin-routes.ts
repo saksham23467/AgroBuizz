@@ -1,6 +1,5 @@
 import { Router, Request, Response } from "express";
-import { db } from "./db";
-import { executeRawQuery } from "./db";
+import { db, executeRawQuery } from "./db";
 import { storage } from "./storage";
 import { eq } from "drizzle-orm";
 import { users, products } from "@shared/schema";
@@ -211,40 +210,27 @@ router.get("/products-by-price-range", ensureAdmin, async (req: Request, res: Re
 // 5. Find available products (in stock)
 router.get("/available-products", ensureAdmin, async (_req: Request, res: Response) => {
   try {
-    // This would be replaced with actual database query
-    const products = [
-      {
-        id: "p1",
-        name: "Premium Wheat Seeds",
-        type: "seeds",
-        price: 45.99,
-        stock: 500,
-        vendorId: "v1",
-        vendorName: "AgriSeeds Co."
-      },
-      {
-        id: "p2",
-        name: "Organic Fertilizer",
-        type: "fertilizer",
-        price: 32.50,
-        stock: 300,
-        vendorId: "v2",
-        vendorName: "EcoFarm Supplies"
-      },
-      {
-        id: "p3",
-        name: "Compact Tractor",
-        type: "equipment",
-        price: 12500.00,
-        stock: 5,
-        vendorId: "v3",
-        vendorName: "FarmTech Machinery"
-      }
-    ].filter(p => p.stock > 0);
+    console.log("[ADMIN API] Fetching available products (in stock)");
     
-    res.json(products);
+    // Fetch all products from database
+    const allProducts = await db.select().from(products);
+    console.log(`[ADMIN API] Retrieved ${allProducts.length} total products from database`);
+    
+    // Filter products with quantity > 0
+    const availableProducts = allProducts.filter(p => {
+      // Safely convert the quantity to a number (handle potential string values)
+      const quantity = typeof p.quantity === 'number' 
+        ? p.quantity 
+        : parseInt(String(p.quantity) || '0');
+      
+      return quantity > 0;
+    });
+    
+    console.log(`[ADMIN API] Found ${availableProducts.length} available products in stock`);
+    
+    res.json(availableProducts);
   } catch (error: unknown) {
-    console.error("Error fetching available products:", error);
+    console.error("[ADMIN API ERROR] Error fetching available products:", error);
     res.status(500).json({ success: false, message: "Internal server error" });
   }
 });
@@ -557,11 +543,11 @@ router.get("/orders-by-year/:year?", ensureAdmin, async (req: Request, res: Resp
     const year = req.params.year || "2025";
     console.log(`[ADMIN API] Fetching orders for year: ${year}`);
     
-    // Get all orders from the database
-    const { sql } = db;
+    // Get all orders from the database using executeRawQuery
+    // Note: We're using the executeRawQuery function imported at the top of the file
     
-    // Query for farmer-customer orders
-    const farmerCustomerOrdersResult = await db.execute(sql`
+    // Query for farmer-customer orders using raw SQL
+    const farmerCustomerOrdersQuery = `
       SELECT 
         fco.order_id as "orderId", 
         fco.order_date as "orderDate",
@@ -574,11 +560,11 @@ router.get("/orders-by-year/:year?", ensureAdmin, async (req: Request, res: Resp
       FROM farmer_customer_orders fco
       LEFT JOIN customers c ON fco.customer_id = c.customer_id
       LEFT JOIN crops cr ON fco.crop_id = cr.crop_id
-      WHERE EXTRACT(YEAR FROM fco.order_date) = ${year}
-    `);
+      WHERE EXTRACT(YEAR FROM fco.order_date) = '${year}'
+    `;
     
-    // Query for vendor-farmer orders
-    const vendorFarmerOrdersResult = await db.execute(sql`
+    // Query for vendor-farmer orders using raw SQL
+    const vendorFarmerOrdersQuery = `
       SELECT 
         vfo.order_id as "orderId", 
         vfo.order_date as "orderDate",
@@ -591,15 +577,23 @@ router.get("/orders-by-year/:year?", ensureAdmin, async (req: Request, res: Resp
       FROM vendor_farmer_orders vfo
       LEFT JOIN farmers f ON vfo.farmer_id = f.farmer_id
       LEFT JOIN products p ON vfo.product_id = p.product_id
-      WHERE EXTRACT(YEAR FROM vfo.order_date) = ${year}
-    `);
+      WHERE EXTRACT(YEAR FROM vfo.order_date) = '${year}'
+    `;
+    
+    // Execute the raw queries
+    const farmerCustomerOrdersRows = await executeRawQuery(farmerCustomerOrdersQuery);
+    const vendorFarmerOrdersRows = await executeRawQuery(vendorFarmerOrdersQuery);
+    
+    // Create result objects to match the expected format
+    const farmerCustomerOrdersResult = { rows: farmerCustomerOrdersRows, rowCount: farmerCustomerOrdersRows.length };
+    const vendorFarmerOrdersResult = { rows: vendorFarmerOrdersRows, rowCount: vendorFarmerOrdersRows.length };
     
     console.log(`[ADMIN API] Found ${farmerCustomerOrdersResult.rowCount || 0} farmer-customer orders for year ${year}`);
     console.log(`[ADMIN API] Found ${vendorFarmerOrdersResult.rowCount || 0} vendor-farmer orders for year ${year}`);
     
-    // Format the data for the frontend
-    const formatOrders = (rows, orderType) => {
-      return rows.map(row => {
+    // Format the data for the frontend with proper type definitions
+    const formatOrders = (rows: any[], orderType: string): any[] => {
+      return rows.map((row: any) => {
         const price = parseFloat(row.price?.toString() || "0");
         const quantity = parseInt(row.quantity?.toString() || "1");
         const totalAmount = price * quantity;
@@ -673,75 +667,56 @@ router.get("/farmers-with-multiple-disputes", ensureAdmin, async (_req: Request,
 // 14. Find Most Sold Items
 router.get("/most-sold-items", ensureAdmin, async (_req: Request, res: Response) => {
   try {
-    // This would be replaced with actual database query
-    const topSellingItems = [
-      {
-        itemId: "p1",
-        itemName: "Premium Wheat Seeds",
-        category: "Seeds",
-        totalSold: 1250,
-        revenue: 57487.50,
-        percentageOfSales: 25.3
-      },
-      {
-        itemId: "p2",
-        itemName: "Organic Fertilizer",
-        category: "Fertilizer",
-        totalSold: 980,
-        revenue: 31850.00,
-        percentageOfSales: 18.7
-      },
-      {
-        itemId: "p5",
-        itemName: "Drip Irrigation Kit",
-        category: "Irrigation",
-        totalSold: 850,
-        revenue: 42500.00,
-        percentageOfSales: 15.2
-      },
-      {
-        itemId: "p8",
-        itemName: "Pest Control Solution",
-        category: "Pesticides",
-        totalSold: 760,
-        revenue: 22800.00,
-        percentageOfSales: 13.5
-      },
-      {
-        itemId: "p12",
-        itemName: "Gardening Tools Set",
-        category: "Tools",
-        totalSold: 630,
-        revenue: 37800.00,
-        percentageOfSales: 10.8
-      },
-      {
-        itemId: "p15",
-        itemName: "Greenhouse Cover",
-        category: "Structures",
-        totalSold: 450,
-        revenue: 33750.00,
-        percentageOfSales: 8.2
-      },
-      {
-        itemId: "p7",
-        itemName: "Soil pH Tester",
-        category: "Tools",
-        totalSold: 380,
-        revenue: 15200.00,
-        percentageOfSales: 6.5
-      },
-      {
-        itemId: "p22",
-        itemName: "Weather Station",
-        category: "Equipment",
-        totalSold: 210,
-        revenue: 41930.00,
-        percentageOfSales: 4.8
-      }
-    ];
+    console.log("[ADMIN API] Fetching most sold items");
     
+    // Use the raw SQL query to get most sold items from the database
+    const mostSoldItemsQuery = `
+      SELECT 
+          p.product_id as "itemId",
+          p.name as "itemName",
+          p.type as "category",
+          SUM(vfo.quantity) as "totalSold",
+          SUM(vfo.quantity * CAST(p.price AS DECIMAL)) as "revenue"
+      FROM vendor_farmer_orders vfo
+      JOIN products p ON vfo.product_id = p.product_id
+      GROUP BY p.product_id, p.name, p.type
+      ORDER BY "totalSold" DESC
+      LIMIT 8
+    `;
+    
+    const mostSoldItems = await executeRawQuery(mostSoldItemsQuery);
+    console.log(`[ADMIN API] Retrieved ${mostSoldItems.length} most sold items`);
+    
+    // Calculate percentage of sales based on total
+    let totalSold = 0;
+    mostSoldItems.forEach(item => {
+      totalSold += parseInt(item.totalSold);
+    });
+    
+    // Format the items with percentages
+    const topSellingItems = mostSoldItems.map(item => {
+      const sold = parseInt(item.totalSold);
+      const percentageOfSales = totalSold > 0 ? (sold / totalSold) * 100 : 0;
+      
+      return {
+        itemId: item.itemId,
+        itemName: item.itemName,
+        category: item.category,
+        totalSold: sold,
+        revenue: parseFloat(item.revenue || '0'),
+        percentageOfSales: parseFloat(percentageOfSales.toFixed(1))
+      };
+    });
+    
+    // If there's no data in the database, provide a reasonable empty result
+    if (topSellingItems.length === 0) {
+      console.log("[ADMIN API] No sold items found in database");
+      return res.json([]);
+    }
+    
+    // Handle CSV format request
     if (_req.query.format === 'csv') {
+      console.log("[ADMIN API] Generating CSV for most sold items");
       // Generate CSV output
       let csv = "Item ID,Item Name,Category,Total Sold,Revenue,Percentage of Sales\n";
       topSellingItems.forEach(item => {
@@ -753,9 +728,10 @@ router.get("/most-sold-items", ensureAdmin, async (_req: Request, res: Response)
       return res.send(csv);
     }
     
+    console.log("[ADMIN API] Returning most sold items data");
     res.json(topSellingItems);
   } catch (error: unknown) {
-    console.error("Error fetching most sold items:", error);
+    console.error("[ADMIN API ERROR] Error fetching most sold items:", error);
     res.status(500).json({ success: false, message: "Internal server error" });
   }
 });
