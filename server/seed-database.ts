@@ -68,10 +68,10 @@ export async function seedDatabase() {
       console.log(`👑 Admin user already exists with ID: ${adminUser[0].id}`);
     }
     
-    // Create farmer user
+    // Create farmer user with shorter field values to prevent varchar overflow
     const farmerUser = await db.insert(users).values({
       username: 'farmer',
-      email: 'farmer@agrobuizz.com',
+      email: 'farmer@example.com', // Using a shorter email
       password: await hashPassword('farmer123'),
       role: 'user',
       userType: 'farmer',
@@ -85,7 +85,7 @@ export async function seedDatabase() {
     // Create customer user
     const customerUser = await db.insert(users).values({
       username: 'customer',
-      email: 'customer@agrobuizz.com',
+      email: 'customer@example.com', // Using a shorter email
       password: await hashPassword('customer123'),
       role: 'user',
       userType: 'customer',
@@ -99,7 +99,7 @@ export async function seedDatabase() {
     // Create vendor user
     const vendorUser = await db.insert(users).values({
       username: 'vendor',
-      email: 'vendor@agrobuizz.com',
+      email: 'vendor@example.com', // Using a shorter email
       password: await hashPassword('vendor123'),
       role: 'user',
       userType: 'vendor',
