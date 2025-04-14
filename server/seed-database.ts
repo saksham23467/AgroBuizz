@@ -180,7 +180,7 @@ export async function seedDatabase() {
     // Add relationship between farmer and crop in the farmer_crops table
     await executeRawQuery(`
       INSERT INTO farmer_crops (farmer_id, crop_id)
-      VALUES ('${farmerUser[0].id}', '${crop1Id}')
+      VALUES ('${farmerId}', '${crop1Id}')
     `);
     
     const crop2Id = `crop_${uuidv4().substring(0, 8)}`;
@@ -198,7 +198,7 @@ export async function seedDatabase() {
     // Add relationship between farmer and crop in the farmer_crops table
     await executeRawQuery(`
       INSERT INTO farmer_crops (farmer_id, crop_id)
-      VALUES ('${farmerUser[0].id}', '${crop2Id}')
+      VALUES ('${farmerId}', '${crop2Id}')
     `);
     
     console.log(`🌱 Created 2 crops for farmer`);
@@ -223,7 +223,7 @@ export async function seedDatabase() {
     // Add relationship between vendor and product in the vendor_products table
     await executeRawQuery(`
       INSERT INTO vendor_products (vendor_id, product_id)
-      VALUES ('${vendorUser[0].id}', '${product1Id}')
+      VALUES ('${vendorId}', '${product1Id}')
     `);
     
     const product2Id = `prod_${uuidv4().substring(0, 8)}`;
@@ -243,7 +243,7 @@ export async function seedDatabase() {
     // Add relationship between vendor and product in the vendor_products table
     await executeRawQuery(`
       INSERT INTO vendor_products (vendor_id, product_id)
-      VALUES ('${vendorUser[0].id}', '${product2Id}')
+      VALUES ('${vendorId}', '${product2Id}')
     `);
     
     const product3Id = `prod_${uuidv4().substring(0, 8)}`;
@@ -263,7 +263,7 @@ export async function seedDatabase() {
     // Add relationship between vendor and product in the vendor_products table
     await executeRawQuery(`
       INSERT INTO vendor_products (vendor_id, product_id)
-      VALUES ('${vendorUser[0].id}', '${product3Id}')
+      VALUES ('${vendorId}', '${product3Id}')
     `);
     
     console.log(`🧰 Created 3 products for vendor`);
@@ -275,7 +275,7 @@ export async function seedDatabase() {
         VALUES (
           ${customerUser[0].id},
           '${product2Id}',
-          '${vendorUser[0].id}',
+          '${vendorId}',
           'Package arrived damaged',
           'The fertilizer bag was torn when it arrived',
           'unsolved',
@@ -304,6 +304,18 @@ export async function seedDatabase() {
         )
       `);
       console.log(`⚠️ Created sample dispute with ID: ${disputeId}`);
+      
+      // Add farmer and vendor to this dispute by updating the junction table
+      // This depends on the actual schema structure - this is a placeholder
+      try {
+        await executeRawQuery(`
+          UPDATE vendor_farmer_disputes
+          SET farmer_id = '${farmerId}', vendor_id = '${vendorId}'
+          WHERE dispute_id = '${disputeId}'
+        `);
+      } catch (err) {
+        console.error('Could not link farmer and vendor to dispute:', err);
+      }
     } catch (error) {
       console.error('Failed to create sample dispute:', error);
     }
