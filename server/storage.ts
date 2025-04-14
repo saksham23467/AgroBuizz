@@ -259,9 +259,16 @@ export class DatabaseStorage implements IStorage {
   async createCrop(crop: InsertCrop): Promise<Crop> {
     try {
       console.log(`[DATABASE] Creating new crop: ${crop.name}`);
+      const cropId = `crop_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
       const [newCrop] = await db.insert(crops)
         .values({
-          ...crop,
+          cropId,
+          type: crop.type || 'vegetable',
+          name: crop.name,
+          quantity: crop.quantity || 0,
+          price: crop.price || 0,
+          description: crop.description || '',
+          farmerId: crop.farmerId,
           createdAt: new Date(),
           updatedAt: new Date()
         })

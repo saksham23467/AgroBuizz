@@ -142,9 +142,12 @@ router.get("/products-by-type/:type", ensureAdmin, async (req: Request, res: Res
     console.log(`[ADMIN API] Fetching products of type: ${type}`);
 
     // Fetch products from the database by type
-    const productsQuery = db.select()
-      .from(products)
-      .where(eq(products.type, type));
+    const productsQuery = `
+      SELECT * FROM products 
+      WHERE type = $1
+    `;
+    const fetchedProducts = await executeRawQuery(productsQuery, [type]);
+    return res.json(fetchedProducts.rows || []);
 
     const fetchedProducts = await productsQuery;
 
