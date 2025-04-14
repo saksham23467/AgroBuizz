@@ -1,147 +1,166 @@
-import { createContext, useContext, useState, useEffect } from 'react';
-import { useAuth } from '@/hooks/use-auth';
+import { createContext, ReactNode, useState, useEffect, useCallback } from 'react';
+import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/use-auth";
+import { useLocation } from "wouter";
 
-type CartItem = {
-  id: string;
-  name: string;
-  price: number;
+// Define cart item type
+export interface CartItem {
+  id: number;
   quantity: number;
-  type: string;
-};
+  name?: string;
+  price?: number;
+  imageUrl?: string;
+}
 
-type CartContextType = {
+interface CartContextType {
   cart: CartItem[];
   addToCart: (item: CartItem) => void;
-  removeFromCart: (itemId: string) => void;
-  updateQuantity: (itemId: string, quantity: number) => void;
+  updateQuantity: (itemId: number, quantity: number) => void;
+  removeFromCart: (itemId: number) => void;
   clearCart: () => void;
   getTotalItems: () => number;
   getSubtotal: () => number;
-  placeOrder: () => Promise<boolean>;
-};
+}
 
-const CartContext = createContext<CartContextType | null>(null);
+export const CartContext = createContext<CartContextType | null>(null);
 
-export function CartProvider({ children }: { children: React.ReactNode }) {
-  const { user } = useAuth();
+export function CartProvider({ children }: { children: ReactNode }) {
   const [cart, setCart] = useState<CartItem[]>([]);
+  const { toast } = useToast();
+  const { user } = useAuth();
+  const [location, navigate] = useLocation();
 
   // Load cart from localStorage on mount
   useEffect(() => {
-    if (user) {
-      const savedCart = localStorage.getItem(`cart_${user.id}`);
-      if (savedCart) {
+    const savedCart = localStorage.getItem('cart');
+    if (savedCart) {
+      try {
         setCart(JSON.parse(savedCart));
+      } catch (e) {
+        console.error("Failed to parse cart from localStorage", e);
+        localStorage.removeItem('cart');
       }
     }
-  }, [user]);
+  }, []);
 
   // Save cart to localStorage whenever it changes
   useEffect(() => {
-    if (user) {
-      localStorage.setItem(`cart_${user.id}`, JSON.stringify(cart));
-    }
-  }, [cart, user]);
+    localStorage.setItem('cart', JSON.stringify(cart));
+  }, [cart]);
 
-  const addToCart = (item: CartItem) => {
-    setCart(prev => {
-      const existing = prev.find(i => i.id === item.id);
-      if (existing) {
-        return prev.map(i =>
-          i.id === item.id
-            ? { ...i, quantity: i.quantity + 1 }
-            : i
-        );
-      }
-      return [...prev, item];
-    });
-  };
-
-  const removeFromCart = (itemId: string) => {
-    setCart(prev => prev.filter(item => item.id !== itemId));
-  };
-
-  const updateQuantity = (itemId: string, quantity: number) => {
-    setCart(prev =>
-      prev
-        .map(item =>
-          item.id === itemId
-            ? { ...item, quantity: Math.max(0, quantity) }
-            : item
-        )
-        .filter(item => item.quantity > 0)
-    );
-  };
-
-  const clearCart = () => {
-    setCart([]);
-    if (user) {
-      localStorage.removeItem(`cart_${user.id}`);
-    }
-  };
-
-  const getTotalItems = () => {
-    return cart.reduce((total, item) => total + item.quantity, 0);
-  };
-
-  const getSubtotal = () => {
-    return cart.reduce((total, item) => total + (item.price * item.quantity), 0);
-  };
-
-  const placeOrder = async () => {
-    try {
-      const response = await fetch('/api/orders', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          items: cart,
-          totalAmount: getSubtotal(),
-          userId: user?.id,
-          userType: user?.userType,
-          status: 'pending'
-        })
+  // Add item to cart - requires auth
+  const addToCart = useCallback((item: CartItem) => {
+    // Check if user is logged in
+    if (!user) {
+      toast({
+        title: "Authentication required",
+        description: "Please login to add items to your cart",
+        variant: "destructive"
       });
-
-      if (!response.ok) {
-        throw new Error('Failed to place order');
-      }
-
-      const data = await response.json();
-      if (data.success) {
-        clearCart();
-        return true;
-      }
-      return false;
-    } catch (error) {
-      console.error('Error placing order:', error);
-      return false;
+      navigate("/login");
+      return;
     }
-  };
+
+    setCart(prevCart => {
+      const existingItemIndex = prevCart.findIndex(cartItem => cartItem.id === item.id);
+      
+      if (existingItemIndex >= 0) {
+        // Item exists, increment quantity
+        const updatedCart = [...prevCart];
+        updatedCart[existingItemIndex] = {
+          ...updatedCart[existingItemIndex],
+          quantity: updatedCart[existingItemIndex].quantity + (item.quantity || 1)
+        };
+        return updatedCart;
+      } else {
+        // Item does not exist, add it
+        return [...prevCart, { ...item, quantity: item.quantity || 1 }];
+      }
+    });
+
+    toast({
+      title: "Added to cart",
+      description: `${item.name || "Item"} has been added to your cart`,
+    });
+  }, [user, toast, navigate]);
+
+  // Update item quantity
+  const updateQuantity = useCallback((itemId: number, quantity: number) => {
+    if (quantity < 1) return;
+    
+    setCart(prevCart => 
+      prevCart.map(item => 
+        item.id === itemId ? { ...item, quantity } : item
+      )
+    );
+  }, []);
+
+  // Remove item from cart
+  const removeFromCart = useCallback((itemId: number) => {
+    setCart(prevCart => {
+      const updatedCart = prevCart.filter(item => item.id !== itemId);
+      
+      // If cart becomes empty after removing item, explicitly remove from localStorage
+      if (updatedCart.length === 0) {
+        localStorage.removeItem('cart');
+      } else {
+        localStorage.setItem('cart', JSON.stringify(updatedCart));
+      }
+      
+      // Dispatch custom event to notify other components about cart changes
+      const cartUpdateEvent = new CustomEvent('cartUpdated');
+      window.dispatchEvent(cartUpdateEvent);
+      
+      return updatedCart;
+    });
+    
+    toast({
+      title: "Item removed",
+      description: "The item has been removed from your cart",
+    });
+  }, [toast]);
+
+  // Clear cart
+  const clearCart = useCallback(() => {
+    setCart([]);
+    // Explicitly remove from localStorage to ensure complete cleanup
+    localStorage.removeItem('cart');
+    
+    // Dispatch custom event to notify other components about cart changes
+    const cartUpdateEvent = new CustomEvent('cartUpdated');
+    window.dispatchEvent(cartUpdateEvent);
+    
+    toast({
+      title: "Cart cleared",
+      description: "All items have been removed from your cart",
+    });
+  }, [toast]);
+
+  // Get total number of items in cart
+  const getTotalItems = useCallback(() => {
+    return cart.reduce((total, item) => total + item.quantity, 0);
+  }, [cart]);
+
+  // Calculate subtotal if prices are available
+  const getSubtotal = useCallback(() => {
+    return cart.reduce((total, item) => {
+      return total + ((item.price || 0) * item.quantity);
+    }, 0);
+  }, [cart]);
 
   return (
     <CartContext.Provider
       value={{
         cart,
         addToCart,
-        removeFromCart,
         updateQuantity,
+        removeFromCart,
         clearCart,
         getTotalItems,
-        getSubtotal,
-        placeOrder
+        getSubtotal
       }}
     >
       {children}
     </CartContext.Provider>
   );
 }
-
-export const useCart = () => {
-  const context = useContext(CartContext);
-  if (!context) {
-    throw new Error('useCart must be used within CartProvider');
-  }
-  return context;
-};
