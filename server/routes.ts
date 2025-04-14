@@ -810,7 +810,9 @@ async function generateMarketPrices(categoryId?: string): Promise<ProductPrice[]
     
     return limitedProducts.map(product => {
       // Create a numeric ID from the string product ID
-      const numericId = parseInt(product.productId.replace(/\D/g, '')) || Math.floor(Math.random() * 1000);
+      // Handle different property naming conventions (product_id vs productId)
+      const productIdStr = product.product_id || product.productId || `prod_${Math.floor(Math.random() * 10000)}`;
+      const numericId = parseInt((productIdStr + '').replace(/\D/g, '')) || Math.floor(Math.random() * 1000);
       
       // Generate random price fluctuation between -8% and +8%
       const fluctuation = (Math.random() * 16 - 8) / 100;

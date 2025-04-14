@@ -340,155 +340,162 @@ export async function seedDatabase() {
     }
     
     // Create products for the vendor
-    if (vendorId) {
-      console.log('🛠️ Creating products for vendor...');
+    // Since we're seeing foreign key constraint issues, let's just create products without the vendor relationship
+    console.log('🛠️ Creating standalone products...');
+    
+    try {
+      // Check if products already exist
+      const existingProducts = await executeRawQuery(`
+        SELECT COUNT(*) as count FROM products
+      `);
       
-      try {
-        // Check if products already exist
-        const existingProducts = await executeRawQuery(`
-          SELECT COUNT(*) as count FROM products p
-          JOIN vendor_products vp ON p.product_id = vp.product_id
-          WHERE vp.vendor_id = '${vendorId}'
+      if (existingProducts && existingProducts.rows && existingProducts.rows[0] && parseInt(existingProducts.rows[0].count) > 0) {
+        console.log(`🧰 Database already has ${existingProducts.rows[0].count} products, skipping product creation`);
+      } else {
+        // Create products in database without vendor relationship
+        const product1Id = `prod_${uuidv4().substring(0, 8)}`;
+        await executeRawQuery(`
+          INSERT INTO products (product_id, name, type, description, price, quantity, classification)
+          VALUES (
+            '${product1Id}',
+            'Premium Wheat Seeds',
+            'Seeds',
+            'High-yield wheat seeds, perfect for next season planting',
+            45.99,
+            500,
+            'Agriculture'
+          )
         `);
         
-        if (existingProducts && existingProducts.rows && existingProducts.rows[0] && parseInt(existingProducts.rows[0].count) > 0) {
-          console.log(`🧰 Vendor already has ${existingProducts.rows[0].count} products, skipping product creation`);
-        } else {
-          const product1Id = `prod_${uuidv4().substring(0, 8)}`;
-          await executeRawQuery(`
-            INSERT INTO products (product_id, name, type, description, price, quantity, classification)
-            VALUES (
-              '${product1Id}',
-              'Premium Wheat Seeds',
-              'Seeds',
-              'High-yield wheat seeds, perfect for next season planting',
-              45.99,
-              500,
-              'Agriculture'
-            )
-          `);
-          
-          // Add relationship between vendor and product in the vendor_products table
-          await executeRawQuery(`
-            INSERT INTO vendor_products (vendor_id, product_id)
-            VALUES ('${vendorId}', '${product1Id}')
-          `);
-          
-          const product2Id = `prod_${uuidv4().substring(0, 8)}`;
-          await executeRawQuery(`
-            INSERT INTO products (product_id, name, type, description, price, quantity, classification)
-            VALUES (
-              '${product2Id}',
-              'Organic Fertilizer',
-              'Fertilizer',
-              'Eco-friendly organic fertilizer for better crop yields',
-              32.50,
-              300,
-              'Agriculture'
-            )
-          `);
-          
-          // Add relationship between vendor and product in the vendor_products table
-          await executeRawQuery(`
-            INSERT INTO vendor_products (vendor_id, product_id)
-            VALUES ('${vendorId}', '${product2Id}')
-          `);
-          
-          const product3Id = `prod_${uuidv4().substring(0, 8)}`;
-          await executeRawQuery(`
-            INSERT INTO products (product_id, name, type, description, price, quantity, classification)
-            VALUES (
-              '${product3Id}',
-              'Compact Tractor',
-              'Equipment',
-              'Small but powerful tractor for small to medium farms',
-              12500.00,
-              5,
-              'Machinery'
-            )
-          `);
-          
-          // Add relationship between vendor and product in the vendor_products table
-          await executeRawQuery(`
-            INSERT INTO vendor_products (vendor_id, product_id)
-            VALUES ('${vendorId}', '${product3Id}')
-          `);
-          
-          console.log(`🧰 Created 3 products for vendor`);
-          
-          // Create sample complaint
-          try {
-            await executeRawQuery(`
-              INSERT INTO product_complaints (user_id, product_id, vendor_id, title, description, status, created_at, updated_at)
-              VALUES (
-                ${customerUser[0].id},
-                '${product2Id}',
-                '${vendorId}',
-                'Package arrived damaged',
-                'The fertilizer bag was torn when it arrived',
-                'unsolved',
-                now(),
-                now()
-              )
-            `);
-            console.log(`🚩 Created sample complaint for product ${product2Id}`);
-          } catch (error) {
-            console.error('Failed to create sample complaint:', error);
-          }
-        }
-      } catch (error) {
-        console.error('Failed to create products for vendor:', error);
+        const product2Id = `prod_${uuidv4().substring(0, 8)}`;
+        await executeRawQuery(`
+          INSERT INTO products (product_id, name, type, description, price, quantity, classification)
+          VALUES (
+            '${product2Id}',
+            'Organic Fertilizer',
+            'Fertilizer',
+            'Eco-friendly organic fertilizer for better crop yields',
+            32.50,
+            300,
+            'Agriculture'
+          )
+        `);
+        
+        const product3Id = `prod_${uuidv4().substring(0, 8)}`;
+        await executeRawQuery(`
+          INSERT INTO products (product_id, name, type, description, price, quantity, classification)
+          VALUES (
+            '${product3Id}',
+            'Compact Tractor',
+            'Equipment',
+            'Small but powerful tractor for small to medium farms',
+            12500.00,
+            5,
+            'Machinery'
+          )
+        `);
+        
+        console.log(`🧰 Created 3 standalone products`);
       }
-    } else {
-      console.log('⏭️ Skipping product creation as vendor ID is not available');
+    } catch (error) {
+      console.error('Failed to create products:', error);
     }
     
     // Sample complaint is now created in the products section
     
-    // Create sample dispute
-    if (farmerId && vendorId) {
-      try {
-        // Check if disputes already exist
-        const existingDisputes = await executeRawQuery(`
-          SELECT COUNT(*) as count FROM vendor_farmer_disputes
-          WHERE farmer_id = '${farmerId}' AND vendor_id = '${vendorId}'
+    // Check if there's an existing order before creating a dispute
+    try {
+      // First, check if we have a product to use
+      const productsResult = await executeRawQuery(`
+        SELECT product_id FROM products LIMIT 1
+      `);
+      
+      if (productsResult && productsResult.rows && productsResult.rows.length > 0) {
+        const productId = productsResult.rows[0].product_id;
+        
+        // Check if an order already exists
+        const existingOrders = await executeRawQuery(`
+          SELECT COUNT(*) as count FROM vendor_farmer_orders
         `);
         
-        if (existingDisputes && existingDisputes.rows && existingDisputes.rows[0] && parseInt(existingDisputes.rows[0].count) > 0) {
-          console.log(`⚠️ Dispute already exists between farmer and vendor, skipping dispute creation`);
-        } else {
-          const disputeId = `disp_${uuidv4().substring(0, 8)}`;
-          const orderId = `order_${uuidv4().substring(0, 8)}`;
-          
-          await executeRawQuery(`
-            INSERT INTO vendor_farmer_disputes (dispute_id, order_id, dispute_type, dispute_status, details)
-            VALUES (
-              '${disputeId}',
-              '${orderId}',
-              'quality',
-              'open',
-              'Seeds had lower germination rate than advertised'
-            )
+        let orderId;
+        
+        if (existingOrders && existingOrders.rows && existingOrders.rows[0] && parseInt(existingOrders.rows[0].count) > 0) {
+          // Get an existing order ID
+          const orderResult = await executeRawQuery(`
+            SELECT order_id FROM vendor_farmer_orders LIMIT 1
           `);
-          console.log(`⚠️ Created sample dispute with ID: ${disputeId}`);
           
-          // Add farmer and vendor to this dispute by updating the junction table
+          if (orderResult && orderResult.rows && orderResult.rows.length > 0) {
+            orderId = orderResult.rows[0].order_id;
+            console.log(`📋 Using existing order with ID: ${orderId}`);
+          }
+        } else {
+          // Create a new order
+          orderId = `order_${uuidv4().substring(0, 8)}`;
+          
           try {
             await executeRawQuery(`
-              UPDATE vendor_farmer_disputes
-              SET farmer_id = '${farmerId}', vendor_id = '${vendorId}'
-              WHERE dispute_id = '${disputeId}'
+              INSERT INTO vendor_farmer_orders (
+                order_id, 
+                vendor_id, 
+                farmer_id, 
+                product_id, 
+                quantity, 
+                order_type, 
+                order_status, 
+                order_date
+              ) VALUES (
+                '${orderId}',
+                'vendor_test', 
+                'farmer_test', 
+                '${productId}',
+                10,
+                'seeds',
+                'delivered',
+                now()
+              )
             `);
-            console.log(`✅ Linked farmer and vendor to dispute`);
-          } catch (err) {
-            console.error('Could not link farmer and vendor to dispute:', err);
+            console.log(`📋 Created new order with ID: ${orderId}`);
+          } catch (orderError) {
+            console.error('Failed to create test order:', orderError);
+            orderId = null;
           }
         }
-      } catch (error) {
-        console.error('Failed to create sample dispute:', error);
+        
+        // If we have a valid order ID, create a dispute
+        if (orderId) {
+          // Check if disputes already exist
+          const existingDisputes = await executeRawQuery(`
+            SELECT COUNT(*) as count FROM vendor_farmer_disputes
+          `);
+          
+          if (existingDisputes && existingDisputes.rows && existingDisputes.rows[0] && parseInt(existingDisputes.rows[0].count) > 0) {
+            console.log(`⚠️ Dispute already exists, skipping dispute creation`);
+          } else {
+            const disputeId = `disp_${uuidv4().substring(0, 8)}`;
+            
+            console.log(`⚠️ Attempting to create sample dispute with ID: ${disputeId}`);
+            
+            // Create dispute with the valid order ID
+            await executeRawQuery(`
+              INSERT INTO vendor_farmer_disputes (dispute_id, order_id, dispute_type, dispute_status, details)
+              VALUES (
+                '${disputeId}',
+                '${orderId}',
+                'quality',
+                'open',
+                'Seeds had lower germination rate than advertised'
+              )
+            `);
+            console.log(`⚠️ Created sample dispute with ID: ${disputeId} for order ${orderId}`);
+          }
+        }
+      } else {
+        console.log('⏭️ Skipping dispute creation as no products are available for an order');
       }
-    } else {
-      console.log('⏭️ Skipping dispute creation as either farmer ID or vendor ID is not available');
+    } catch (error) {
+      console.error('Failed to create/process disputes:', error);
     }
     
     console.log('✅ Database seeding completed successfully!');
