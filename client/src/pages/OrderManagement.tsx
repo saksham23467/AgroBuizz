@@ -28,19 +28,23 @@ import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
 
 // Mock order data
-const orders = [
-  { 
-    id: "ORD-001", 
-    customer: "John Farmer", 
-    customerType: "farmer",
-    items: ["Premium Corn Seeds", "Basic Tractor"], 
-    total: 2530, 
-    status: "pending", 
-    date: "2025-03-20",
-    address: "123 Farm Lane, Rural District",
-    payment: "Credit Card",
-    notes: ""
-  },
+import { useQuery } from "@tanstack/react-query";
+import { getQueryFn } from "@/lib/queryClient";
+
+// Fetch orders data
+const { data: orders = [], isLoading } = useQuery({
+  queryKey: ["/api/admin/orders"],
+  queryFn: getQueryFn({ on401: "throw" }),
+  refetchInterval: 5000, // Refetch every 5 seconds for real-time updates
+});
+
+if (isLoading) {
+  return (
+    <div className="flex items-center justify-center min-h-screen">
+      <Loader2 className="h-8 w-8 animate-spin text-[#4CAF50]" />
+    </div>
+  );
+}
   { 
     id: "ORD-002", 
     customer: "Sara Vendor", 

@@ -11,11 +11,11 @@ const ensureAdmin = (req: Request, res: Response, next: Function) => {
   if (!req.isAuthenticated()) {
     return res.status(401).json({ success: false, message: "Not authenticated" });
   }
-  
+
   if (req.user.role !== "admin") {
     return res.status(403).json({ success: false, message: "Admin access required" });
   }
-  
+
   next();
 };
 
@@ -23,10 +23,10 @@ const ensureAdmin = (req: Request, res: Response, next: Function) => {
 router.get("/users", ensureAdmin, async (_req: Request, res: Response) => {
   try {
     console.log("[ADMIN API] Fetching all users for admin dashboard");
-    
+
     // Fetch all users from the database
     const allUsers = await db.select().from(users);
-    
+
     console.log(`[ADMIN API] Retrieved ${allUsers.length} users`);
     return res.json({ 
       success: true, 
@@ -81,7 +81,7 @@ router.get("/farmers-with-crops", ensureAdmin, async (_req: Request, res: Respon
         ]
       }
     ];
-    
+
     res.json(farmersWithCrops);
   } catch (error: unknown) {
     console.error("Error fetching farmers with crops:", error);
@@ -127,7 +127,7 @@ router.get("/customers-with-multiple-orders", ensureAdmin, async (_req: Request,
         lastOrderDate: "2025-04-05T16:20:00.000Z"
       }
     ];
-    
+
     res.json(customers);
   } catch (error: unknown) {
     console.error("Error fetching frequent customers:", error);
@@ -140,22 +140,22 @@ router.get("/products-by-type/:type", ensureAdmin, async (req: Request, res: Res
   try {
     const { type } = req.params;
     console.log(`[ADMIN API] Fetching products of type: ${type}`);
-    
+
     // Fetch products from the database by type
     const productsQuery = db.select()
       .from(products)
       .where(eq(products.type, type));
-      
+
     const fetchedProducts = await productsQuery;
-    
+
     console.log(`[ADMIN API] Found ${fetchedProducts.length} products of type ${type}`);
-    
+
     // If no products found in the database, return empty array
     if (fetchedProducts.length === 0) {
       console.log(`[ADMIN API] No products found in database for type ${type}`);
       return res.json([]);
     }
-    
+
     res.json(fetchedProducts);
   } catch (error: unknown) {
     console.error(`[ADMIN API ERROR] Error fetching products of type ${req.params.type}:`, error);
@@ -168,7 +168,7 @@ router.get("/products-by-price-range", ensureAdmin, async (req: Request, res: Re
   try {
     const min = parseFloat(req.query.min as string) || 0;
     const max = parseFloat(req.query.max as string) || Number.MAX_SAFE_INTEGER;
-    
+
     // This would be replaced with actual database query
     const products = [
       {
@@ -199,7 +199,7 @@ router.get("/products-by-price-range", ensureAdmin, async (req: Request, res: Re
         vendorName: "FarmTech Machinery"
       }
     ].filter(p => p.price >= min && p.price <= max);
-    
+
     res.json(products);
   } catch (error: unknown) {
     console.error(`Error fetching products by price range:`, error);
@@ -211,23 +211,23 @@ router.get("/products-by-price-range", ensureAdmin, async (req: Request, res: Re
 router.get("/available-products", ensureAdmin, async (_req: Request, res: Response) => {
   try {
     console.log("[ADMIN API] Fetching available products (in stock)");
-    
+
     // Fetch all products from database
     const allProducts = await db.select().from(products);
     console.log(`[ADMIN API] Retrieved ${allProducts.length} total products from database`);
-    
+
     // Filter products with quantity > 0
     const availableProducts = allProducts.filter(p => {
       // Safely convert the quantity to a number (handle potential string values)
       const quantity = typeof p.quantity === 'number' 
         ? p.quantity 
         : parseInt(String(p.quantity) || '0');
-      
+
       return quantity > 0;
     });
-    
+
     console.log(`[ADMIN API] Found ${availableProducts.length} available products in stock`);
-    
+
     res.json(availableProducts);
   } catch (error: unknown) {
     console.error("[ADMIN API ERROR] Error fetching available products:", error);
@@ -268,7 +268,7 @@ router.get("/products-by-vendor-ratings", ensureAdmin, async (_req: Request, res
         vendorRating: 4.2
       }
     ].sort((a, b) => b.vendorRating - a.vendorRating);
-    
+
     res.json(products);
   } catch (error: unknown) {
     console.error("Error fetching products by vendor ratings:", error);
@@ -322,7 +322,7 @@ router.get("/crop-sales", ensureAdmin, async (_req: Request, res: Response) => {
         farmerName: "Ahmed Khan"
       }
     ];
-    
+
     res.json(cropSales);
   } catch (error: unknown) {
     console.error("Error fetching crop sales:", error);
@@ -371,7 +371,7 @@ router.get("/vendor-product-counts", ensureAdmin, async (_req: Request, res: Res
         avgRating: 3.9
       }
     ];
-    
+
     res.json(vendorProducts);
   } catch (error: unknown) {
     console.error("Error fetching vendor product counts:", error);
@@ -429,7 +429,7 @@ router.get("/farmer-orders", ensureAdmin, async (_req: Request, res: Response) =
         status: "processing"
       }
     ];
-    
+
     res.json(farmerOrders);
   } catch (error: unknown) {
     console.error("Error fetching farmer orders:", error);
@@ -491,7 +491,7 @@ router.get("/disputes", ensureAdmin, async (_req: Request, res: Response) => {
         description: "Missing items in the set"
       }
     ];
-    
+
     res.json(disputes);
   } catch (error: unknown) {
     console.error("Error fetching disputes:", error);
@@ -529,7 +529,7 @@ router.get("/highly-rated-vendors", ensureAdmin, async (_req: Request, res: Resp
         topProducts: ["Organic Fertilizer", "Sustainable Pest Control"]
       }
     ];
-    
+
     res.json(vendors);
   } catch (error: unknown) {
     console.error("Error fetching highly rated vendors:", error);
@@ -537,15 +537,75 @@ router.get("/highly-rated-vendors", ensureAdmin, async (_req: Request, res: Resp
   }
 });
 
-// 12. Find orders by year
+// 12. Get all orders
+router.get("/orders", ensureAdmin, async (_req: Request, res: Response) => {
+  try {
+    console.log("[ADMIN API] Fetching all orders");
+
+    // Query for all orders using raw SQL to combine both farmer-customer and vendor-farmer orders
+    const ordersQuery = `
+      SELECT 
+        o.order_id,
+        CASE 
+          WHEN o.farmer_id IS NOT NULL THEN f.name
+          WHEN o.customer_id IS NOT NULL THEN c.name
+        END as customer_name,
+        CASE 
+          WHEN o.farmer_id IS NOT NULL THEN 'farmer'
+          WHEN o.customer_id IS NOT NULL THEN 'customer'
+        END as customer_type,
+        o.order_date,
+        o.order_status as status,
+        o.total_amount,
+        o.shipping_address,
+        o.payment_method,
+        o.notes,
+        json_agg(json_build_object(
+          'name', COALESCE(p.name, cr.name),
+          'quantity', oi.quantity,
+          'price', COALESCE(p.price, cr.price)
+        )) as items
+      FROM orders o
+      LEFT JOIN farmers f ON o.farmer_id = f.farmer_id
+      LEFT JOIN customers c ON o.customer_id = c.customer_id
+      LEFT JOIN order_items oi ON o.order_id = oi.order_id
+      LEFT JOIN products p ON oi.product_id = p.product_id
+      LEFT JOIN crops cr ON oi.crop_id = cr.crop_id
+      GROUP BY o.order_id, f.name, c.name
+      ORDER BY o.order_date DESC
+    `;
+
+    const result = await executeRawQuery(ordersQuery);
+    const orders = result.rows.map(order => ({
+      id: order.order_id,
+      customer: order.customer_name,
+      customerType: order.customer_type,
+      items: order.items.map((item: any) => item.name),
+      total: order.total_amount,
+      status: order.status,
+      date: new Date(order.order_date).toISOString().split('T')[0],
+      address: order.shipping_address,
+      payment: order.payment_method,
+      notes: order.notes || ""
+    }));
+
+    console.log(`[ADMIN API] Found ${orders.length} orders`);
+    return res.json(orders);
+  } catch (error) {
+    console.error("[ADMIN API ERROR] Error fetching orders:", error);
+    return res.status(500).json({ success: false, message: "Internal server error" });
+  }
+});
+
+// Get orders by year 
 router.get("/orders-by-year/:year?", ensureAdmin, async (req: Request, res: Response) => {
   try {
     const year = req.params.year || "2025";
     console.log(`[ADMIN API] Fetching orders for year: ${year}`);
-    
+
     // Get all orders from the database using executeRawQuery
     // Note: We're using the executeRawQuery function imported at the top of the file
-    
+
     // Query for farmer-customer orders using raw SQL
     const farmerCustomerOrdersQuery = `
       SELECT 
@@ -563,7 +623,7 @@ router.get("/orders-by-year/:year?", ensureAdmin, async (req: Request, res: Resp
       LEFT JOIN crops cr ON fco.crop_id = cr.crop_id
       WHERE EXTRACT(YEAR FROM fco.order_date) = '${year}'
     `;
-    
+
     // Query for vendor-farmer orders using raw SQL
     const vendorFarmerOrdersQuery = `
       SELECT 
@@ -582,25 +642,25 @@ router.get("/orders-by-year/:year?", ensureAdmin, async (req: Request, res: Resp
       LEFT JOIN products p ON vfo.product_id = p.product_id
       WHERE EXTRACT(YEAR FROM vfo.order_date) = '${year}'
     `;
-    
+
     // Execute the raw queries
     const farmerCustomerOrdersResult = await executeRawQuery(farmerCustomerOrdersQuery);
     const vendorFarmerOrdersResult = await executeRawQuery(vendorFarmerOrdersQuery);
-    
+
     // Handle the result safely
     const farmerCustomerOrders = farmerCustomerOrdersResult && farmerCustomerOrdersResult.rows ? farmerCustomerOrdersResult.rows : [];
     const vendorFarmerOrders = vendorFarmerOrdersResult && vendorFarmerOrdersResult.rows ? vendorFarmerOrdersResult.rows : [];
-    
+
     console.log(`[ADMIN API] Found ${farmerCustomerOrders.length || 0} farmer-customer orders for year ${year}`);
     console.log(`[ADMIN API] Found ${vendorFarmerOrders.length || 0} vendor-farmer orders for year ${year}`);
-    
+
     // Format the data for the frontend with proper type definitions
     const formatOrders = (rows: any[], orderType: string): any[] => {
       return rows.map((row: any) => {
         const price = parseFloat(row.price?.toString() || "0");
         const quantity = parseInt(row.quantity?.toString() || "1");
         const totalAmount = price * quantity;
-        
+
         return {
           orderId: row.orderId || `order-${Date.now()}`,
           customerName: row.customerName || "Unknown Customer",
@@ -612,23 +672,23 @@ router.get("/orders-by-year/:year?", ensureAdmin, async (req: Request, res: Resp
         };
       });
     };
-    
+
     // Process the results
     const formattedFarmerCustomerOrders = formatOrders(farmerCustomerOrders, 'farmer-customer');
     const formattedVendorFarmerOrders = formatOrders(vendorFarmerOrders, 'vendor-farmer');
-    
+
     // Combine all orders and sort by date (newest first)
     const allOrders = [...formattedFarmerCustomerOrders, ...formattedVendorFarmerOrders]
       .sort((a, b) => new Date(b.orderDate).getTime() - new Date(a.orderDate).getTime());
-    
+
     console.log(`[ADMIN API] Returning ${allOrders.length} total orders for year ${year}`);
-    
+
     // If no real orders, provide empty array to avoid frontend errors
     if (allOrders.length === 0) {
       console.log(`[ADMIN API] No orders found for year ${year}`);
       return res.json([]);
     }
-    
+
     // Return results
     res.json(allOrders);
   } catch (error: unknown) {
@@ -642,19 +702,19 @@ router.post("/update-order-status/:orderId", ensureAdmin, async (req: Request, r
   try {
     const { orderId } = req.params;
     const { status, orderType } = req.body;
-    
+
     if (!orderId || !status || !orderType) {
       return res.status(400).json({ 
         success: false, 
         message: "Missing required parameters: orderId, status, or orderType" 
       });
     }
-    
+
     console.log(`[ADMIN API] Updating order ${orderId} to status: ${status}`);
-    
+
     // Determine which table to update based on orderType
     let updateResult;
-    
+
     if (orderType === 'farmer-customer') {
       updateResult = await executeRawQuery(`
         UPDATE farmer_customer_orders 
@@ -675,7 +735,7 @@ router.post("/update-order-status/:orderId", ensureAdmin, async (req: Request, r
         message: "Invalid order type. Expected 'farmer-customer' or 'vendor-farmer'." 
       });
     }
-    
+
     if (updateResult && updateResult.rows && updateResult.rows.length > 0) {
       console.log(`[ADMIN API] Successfully updated order ${orderId} status to ${status}`);
       return res.json({ 
@@ -718,7 +778,7 @@ router.get("/farmers-with-multiple-disputes", ensureAdmin, async (_req: Request,
         resolvedDisputes: 2
       }
     ];
-    
+
     res.json(farmerDisputes);
   } catch (error: unknown) {
     console.error("Error fetching farmers with multiple disputes:", error);
@@ -730,7 +790,7 @@ router.get("/farmers-with-multiple-disputes", ensureAdmin, async (_req: Request,
 router.get("/most-sold-items", ensureAdmin, async (_req: Request, res: Response) => {
   try {
     console.log("[ADMIN API] Fetching most sold items");
-    
+
     // Use the raw SQL query to get most sold items from the database
     const mostSoldItemsQuery = `
       SELECT 
@@ -745,21 +805,21 @@ router.get("/most-sold-items", ensureAdmin, async (_req: Request, res: Response)
       ORDER BY "totalSold" DESC
       LIMIT 8
     `;
-    
+
     const mostSoldItems = await executeRawQuery(mostSoldItemsQuery);
     console.log(`[ADMIN API] Retrieved ${mostSoldItems.length} most sold items`);
-    
+
     // Calculate percentage of sales based on total
     let totalSold = 0;
     mostSoldItems.forEach(item => {
       totalSold += parseInt(item.totalSold);
     });
-    
+
     // Format the items with percentages
     const topSellingItems = mostSoldItems.map(item => {
       const sold = parseInt(item.totalSold);
       const percentageOfSales = totalSold > 0 ? (sold / totalSold) * 100 : 0;
-      
+
       return {
         itemId: item.itemId,
         itemName: item.itemName,
@@ -769,13 +829,13 @@ router.get("/most-sold-items", ensureAdmin, async (_req: Request, res: Response)
         percentageOfSales: parseFloat(percentageOfSales.toFixed(1))
       };
     });
-    
+
     // If there's no data in the database, provide a reasonable empty result
     if (topSellingItems.length === 0) {
       console.log("[ADMIN API] No sold items found in database");
       return res.json([]);
     }
-    
+
     // Handle CSV format request
     if (_req.query.format === 'csv') {
       console.log("[ADMIN API] Generating CSV for most sold items");
@@ -784,12 +844,12 @@ router.get("/most-sold-items", ensureAdmin, async (_req: Request, res: Response)
       topSellingItems.forEach(item => {
         csv += `${item.itemId},${item.itemName},${item.category},${item.totalSold},${item.revenue.toFixed(2)},${item.percentageOfSales.toFixed(1)}\n`;
       });
-      
+
       res.setHeader('Content-Type', 'text/csv');
       res.setHeader('Content-Disposition', 'attachment; filename=most_sold_items.csv');
       return res.send(csv);
     }
-    
+
     console.log("[ADMIN API] Returning most sold items data");
     res.json(topSellingItems);
   } catch (error: unknown) {
@@ -802,11 +862,11 @@ router.get("/most-sold-items", ensureAdmin, async (_req: Request, res: Response)
 router.post("/execute-query", ensureAdmin, async (req: Request, res: Response) => {
   try {
     const { query } = req.body;
-    
+
     if (!query) {
       return res.status(400).json({ success: false, message: "Query is required" });
     }
-    
+
     // Validate the query to prevent dangerous operations
     const lowerQuery = query.toLowerCase();
     if (
@@ -821,10 +881,10 @@ router.post("/execute-query", ensureAdmin, async (req: Request, res: Response) =
         message: "For safety reasons, only SELECT queries are allowed" 
       });
     }
-    
+
     // Execute the query against the database
     const result = await executeRawQuery(query);
-    
+
     res.json({
       success: true,
       result
