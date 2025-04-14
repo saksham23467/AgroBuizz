@@ -578,63 +578,88 @@ router.get("/highly-rated-vendors", ensureAdmin, async (_req: Request, res: Resp
 router.get("/orders-by-year/:year?", ensureAdmin, async (req: Request, res: Response) => {
   try {
     const year = req.params.year || "2025";
+    console.log(`[ADMIN API] Fetching orders for year: ${year}`);
     
-    // This would be replaced with actual database query
-    const yearOrders = [
-      {
-        orderId: "o1",
-        customerName: "Emma Wilson",
-        orderDate: "2025-04-10T09:30:00.000Z",
-        totalAmount: 1250.75,
-        status: "completed",
-        items: 5
-      },
-      {
-        orderId: "o2",
-        customerName: "James Brown",
-        orderDate: "2025-04-08T14:15:00.000Z",
-        totalAmount: 875.20,
-        status: "processing",
-        items: 3
-      },
-      {
-        orderId: "o3",
-        customerName: "Sophia Chen",
-        orderDate: "2025-04-12T11:45:00.000Z",
-        totalAmount: 2120.50,
-        status: "completed",
-        items: 8
-      },
-      {
-        orderId: "o4",
-        customerName: "Miguel Rodriguez",
-        orderDate: "2025-04-05T16:20:00.000Z",
-        totalAmount: 450.25,
-        status: "processing",
-        items: 2
-      },
-      {
-        orderId: "o5",
-        customerName: "Emma Wilson",
-        orderDate: "2025-04-15T10:10:00.000Z",
-        totalAmount: 755.00,
-        status: "cancelled",
-        items: 4
-      },
-      {
-        orderId: "o6",
-        customerName: "Ahmed Khan",
-        orderDate: "2025-04-11T15:30:00.000Z",
-        totalAmount: 1850.75,
-        status: "completed",
-        items: 6
-      }
-    ].filter(order => new Date(order.orderDate).getFullYear().toString() === year);
+    // Get all orders from the database
+    const { sql } = db;
     
-    res.json(yearOrders);
+    // Query for farmer-customer orders
+    const farmerCustomerOrdersResult = await db.execute(sql`
+      SELECT 
+        fco.order_id as "orderId", 
+        fco.order_date as "orderDate",
+        fco.order_status as "status",
+        fco.quantity,
+        c.name as "customerName",
+        cr.name as "itemName",
+        cr.price,
+        'farmer-customer' as "orderType"
+      FROM farmer_customer_orders fco
+      LEFT JOIN customers c ON fco.customer_id = c.customer_id
+      LEFT JOIN crops cr ON fco.crop_id = cr.crop_id
+      WHERE EXTRACT(YEAR FROM fco.order_date) = ${year}
+    `);
+    
+    // Query for vendor-farmer orders
+    const vendorFarmerOrdersResult = await db.execute(sql`
+      SELECT 
+        vfo.order_id as "orderId", 
+        vfo.order_date as "orderDate",
+        vfo.order_status as "status",
+        vfo.quantity,
+        f.name as "customerName",
+        p.name as "itemName",
+        p.price,
+        'vendor-farmer' as "orderType"
+      FROM vendor_farmer_orders vfo
+      LEFT JOIN farmers f ON vfo.farmer_id = f.farmer_id
+      LEFT JOIN products p ON vfo.product_id = p.product_id
+      WHERE EXTRACT(YEAR FROM vfo.order_date) = ${year}
+    `);
+    
+    console.log(`[ADMIN API] Found ${farmerCustomerOrdersResult.rowCount || 0} farmer-customer orders for year ${year}`);
+    console.log(`[ADMIN API] Found ${vendorFarmerOrdersResult.rowCount || 0} vendor-farmer orders for year ${year}`);
+    
+    // Format the data for the frontend
+    const formatOrders = (rows, orderType) => {
+      return rows.map(row => {
+        const price = parseFloat(row.price?.toString() || "0");
+        const quantity = parseInt(row.quantity?.toString() || "1");
+        const totalAmount = price * quantity;
+        
+        return {
+          orderId: row.orderId || `order-${Date.now()}`,
+          customerName: row.customerName || "Unknown Customer",
+          orderDate: row.orderDate ? new Date(row.orderDate).toISOString() : new Date().toISOString(),
+          totalAmount: totalAmount,
+          status: row.status || "pending",
+          items: quantity,
+          orderType: orderType
+        };
+      });
+    };
+    
+    // Process the results
+    const farmerCustomerOrders = formatOrders(farmerCustomerOrdersResult.rows || [], 'farmer-customer');
+    const vendorFarmerOrders = formatOrders(vendorFarmerOrdersResult.rows || [], 'vendor-farmer');
+    
+    // Combine all orders and sort by date (newest first)
+    const allOrders = [...farmerCustomerOrders, ...vendorFarmerOrders]
+      .sort((a, b) => new Date(b.orderDate).getTime() - new Date(a.orderDate).getTime());
+    
+    console.log(`[ADMIN API] Returning ${allOrders.length} total orders for year ${year}`);
+    
+    // If no real orders, provide empty array to avoid frontend errors
+    if (allOrders.length === 0) {
+      console.log(`[ADMIN API] No orders found for year ${year}`);
+      return res.json([]);
+    }
+    
+    // Return results
+    res.json(allOrders);
   } catch (error: unknown) {
-    console.error(`Error fetching orders for year ${req.params.year}:`, error);
-    res.status(500).json({ success: false, message: "Internal server error" });
+    console.error("[ADMIN API ERROR] Error fetching orders by year:", error);
+    res.status(500).json({ success: false, message: "Internal server error fetching orders" });
   }
 });
 
