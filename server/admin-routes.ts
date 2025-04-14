@@ -29,10 +29,17 @@ router.get("/users", ensureAdmin, async (_req: Request, res: Response) => {
     const allUsers = await db.select().from(users);
     
     console.log(`[ADMIN API] Retrieved ${allUsers.length} users`);
-    return res.json(allUsers);
+    return res.json({ 
+      success: true, 
+      users: allUsers 
+    });
   } catch (error) {
     console.error("[ADMIN API ERROR] Failed to fetch users:", error);
-    return res.status(500).json({ success: false, message: "Error fetching users" });
+    return res.status(500).json({ 
+      success: false, 
+      message: "Error fetching users",
+      users: [] 
+    });
   }
 });
 
@@ -144,40 +151,10 @@ router.get("/products-by-type/:type", ensureAdmin, async (req: Request, res: Res
     
     console.log(`[ADMIN API] Found ${fetchedProducts.length} products of type ${type}`);
     
-    // If no products found in the database, return sample data
+    // If no products found in the database, return empty array
     if (fetchedProducts.length === 0) {
-      console.log(`[ADMIN API] No products found in database for type ${type}, returning sample data`);
-      const sampleProducts = [
-        {
-          id: "p1",
-          name: "Premium Wheat Seeds",
-          type: "seeds",
-          price: 45.99,
-          stock: 500,
-          vendorId: "v1",
-          vendorName: "AgriSeeds Co."
-        },
-        {
-          id: "p2",
-          name: "Organic Fertilizer", 
-          type: "fertilizer",
-          price: 32.50,
-          stock: 300,
-          vendorId: "v2",
-          vendorName: "EcoFarm Supplies"
-        },
-        {
-          id: "p3",
-          name: "Compact Tractor",
-          type: "equipment",
-          price: 12500.00,
-          stock: 5,
-          vendorId: "v3",
-          vendorName: "FarmTech Machinery"
-        }
-      ].filter(p => p.type === type);
-      
-      return res.json(sampleProducts);
+      console.log(`[ADMIN API] No products found in database for type ${type}`);
+      return res.json([]);
     }
     
     res.json(fetchedProducts);

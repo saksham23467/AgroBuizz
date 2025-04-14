@@ -266,7 +266,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Ensure the crop belongs to this farmer
-      if (crop.farmer_id !== user.id) {
+      if (crop.farmerId !== user.id) {
         return res.status(403).json({ 
           success: false, 
           message: "Access denied. This crop does not belong to your account." 
