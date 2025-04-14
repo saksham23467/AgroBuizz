@@ -93,7 +93,7 @@ export default function Checkout() {
     });
   };
 
-  const handleCheckout = () => {
+  const handleCheckout = async () => {
     const total = calculateSubtotal();
     
     if (total > pointsBalance) {
@@ -106,24 +106,33 @@ export default function Checkout() {
     }
     
     setProcessingOrder(true);
-    
-    // Simulate order processing
-    const timer = setInterval(() => {
-      setProgress(prev => {
-        if (prev >= 100) {
-          clearInterval(timer);
-          setProcessingOrder(false);
-          setOrderComplete(true);
-          setPointsBalance(prev => prev - total);
-          toast({
-            title: "Order completed!",
-            description: `Your purchase of ${total} points has been processed.`,
-          });
-          return 0;
-        }
-        return prev + 10;
+    setProgress(25);
+
+    try {
+      const success = await placeOrder();
+      
+      if (success) {
+        setProgress(100);
+        setProcessingOrder(false);
+        setOrderComplete(true);
+        setPointsBalance(prev => prev - total);
+        toast({
+          title: "Order completed!",
+          description: `Your purchase of ${total} points has been processed.`,
+        });
+      } else {
+        throw new Error('Order placement failed');
+      }
+    } catch (error) {
+      console.error('Error placing order:', error);
+      toast({
+        title: "Order failed",
+        description: "There was an error processing your order. Please try again.",
+        variant: "destructive"
       });
-    }, 300);
+      setProcessingOrder(false);
+      setProgress(0);
+    }
   };
 
   const resetOrder = () => {
