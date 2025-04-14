@@ -411,7 +411,12 @@ export async function seedDatabase() {
       `);
       
       // Only proceed with creating orders if none exist
-      if (!existingOrders.rows[0] || parseInt(existingOrders.rows[0].count) === 0) {
+      const hasExistingOrders = existingOrders && 
+                                existingOrders.rows && 
+                                existingOrders.rows[0] && 
+                                parseInt(existingOrders.rows[0].count) > 0;
+      
+      if (!hasExistingOrders) {
         console.log('📋 No existing orders found, creating sample orders...');
         
         // Get vendor ID from the database
@@ -435,10 +440,10 @@ export async function seedDatabase() {
         `);
         
         // Only proceed if we have all the required data
-        if (vendorResult.rows.length > 0 && 
-            farmerResult.rows.length > 0 && 
-            productsResult.rows.length > 0 &&
-            cropsResult.rows.length > 0) {
+        if (vendorResult && vendorResult.rows && vendorResult.rows.length > 0 && 
+            farmerResult && farmerResult.rows && farmerResult.rows.length > 0 && 
+            productsResult && productsResult.rows && productsResult.rows.length > 0 &&
+            cropsResult && cropsResult.rows && cropsResult.rows.length > 0) {
           
           const vendorId = vendorResult.rows[0].vendor_id;
           const farmerId = farmerResult.rows[0].farmer_id;
@@ -530,7 +535,11 @@ export async function seedDatabase() {
           console.log('⚠️ Missing required data for creating sample orders (vendor, farmer, products, or crops)');
         }
       } else {
-        console.log(`📋 ${existingOrders.rows[0].count} existing orders found, skipping sample order creation`);
+        const orderCount = existingOrders && 
+                        existingOrders.rows && 
+                        existingOrders.rows[0] ? 
+                        existingOrders.rows[0].count : 0;
+        console.log(`📋 ${orderCount} existing orders found, skipping sample order creation`);
       }
       
       // Create disputes section
@@ -583,11 +592,12 @@ export async function seedDatabase() {
     
     console.log('✅ Database seeding completed successfully!');
     
+    // Safely return the user objects if they exist
     return {
-      admin: adminUser[0],
-      farmer: farmerUser[0],
-      customer: customerUser[0],
-      vendor: vendorUser[0],
+      admin: adminUser && adminUser[0] ? adminUser[0] : null,
+      farmer: farmerUser && farmerUser[0] ? farmerUser[0] : null,
+      customer: customerUser && customerUser[0] ? customerUser[0] : null,
+      vendor: vendorUser && vendorUser[0] ? vendorUser[0] : null,
     };
     
   } catch (error) {
