@@ -44,14 +44,8 @@ export function setupAuth(app: Express) {
   passport.use(
     new LocalStrategy(async (username, password, done) => {
       try {
-        // First check if user exists
-        const user = await storage.getUserByUsername(username);
+        const user = await storage.validateUserCredentials(username, password);
         if (!user) {
-          return done(null, false, { message: 'Invalid username or password' });
-        }
-
-        // Validate password (implement proper password validation)
-        if (user.password !== password) { // In production, use proper password hashing
           return done(null, false, { message: 'Invalid username or password' });
         }
         
@@ -60,7 +54,6 @@ export function setupAuth(app: Express) {
         
         return done(null, user);
       } catch (error) {
-        console.error("Login error:", error);
         return done(error);
       }
     }),
@@ -81,16 +74,6 @@ export function setupAuth(app: Express) {
 
   app.post("/api/register", async (req, res) => {
     try {
-      console.log("Registration attempt:", req.body);
-      
-      // Validate required fields
-      if (!req.body.username || !req.body.email || !req.body.password) {
-        return res.status(400).json({
-          success: false,
-          message: "Username, email and password are required"
-        });
-      }
-
       // Check if user already exists
       const existingUser = await storage.getUserByUsername(req.body.username);
       if (existingUser) {
@@ -108,16 +91,8 @@ export function setupAuth(app: Express) {
         });
       }
 
-      // Create the user with default values
-      const userData = {
-        ...req.body,
-        role: req.body.role || "user",
-        userType: req.body.userType || "customer",
-        darkMode: false
-      };
-
-      console.log("Creating user with data:", userData);
-      const user = await storage.createUser(userData);
+      // Create the user
+      const user = await storage.createUser(req.body);
       
       // Log the user in
       req.login(user, (err) => {
