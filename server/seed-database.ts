@@ -17,9 +17,18 @@ const scryptAsync = promisify(scrypt);
 
 // Helper function to hash passwords
 async function hashPassword(password: string): Promise<string> {
-  const salt = randomBytes(16).toString("hex");
-  const buf = (await scryptAsync(password, salt, 64)) as Buffer;
-  return `${buf.toString("hex")}.${salt}`;
+  // Use a shorter hash+salt combination to fit within varchar(100)
+  const salt = randomBytes(8).toString("hex");  // 16 chars
+  const buf = (await scryptAsync(password, salt, 32)) as Buffer; // 64 chars
+  const result = `${buf.toString("hex")}.${salt}`;
+  
+  // Ensure the result fits within 100 characters
+  if (result.length > 99) {
+    console.warn(`Warning: Hash truncated from ${result.length} to 99 characters`);
+    return result.substring(0, 99);
+  }
+  
+  return result;
 }
 
 // Main seeding function
@@ -82,6 +91,28 @@ export async function seedDatabase() {
     
     console.log(`🚜 Farmer user created with ID: ${farmerUser[0].id}`);
     
+    // Create a farmer profile in the farmers table
+    const farmerId = `farm_${uuidv4().substring(0, 8)}`;
+    try {
+      await executeRawQuery(`
+        INSERT INTO farmers (farmer_id, name, contact_info, address, farm_type, crops_grown, profile_creation_date, username, password)
+        VALUES (
+          '${farmerId}',
+          'Test Farmer',
+          '555-123-4567',
+          '123 Farm Lane, Countryside, CA',
+          'Organic',
+          'Corn, Tomatoes, Wheat',
+          now(),
+          'farmer',
+          '${await hashPassword('farmer123')}'
+        )
+      `);
+      console.log(`🧑‍🌾 Farmer profile created with ID: ${farmerId}`);
+    } catch (error) {
+      console.error('Failed to create farmer profile:', error);
+    }
+    
     // Create customer user
     const customerUser = await db.insert(users).values({
       username: 'customer',
@@ -110,15 +141,35 @@ export async function seedDatabase() {
     
     console.log(`🏪 Vendor user created with ID: ${vendorUser[0].id}`);
     
+    // Create a vendor profile in the vendors table
+    const vendorId = `vend_${uuidv4().substring(0, 8)}`;
+    try {
+      await executeRawQuery(`
+        INSERT INTO vendors (vendor_id, name, business_details, contact_info, address, profile_creation_date, username, password)
+        VALUES (
+          '${vendorId}',
+          'Test Vendor',
+          'Agricultural supplies and equipment',
+          '555-987-6543',
+          '456 Business Ave, Metropolis, CA',
+          now(),
+          'vendor',
+          '${await hashPassword('vendor123')}'
+        )
+      `);
+      console.log(`🏭 Vendor profile created with ID: ${vendorId}`);
+    } catch (error) {
+      console.error('Failed to create vendor profile:', error);
+    }
+    
     // Create crops for the farmer using raw SQL (simpler than dealing with schema mismatches)
     console.log('🌽 Creating crops for farmer...');
     
     const crop1Id = `crop_${uuidv4().substring(0, 8)}`;
     await executeRawQuery(`
-      INSERT INTO crops (crop_id, name, type, description, quantity, price)
+      INSERT INTO crops (crop_id, type, description, quantity, price)
       VALUES (
         '${crop1Id}',
-        'Organic Sweet Corn',
         'vegetable',
         'Freshly harvested organic sweet corn, perfect for summer meals',
         1000,
@@ -126,17 +177,28 @@ export async function seedDatabase() {
       )
     `);
     
+    // Add relationship between farmer and crop in the farmer_crops table
+    await executeRawQuery(`
+      INSERT INTO farmer_crops (farmer_id, crop_id)
+      VALUES ('${farmerUser[0].id}', '${crop1Id}')
+    `);
+    
     const crop2Id = `crop_${uuidv4().substring(0, 8)}`;
     await executeRawQuery(`
-      INSERT INTO crops (crop_id, name, type, description, quantity, price)
+      INSERT INTO crops (crop_id, type, description, quantity, price)
       VALUES (
         '${crop2Id}',
-        'Premium Tomatoes',
         'vegetable',
         'Vine-ripened tomatoes, grown with organic practices',
         500,
         2.99
       )
+    `);
+    
+    // Add relationship between farmer and crop in the farmer_crops table
+    await executeRawQuery(`
+      INSERT INTO farmer_crops (farmer_id, crop_id)
+      VALUES ('${farmerUser[0].id}', '${crop2Id}')
     `);
     
     console.log(`🌱 Created 2 crops for farmer`);
@@ -158,6 +220,12 @@ export async function seedDatabase() {
       )
     `);
     
+    // Add relationship between vendor and product in the vendor_products table
+    await executeRawQuery(`
+      INSERT INTO vendor_products (vendor_id, product_id)
+      VALUES ('${vendorUser[0].id}', '${product1Id}')
+    `);
+    
     const product2Id = `prod_${uuidv4().substring(0, 8)}`;
     await executeRawQuery(`
       INSERT INTO products (product_id, name, type, description, price, quantity, classification)
@@ -170,6 +238,12 @@ export async function seedDatabase() {
         300,
         'Agriculture'
       )
+    `);
+    
+    // Add relationship between vendor and product in the vendor_products table
+    await executeRawQuery(`
+      INSERT INTO vendor_products (vendor_id, product_id)
+      VALUES ('${vendorUser[0].id}', '${product2Id}')
     `);
     
     const product3Id = `prod_${uuidv4().substring(0, 8)}`;
@@ -186,15 +260,22 @@ export async function seedDatabase() {
       )
     `);
     
+    // Add relationship between vendor and product in the vendor_products table
+    await executeRawQuery(`
+      INSERT INTO vendor_products (vendor_id, product_id)
+      VALUES ('${vendorUser[0].id}', '${product3Id}')
+    `);
+    
     console.log(`🧰 Created 3 products for vendor`);
     
     // Create sample complaint
     try {
       await executeRawQuery(`
-        INSERT INTO product_complaints (user_id, product_id, title, description, status, created_at, updated_at)
+        INSERT INTO product_complaints (user_id, product_id, vendor_id, title, description, status, created_at, updated_at)
         VALUES (
           ${customerUser[0].id},
           '${product2Id}',
+          '${vendorUser[0].id}',
           'Package arrived damaged',
           'The fertilizer bag was torn when it arrived',
           'unsolved',
@@ -209,20 +290,20 @@ export async function seedDatabase() {
     
     // Create sample dispute
     try {
+      const disputeId = `disp_${uuidv4().substring(0, 8)}`;
+      const orderId = `order_${uuidv4().substring(0, 8)}`;
+      
       await executeRawQuery(`
-        INSERT INTO farmer_disputes (vendor_id, farmer_id, title, description, status, category, created_at, updated_at)
+        INSERT INTO vendor_farmer_disputes (dispute_id, order_id, dispute_type, dispute_status, details)
         VALUES (
-          ${vendorUser[0].id},
-          ${farmerUser[0].id},
-          'Seeds quality issue',
-          'Seeds had lower germination rate than advertised',
-          'open',
+          '${disputeId}',
+          '${orderId}',
           'quality',
-          now(),
-          now()
+          'open',
+          'Seeds had lower germination rate than advertised'
         )
       `);
-      console.log(`⚠️ Created sample dispute`);
+      console.log(`⚠️ Created sample dispute with ID: ${disputeId}`);
     } catch (error) {
       console.error('Failed to create sample dispute:', error);
     }
