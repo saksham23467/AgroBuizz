@@ -401,70 +401,151 @@ export async function seedDatabase() {
       console.error('Failed to create products:', error);
     }
     
-    // Sample complaint is now created in the products section
+    // Create sample orders section
+    console.log('📋 Creating sample orders...');
     
-    // Check if there's an existing order before creating a dispute
     try {
-      // First, check if we have a product to use
-      const productsResult = await executeRawQuery(`
-        SELECT product_id FROM products LIMIT 1
+      // First, check if we have any orders already
+      const existingOrders = await executeRawQuery(`
+        SELECT COUNT(*) as count FROM vendor_farmer_orders
       `);
       
-      if (productsResult && productsResult.rows && productsResult.rows.length > 0) {
-        const productId = productsResult.rows[0].product_id;
+      // Only proceed with creating orders if none exist
+      if (!existingOrders.rows[0] || parseInt(existingOrders.rows[0].count) === 0) {
+        console.log('📋 No existing orders found, creating sample orders...');
         
-        // Check if an order already exists
-        const existingOrders = await executeRawQuery(`
-          SELECT COUNT(*) as count FROM vendor_farmer_orders
+        // Get vendor ID from the database
+        const vendorResult = await executeRawQuery(`
+          SELECT vendor_id FROM vendors LIMIT 1
         `);
         
-        let orderId;
+        // Get farmer ID from the database
+        const farmerResult = await executeRawQuery(`
+          SELECT farmer_id FROM farmers LIMIT 1
+        `);
         
-        if (existingOrders && existingOrders.rows && existingOrders.rows[0] && parseInt(existingOrders.rows[0].count) > 0) {
-          // Get an existing order ID
-          const orderResult = await executeRawQuery(`
-            SELECT order_id FROM vendor_farmer_orders LIMIT 1
-          `);
+        // Get product IDs from the database
+        const productsResult = await executeRawQuery(`
+          SELECT product_id FROM products LIMIT 3
+        `);
+        
+        // Get crop IDs from the database
+        const cropsResult = await executeRawQuery(`
+          SELECT crop_id FROM crops LIMIT 3
+        `);
+        
+        // Only proceed if we have all the required data
+        if (vendorResult.rows.length > 0 && 
+            farmerResult.rows.length > 0 && 
+            productsResult.rows.length > 0 &&
+            cropsResult.rows.length > 0) {
           
-          if (orderResult && orderResult.rows && orderResult.rows.length > 0) {
-            orderId = orderResult.rows[0].order_id;
-            console.log(`📋 Using existing order with ID: ${orderId}`);
+          const vendorId = vendorResult.rows[0].vendor_id;
+          const farmerId = farmerResult.rows[0].farmer_id;
+          
+          // Create vendor-farmer orders (vendor selling to farmer)
+          for (let i = 0; i < Math.min(productsResult.rows.length, 3); i++) {
+            const productId = productsResult.rows[i].product_id;
+            const orderTypes = ['seeds', 'equipment', 'fertilizer'];
+            const orderStatuses = ['pending', 'processing', 'shipped', 'delivered', 'cancelled'];
+            
+            // Create order with a random status and order_type
+            const orderType = orderTypes[i % orderTypes.length];
+            // Create orders with different status to demonstrate the dashboard filters
+            const orderStatus = orderStatuses[i % orderStatuses.length];
+            const quantity = Math.floor(Math.random() * 20) + 1;
+            const orderId = `order_${uuidv4().substring(0, 8)}`;
+            
+            try {
+              await executeRawQuery(`
+                INSERT INTO vendor_farmer_orders (
+                  order_id, 
+                  vendor_id, 
+                  farmer_id, 
+                  product_id, 
+                  quantity, 
+                  order_type, 
+                  order_status, 
+                  order_date
+                ) VALUES (
+                  '${orderId}',
+                  '${vendorId}', 
+                  '${farmerId}', 
+                  '${productId}',
+                  ${quantity},
+                  '${orderType}',
+                  '${orderStatus}',
+                  now() - interval '${i} days'
+                )
+              `);
+              console.log(`📦 Created vendor-farmer order #${i+1} with ID: ${orderId}, status: ${orderStatus}`);
+            } catch (orderError) {
+              console.error(`Failed to create vendor-farmer order #${i+1}:`, orderError);
+            }
           }
+          
+          // Create farmer-customer orders (farmer selling to customer)
+          for (let i = 0; i < Math.min(cropsResult.rows.length, 3); i++) {
+            const cropId = cropsResult.rows[i].crop_id;
+            const orderTypes = ['grain', 'vegetables', 'fruit'];
+            const orderStatuses = ['pending', 'processing', 'shipped', 'delivered', 'cancelled'];
+            
+            // Create order with a random status and order_type
+            const orderType = orderTypes[i % orderTypes.length];
+            // Create orders with different status to demonstrate the dashboard filters
+            const orderStatus = orderStatuses[(i+2) % orderStatuses.length]; // Different from vendor orders
+            const quantity = Math.floor(Math.random() * 50) + 5;
+            const orderId = `order_${uuidv4().substring(0, 8)}`;
+            
+            try {
+              await executeRawQuery(`
+                INSERT INTO farmer_customer_orders (
+                  order_id, 
+                  farmer_id, 
+                  customer_id, 
+                  crop_id, 
+                  quantity, 
+                  order_type, 
+                  order_status, 
+                  order_date
+                ) VALUES (
+                  '${orderId}',
+                  '${farmerId}', 
+                  'cust_${uuidv4().substring(0, 8)}', 
+                  '${cropId}',
+                  ${quantity},
+                  '${orderType}',
+                  '${orderStatus}',
+                  now() - interval '${i*2} days'
+                )
+              `);
+              console.log(`🥕 Created farmer-customer order #${i+1} with ID: ${orderId}, status: ${orderStatus}`);
+            } catch (orderError) {
+              console.error(`Failed to create farmer-customer order #${i+1}:`, orderError);
+            }
+          }
+          
+          console.log('📋 Sample orders created successfully');
         } else {
-          // Create a new order
-          orderId = `order_${uuidv4().substring(0, 8)}`;
-          
-          try {
-            await executeRawQuery(`
-              INSERT INTO vendor_farmer_orders (
-                order_id, 
-                vendor_id, 
-                farmer_id, 
-                product_id, 
-                quantity, 
-                order_type, 
-                order_status, 
-                order_date
-              ) VALUES (
-                '${orderId}',
-                'vendor_test', 
-                'farmer_test', 
-                '${productId}',
-                10,
-                'seeds',
-                'delivered',
-                now()
-              )
-            `);
-            console.log(`📋 Created new order with ID: ${orderId}`);
-          } catch (orderError) {
-            console.error('Failed to create test order:', orderError);
-            orderId = null;
-          }
+          console.log('⚠️ Missing required data for creating sample orders (vendor, farmer, products, or crops)');
         }
+      } else {
+        console.log(`📋 ${existingOrders.rows[0].count} existing orders found, skipping sample order creation`);
+      }
+      
+      // Create disputes section
+      console.log('⚠️ Checking for vendor-farmer orders to create disputes...');
+      
+      try {
+        // Get an existing vendor-farmer order ID to create a dispute
+        const orderResult = await executeRawQuery(`
+          SELECT order_id FROM vendor_farmer_orders LIMIT 1
+        `);
         
-        // If we have a valid order ID, create a dispute
-        if (orderId) {
+        if (orderResult && orderResult.rows && orderResult.rows.length > 0) {
+          const orderId = orderResult.rows[0].order_id;
+          console.log(`📋 Found order with ID: ${orderId} for dispute creation`);
+          
           // Check if disputes already exist
           const existingDisputes = await executeRawQuery(`
             SELECT COUNT(*) as count FROM vendor_farmer_disputes
@@ -490,9 +571,11 @@ export async function seedDatabase() {
             `);
             console.log(`⚠️ Created sample dispute with ID: ${disputeId} for order ${orderId}`);
           }
+        } else {
+          console.log('⏭️ Skipping dispute creation as no orders are available');
         }
-      } else {
-        console.log('⏭️ Skipping dispute creation as no products are available for an order');
+      } catch (disputeError) {
+        console.error('Failed to create dispute:', disputeError);
       }
     } catch (error) {
       console.error('Failed to create/process disputes:', error);

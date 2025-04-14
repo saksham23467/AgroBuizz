@@ -587,8 +587,12 @@ router.get("/orders-by-year/:year?", ensureAdmin, async (req: Request, res: Resp
     const farmerCustomerOrdersResult = await executeRawQuery(farmerCustomerOrdersQuery);
     const vendorFarmerOrdersResult = await executeRawQuery(vendorFarmerOrdersQuery);
     
-    console.log(`[ADMIN API] Found ${farmerCustomerOrdersResult.rows.length || 0} farmer-customer orders for year ${year}`);
-    console.log(`[ADMIN API] Found ${vendorFarmerOrdersResult.rows.length || 0} vendor-farmer orders for year ${year}`);
+    // Handle the result safely
+    const farmerCustomerOrders = farmerCustomerOrdersResult && farmerCustomerOrdersResult.rows ? farmerCustomerOrdersResult.rows : [];
+    const vendorFarmerOrders = vendorFarmerOrdersResult && vendorFarmerOrdersResult.rows ? vendorFarmerOrdersResult.rows : [];
+    
+    console.log(`[ADMIN API] Found ${farmerCustomerOrders.length || 0} farmer-customer orders for year ${year}`);
+    console.log(`[ADMIN API] Found ${vendorFarmerOrders.length || 0} vendor-farmer orders for year ${year}`);
     
     // Format the data for the frontend with proper type definitions
     const formatOrders = (rows: any[], orderType: string): any[] => {
@@ -610,11 +614,11 @@ router.get("/orders-by-year/:year?", ensureAdmin, async (req: Request, res: Resp
     };
     
     // Process the results
-    const farmerCustomerOrders = formatOrders(farmerCustomerOrdersResult.rows || [], 'farmer-customer');
-    const vendorFarmerOrders = formatOrders(vendorFarmerOrdersResult.rows || [], 'vendor-farmer');
+    const formattedFarmerCustomerOrders = formatOrders(farmerCustomerOrders, 'farmer-customer');
+    const formattedVendorFarmerOrders = formatOrders(vendorFarmerOrders, 'vendor-farmer');
     
     // Combine all orders and sort by date (newest first)
-    const allOrders = [...farmerCustomerOrders, ...vendorFarmerOrders]
+    const allOrders = [...formattedFarmerCustomerOrders, ...formattedVendorFarmerOrders]
       .sort((a, b) => new Date(b.orderDate).getTime() - new Date(a.orderDate).getTime());
     
     console.log(`[ADMIN API] Returning ${allOrders.length} total orders for year ${year}`);
