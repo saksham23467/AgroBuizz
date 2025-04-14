@@ -138,7 +138,7 @@ router.get("/products-by-type/:type", ensureAdmin, async (req: Request, res: Res
     // Fetch products from the database by type
     const productsQuery = db.select()
       .from(products)
-      .where(eq(products.productType, type));
+      .where(eq(products.type, type));
       
     const fetchedProducts = await productsQuery;
     

@@ -834,7 +834,16 @@ export default function AdminDashboard() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {getFilteredUsers().map(user => (
+                    {isLoadingUsers ? (
+                      <TableRow>
+                        <TableCell colSpan={7} className="text-center">
+                          <div className="flex items-center justify-center space-x-2">
+                            <RefreshCw className="h-4 w-4 animate-spin" />
+                            <span>Loading user data...</span>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ) : getFilteredUsers().map((user: any) => (
                       <TableRow key={user.id}>
                         <TableCell className="font-medium">{user.username}</TableCell>
                         <TableCell>{user.email}</TableCell>
@@ -844,8 +853,8 @@ export default function AdminDashboard() {
                           </Badge>
                         </TableCell>
                         <TableCell className="capitalize">{user.userType}</TableCell>
-                        <TableCell>{user.createdAt}</TableCell>
-                        <TableCell>{user.lastLogin}</TableCell>
+                        <TableCell>{user.createdAt ? new Date(user.createdAt).toLocaleString() : 'N/A'}</TableCell>
+                        <TableCell>{user.lastLogin ? new Date(user.lastLogin).toLocaleString() : 'Never'}</TableCell>
                         <TableCell>
                           <div className="flex items-center space-x-2">
                             <Button variant="ghost" size="icon">
