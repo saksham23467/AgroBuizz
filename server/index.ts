@@ -2,6 +2,7 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import cookieParser from "cookie-parser";
+import { seedDatabase } from "./seed-database";
 
 const app = express();
 app.use(express.json());
@@ -39,6 +40,14 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  // Run database seeding (creates sample users and products if they don't exist)
+  try {
+    await seedDatabase();
+    log("Database seeding completed or was skipped (already seeded)");
+  } catch (error) {
+    log("Error during database seeding: " + (error as Error).message);
+  }
+  
   const server = await registerRoutes(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
