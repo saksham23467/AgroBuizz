@@ -121,12 +121,47 @@ export function CartProvider({ children }: { children: ReactNode }) {
   }, [toast]);
 
   // Clear cart
+  const placeOrder = useCallback(async () => {
+    try {
+      const response = await fetch('/api/orders', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          items: cart,
+          totalAmount: getSubtotal()
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to place order');
+      }
+
+      // Clear cart after successful order
+      setCart([]);
+      localStorage.removeItem('cart');
+      
+      toast({
+        title: "Order placed successfully",
+        description: "Your order has been placed and is being processed",
+      });
+
+      return true;
+    } catch (error) {
+      toast({
+        title: "Error placing order",
+        description: "There was a problem placing your order. Please try again.",
+        variant: "destructive"
+      });
+      return false;
+    }
+  }, [cart, getSubtotal, toast]);
+
   const clearCart = useCallback(() => {
     setCart([]);
-    // Explicitly remove from localStorage to ensure complete cleanup
     localStorage.removeItem('cart');
     
-    // Dispatch custom event to notify other components about cart changes
     const cartUpdateEvent = new CustomEvent('cartUpdated');
     window.dispatchEvent(cartUpdateEvent);
     
@@ -157,7 +192,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
         removeFromCart,
         clearCart,
         getTotalItems,
-        getSubtotal
+        getSubtotal,
+        placeOrder
       }}
     >
       {children}
