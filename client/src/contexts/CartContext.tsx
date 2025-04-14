@@ -97,7 +97,22 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   // Remove item from cart
   const removeFromCart = useCallback((itemId: number) => {
-    setCart(prevCart => prevCart.filter(item => item.id !== itemId));
+    setCart(prevCart => {
+      const updatedCart = prevCart.filter(item => item.id !== itemId);
+      
+      // If cart becomes empty after removing item, explicitly remove from localStorage
+      if (updatedCart.length === 0) {
+        localStorage.removeItem('cart');
+      } else {
+        localStorage.setItem('cart', JSON.stringify(updatedCart));
+      }
+      
+      // Dispatch custom event to notify other components about cart changes
+      const cartUpdateEvent = new CustomEvent('cartUpdated');
+      window.dispatchEvent(cartUpdateEvent);
+      
+      return updatedCart;
+    });
     
     toast({
       title: "Item removed",
@@ -108,6 +123,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
   // Clear cart
   const clearCart = useCallback(() => {
     setCart([]);
+    // Explicitly remove from localStorage to ensure complete cleanup
+    localStorage.removeItem('cart');
+    
+    // Dispatch custom event to notify other components about cart changes
+    const cartUpdateEvent = new CustomEvent('cartUpdated');
+    window.dispatchEvent(cartUpdateEvent);
+    
     toast({
       title: "Cart cleared",
       description: "All items have been removed from your cart",

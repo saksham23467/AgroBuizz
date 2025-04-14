@@ -214,7 +214,7 @@ export default function AdminDashboard() {
     
     if (!searchQuery) return products;
     
-    return products.filter(product => 
+    return products.filter((product: {name: string, category: string, description: string}) => 
       product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       product.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
       product.description.toLowerCase().includes(searchQuery.toLowerCase())
@@ -224,7 +224,7 @@ export default function AdminDashboard() {
   const getFilteredUsers = () => {
     if (!searchQuery) return usersData;
     
-    return usersData.filter(user => 
+    return usersData.filter((user: {username?: string, email?: string, userType?: string}) => 
       user.username?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       user.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       user.userType?.toLowerCase().includes(searchQuery.toLowerCase())
