@@ -266,7 +266,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Ensure the crop belongs to this farmer
-      if (crop.farmerId !== user.id) {
+      if (crop.farmer_id !== user.id) {
         return res.status(403).json({ 
           success: false, 
           message: "Access denied. This crop does not belong to your account." 
@@ -302,7 +302,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
-      if (existingCrop.farmerId !== user.id) {
+      if (existingCrop.farmer_id !== user.id) {
         return res.status(403).json({ 
           success: false, 
           message: "Access denied. This crop does not belong to your account." 
@@ -342,7 +342,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
-      if (existingCrop.farmerId !== user.id) {
+      if (existingCrop.farmer_id !== user.id) {
         return res.status(403).json({ 
           success: false, 
           message: "Access denied. This crop does not belong to your account." 
