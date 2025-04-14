@@ -59,7 +59,7 @@ export default function AdminDashboard() {
   
   // Fetch all users from the database
   const {
-    data: usersData = [],
+    data: usersResponse,
     isLoading: isLoadingUsers,
     error: usersError,
     refetch: refetchUsers
@@ -71,13 +71,16 @@ export default function AdminDashboard() {
         const res = await apiRequest('GET', '/api/admin/users');
         const data = await res.json();
         console.log('Fetched users data:', data);
-        return data || [];
+        return data || { users: [] };
       } catch (error) {
         console.error('Error fetching users:', error);
-        return [];
+        return { users: [] };
       }
     }
   });
+  
+  // Extract users array from the response
+  const usersData = usersResponse?.users || [];
   
   // Fetch all products from the database
   const {
