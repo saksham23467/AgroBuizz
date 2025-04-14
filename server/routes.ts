@@ -165,7 +165,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const productData = {
         ...req.body,
         productId,
-        vendorId: `vendor_${user.id}`, // Use a predictable vendor ID format
+        vendor_id: `vendor_${user.id}`, // Use a predictable vendor ID format with correct column name
         createdAt: new Date()
       };
       
@@ -225,7 +225,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const cropData = {
         ...req.body,
         cropId,
-        farmerId: user.id
+        farmer_id: user.id // Use correct column name from schema
       };
       
       console.log("[FARMER API] Prepared crop data:", JSON.stringify(cropData));
