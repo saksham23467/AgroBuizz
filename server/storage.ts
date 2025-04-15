@@ -269,6 +269,7 @@ export class DatabaseStorage implements IStorage {
           price: crop.price || 0,
           description: crop.description || '',
           farmerId: crop.farmerId,
+          imagePath: crop.imagePath || null, // Add imagePath with default value
           createdAt: new Date(),
           updatedAt: new Date()
         })
