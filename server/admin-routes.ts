@@ -147,19 +147,8 @@ router.get("/products-by-type/:type", ensureAdmin, async (req: Request, res: Res
       WHERE type = $1
     `;
     const fetchedProducts = await executeRawQuery(productsQuery, [type]);
+    console.log(`[ADMIN API] Found ${fetchedProducts.rows?.length || 0} products of type ${type}`);
     return res.json(fetchedProducts.rows || []);
-
-    const fetchedProducts = await productsQuery;
-
-    console.log(`[ADMIN API] Found ${fetchedProducts.length} products of type ${type}`);
-
-    // If no products found in the database, return empty array
-    if (fetchedProducts.length === 0) {
-      console.log(`[ADMIN API] No products found in database for type ${type}`);
-      return res.json([]);
-    }
-
-    res.json(fetchedProducts);
   } catch (error: unknown) {
     console.error(`[ADMIN API ERROR] Error fetching products of type ${req.params.type}:`, error);
     res.status(500).json({ success: false, message: "Internal server error" });
