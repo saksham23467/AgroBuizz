@@ -215,14 +215,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Update user type
   const updateUserTypeMutation = useMutation({
     mutationFn: async (userType: 'farmer' | 'customer' | 'vendor') => {
-      const res = await apiRequest("POST", "/api/user/preferences", { userType });
-      const data = await res.json();
+      console.log(`[CLIENT] Requesting user type change to: ${userType}`);
       
-      if (!data.success) {
-        throw new Error(data.message || "Failed to update user type");
+      try {
+        const res = await apiRequest("POST", "/api/user/preferences", { userType });
+        
+        if (!res.ok) {
+          const errorText = await res.text();
+          console.error(`[CLIENT] Error response from server:`, errorText);
+          throw new Error(`Server error: ${res.status} ${res.statusText}`);
+        }
+        
+        const data = await res.json();
+        
+        if (!data.success) {
+          console.error(`[CLIENT] API returned failure:`, data);
+          throw new Error(data.message || "Failed to update user type");
+        }
+        
+        console.log(`[CLIENT] User type updated successfully to: ${data.user.userType}`);
+        return data.user;
+      } catch (err) {
+        console.error(`[CLIENT] Error during user type update:`, err);
+        throw err;
       }
-      
-      return data.user;
     },
     onSuccess: (user: User) => {
       // Update the user data in cache
@@ -233,15 +249,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         description: `Your account type is now: ${user.userType}.`,
       });
       
+      console.log(`[CLIENT] Redirecting to homepage after user type change to: ${user.userType}`);
+      
       // Reload the page to apply new permissions and UI changes
       setTimeout(() => {
         window.location.href = '/';
       }, 1500);
     },
     onError: (error: Error) => {
+      console.error(`[CLIENT] User type update mutation error:`, error);
+      
       toast({
         title: "Update failed",
-        description: error.message,
+        description: error.message || "Failed to update user type. Please try again.",
         variant: "destructive",
       });
     },

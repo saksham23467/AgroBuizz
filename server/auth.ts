@@ -219,28 +219,35 @@ export function setupAuth(app: Express) {
       
       // Update user type if provided
       if (userType && ['farmer', 'customer', 'vendor'].includes(userType)) {
-        // Call storage method to update user type
-        const result = await storage.updateUserType(req.user.id, userType);
-        if (!result) {
-          return res.status(404).json({
-            success: false,
-            message: "User not found"
-          });
-        }
-        updatedUser = result;
-        
-        // Update session user data
-        req.login(updatedUser, (err) => {
-          if (err) {
-            console.error("Error updating session after user type change:", err);
-            return res.status(500).json({
+        try {
+          console.log(`[AUTH] Updating user type from ${req.user.userType} to ${userType} for user ID: ${req.user.id}`);
+          
+          // Call storage method to update user type
+          const result = await storage.updateUserType(req.user.id, userType);
+          if (!result) {
+            return res.status(404).json({
               success: false,
-              message: "Error updating session"
+              message: "User not found"
             });
           }
+          updatedUser = result;
           
-          // Return updated user data
-          res.json({ 
+          // Wrap req.login in a Promise to handle it properly
+          await new Promise<void>((resolve, reject) => {
+            req.login(updatedUser, (err) => {
+              if (err) {
+                console.error("Error updating session after user type change:", err);
+                reject(err);
+              } else {
+                console.log(`[AUTH] Session updated successfully for user type change to: ${userType}`);
+                resolve();
+              }
+            });
+          });
+          
+          // After successful login, return the updated user data
+          console.log(`[AUTH] Returning updated user data with userType: ${updatedUser.userType}`);
+          return res.json({ 
             success: true, 
             user: { 
               id: updatedUser.id, 
@@ -251,10 +258,16 @@ export function setupAuth(app: Express) {
               darkMode: updatedUser.darkMode
             } 
           });
-        });
+        } catch (loginError) {
+          console.error("Login error during user type update:", loginError);
+          return res.status(500).json({
+            success: false,
+            message: "Error updating session"
+          });
+        }
       } else if (!userType) {
         // Just return the updated user if only dark mode was changed
-        res.json({ 
+        return res.json({ 
           success: true, 
           user: { 
             id: updatedUser.id, 
