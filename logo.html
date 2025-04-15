@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AgroBuizz Logo</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 50px;
+            background-color: #f5f5f5;
+        }
+        .logo-container {
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        h1 {
+            color: #2E7D32;
+            margin-bottom: 30px;
+        }
+        p {
+            margin-top: 30px;
+            color: #555;
+            max-width: 600px;
+            text-align: center;
+        }
+        .instructions {
+            margin-top: 30px;
+            padding: 15px;
+            background-color: #e8f5e9;
+            border-radius: 8px;
+            border-left: 4px solid #4CAF50;
+        }
+        .logo-options {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 30px;
+            margin-top: 30px;
+        }
+        .logo-option {
+            text-align: center;
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .logo-title {
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #2E7D32;
+        }
+    </style>
+</head>
+<body>
+    <h1>AgroBuizz Logo</h1>
+    
+    <div class="logo-options">
+        <div class="logo-option">
+            <div class="logo-title">Standard Logo (PNG)</div>
+            <img src="data:image/png;base64,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uvUu19P4QVoWpKysnKrzx+mauxYmLoDSBVAwFV24J2Cuvz6TIBUkLEhn2yV6KnZAzwjX46SvcOJ7t8hhm5+fz5YtW5g5c6brUZJOX3slZUTi7vcUCQwVRMQiLa+DSGJUjX0TkSBSQUQsVBARCxVExEIFEbFQQUQsVBARCxVExEIFEbFQQUQsVBARCxVExEIFEbFQQUQsVBARCxVExEIFEbFQQUQsVBARCxVExEIFEbFQQUQsVBARCxVExEIFEbFQQUQsVBARCxVExEIFEbFQQUQsVBARCxVExEIFEbFQQUQsVBARCxVExEIFEbFQQUQsVBARCxVExEIFEbFQQUQsVBARCxVExEIFEbFQQUQsVBARCxVExEIFEbFQQUQsVBARCxVExEIFEbFQQUQsVBARCxVExEIFEbFQQUQsVBARCxVExEIFEbFQQUQsVBARCxVExEIFEbFQQUQsVBARCxVExEIFEbFQQUQsVBARCxVExEIFEbFQQUQsVBARCxVExEIFEbFQQUQsVBARCxVExEIFEbFQQUQsVBARCxVExEIFEbFQQUQsVBARCxVExEIFEbFQQUQsVBARCxVExEIFEbFQQUQsVBARCxVExEIFEbFQQUQsVBARCxVExEIFEbFQQUQsVBARCxVExEIFEbFQQUQsVBARCxVExEIFEbFQQUQsVBARCxVExEIFEbFQQUQsVBARCxVExEIFEbFQQUQsVBARCxVExEIFEbFQQUQsVBARCxVExEIFEbFQQUQsVBARCxVExEIFEbFQQUQsVBARCxVExEIFEbFQQUQsVBARCxVExEIFEbFQQUQsVBARCxVExEIFEbFQQUQsVBARCxVExEIFEbFQQUQsVBARCxVExEIFEbFQQUQsVBARCxVExEIFEbFQQUQsVBARCxVExEIFEbFQQUQsVBARCxVExEIFEbFQQUQsVBARCxVExEIFEbFQQUQsVBARCxVExEIFEbFQQUQsVBARCxVExEIFEbFQQUQsVBARCxVExEIFEbFQQUQsVBARCxVExEIFEbFQQUQsVBARCxVExEIFEbFQQUQsVBARCxVExEIFEbFQQUQsVBARCxVExEIFEbFQQUQsVBARCxVExEIFEbFQQUQsVBARCxVExEIFEbFQQUQsVBARCxVExEIFEbFQQUQsVBARCxVExEIFEbFQQUQsVBARCxVExEIFEbFQQUQsVBARCxVExEIFEbFQQUQsVBARCxVExEIFEbFQQUQsVBARCxVExEIFEbFQQUQsVBARCxVExEIFEbFQQUQsVBARCxVExEIFEbFQQUQsVBARCxVExEIFEbH4H+TVj7Vlz6y1AAAAAElFTkSuQmCC" width="200" alt="AgroBuizz Logo">
+            <p>Right-click and "Save Image As..." to download</p>
+        </div>
+        
+        <div class="logo-option">
+            <div class="logo-title">Logo with Text (PNG)</div>
+            <img src="data:image/png;base64,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" width="200" alt="AgroBuizz Logo with Text">
+            <p>Right-click and "Save Image As..." to download</p>
+        </div>
+    </div>
+    
+    <div class="instructions">
+        <p>You can right-click on either of these logos and select "Save Image As..." to download them. The images are in PNG format with transparent backgrounds, which makes them suitable for various uses including presentations, documents, and websites.</p>
+    </div>
+</body>
+</html>
