@@ -1,0 +1,52 @@
+For a truly aesthetic dark mode, you can use a refined palette that balances deep, rich tones with vibrant accent colors. Here’s a precise breakdown:
+
+1. **Primary Background:**  
+   - **Color:** `#121212`  
+   - **Usage:** This near-black shade forms the main backdrop, ensuring minimal glare and creating a dramatic, immersive atmosphere.
+
+2. **Secondary Background/Surface:**  
+   - **Color:** `#1E1E1E`  
+   - **Usage:** Use this slightly lighter tone for cards, panels, and modals to create subtle depth and layering.
+
+3. **Primary Text:**  
+   - **Color:** `#E0E0E0`  
+   - **Usage:** This light gray ensures high readability on the dark background for body text and headings.
+
+4. **Secondary Text & Subtle Elements:**  
+   - **Color:** `#B0B0B0`  
+   - **Usage:** Ideal for subtitles, placeholder text, or less prominent information that still needs to be legible without competing with main content.
+
+5. **Accent & Interactive Elements:**  
+   - **Color:** `#4CAF50`  
+   - **Usage:** Use this vibrant green to highlight buttons, links, or hover states. It reinforces the agricultural theme while providing a clear call to action.
+
+6. **Highlight / Call-to-Action (CTA):**  
+   - **Color:** `#FF5722`  
+   - **Usage:** A dynamic orange-red used sparingly for CTAs, notifications, or important alerts that need immediate attention.
+
+7. **Borders & Dividers:**  
+   - **Color:** `#424242`  
+   - **Usage:** This medium gray creates subtle separations between sections, such as card borders, divider lines, or input field outlines, without overwhelming the design.
+
+8. **Shadows & Depth:**  
+   - **Color:** `rgba(0, 0, 0, 0.5)`  
+   - **Usage:** Apply soft shadows to elevate elements like modals or popups, giving them a floating appearance over the dark background.
+
+### Usage Example
+
+- **Navigation Bar:**  
+  - **Background:** `#1E1E1E`  
+  - **Text:** `#E0E0E0`  
+  - **Active Link/Accent:** `#4CAF50`
+
+- **Buttons:**  
+  - **Primary Button:** Background `#4CAF50`, text `#121212`  
+  - **Secondary/CTA:** Background `#FF5722`, text `#121212`
+
+- **Cards/Modals:**  
+  - **Background:** `#1E1E1E`  
+  - **Border:** `#424242`  
+  - **Title Text:** `#E0E0E0`  
+  - **Body Text:** `#B0B0B0`
+
+This cohesive color scheme creates a modern and visually appealing dark mode, balancing contrast and vibrancy while keeping your website both functional and aesthetically pleasing.

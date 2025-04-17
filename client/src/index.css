@@ -1,0 +1,205 @@
+/* Import animations */
+@import './lib/animations.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --color-primary: #4CAF50;
+  --color-secondary: #8BC34A;
+  --color-background: #F1F8E9;
+  --color-highlight: #FFEB3B;
+  --color-text-primary: #101828;
+  --color-text-secondary: #475467;
+  --color-border: #d0d5dd;
+}
+
+/* Dark mode color palette */
+html.dark-mode {
+  --color-background: #121212;
+  --color-text-primary: #E0E0E0;
+  --color-text-secondary: #B0B0B0;
+  --color-primary: #4CAF50;
+  --color-highlight: #FF5722;
+  --color-border: #424242;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  html.dark-mode-transition * {
+    transition: background-color 0.3s ease, 
+                color 0.3s ease, 
+                border-color 0.3s ease,
+                box-shadow 0.3s ease,
+                filter 0.3s ease;
+  }
+
+  body {
+    @apply font-sans antialiased;
+    background-color: var(--color-background);
+    color: var(--color-text-primary);
+  }
+}
+
+/* Dark mode specific classes */
+html.dark-mode {
+  /* Card styling */
+  .card, 
+  .bg-card, 
+  .bg-white {
+    background-color: #1E1E1E !important;
+    border-color: var(--color-border) !important;
+  }
+
+  /* Button styling */
+  .btn-primary, 
+  .btn-secondary {
+    color: var(--color-text-primary) !important;
+  }
+
+  /* Form elements */
+  input, 
+  select, 
+  textarea {
+    background-color: #2D2D2D !important;
+    border-color: var(--color-border) !important;
+    color: var(--color-text-primary) !important;
+  }
+
+  /* Table styling */
+  table th, 
+  table td {
+    border-color: var(--color-border) !important;
+  }
+  
+  table thead th {
+    background-color: #1A1A1A !important;
+  }
+  
+  table tbody tr:hover {
+    background-color: #2A2A2A !important;
+  }
+
+  /* Dropdown and popover background */
+  .dropdown-content,
+  .select-content,
+  .popover-content,
+  .dialog-content {
+    background-color: #1E1E1E !important;
+    border-color: var(--color-border) !important;
+  }
+}
+
+/* Custom dark mode classes for shadcn UI components */
+html.dark-mode .bg-background {
+  background-color: var(--color-background) !important;
+}
+
+html.dark-mode .text-foreground {
+  color: var(--color-text-primary) !important;
+}
+
+html.dark-mode .text-muted-foreground {
+  color: var(--color-text-secondary) !important;
+}
+
+html.dark-mode .border-input,
+html.dark-mode .border {
+  border-color: var(--color-border) !important;
+}
+
+/* Dark mode card styling */
+html.dark-mode [class*="card"] {
+  background-color: #1E1E1E;
+}
+
+/* Custom dark mode for different sections */
+html.dark-mode .header,
+html.dark-mode .footer {
+  background-color: #181818;
+}
+
+html.dark-mode .sidebar {
+  background-color: #1A1A1A;
+}
+
+/* Animation utility classes */
+@layer utilities {
+  /* Hover effect utilities */
+  .hover-scale {
+    @apply transition-transform duration-200;
+  }
+  .hover-scale:hover {
+    transform: scale(1.05);
+  }
+  
+  .hover-scale-sm {
+    @apply transition-transform duration-200;
+  }
+  .hover-scale-sm:hover {
+    transform: scale(1.02);
+  }
+  
+  .hover-lift {
+    @apply transition-all duration-300;
+  }
+  .hover-lift:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+  }
+  
+  /* Click effects */
+  .click-scale:active {
+    transform: scale(0.98);
+  }
+  
+  /* Animation duration utilities */
+  .duration-300 {
+    transition-duration: 300ms;
+  }
+  
+  .duration-500 {
+    transition-duration: 500ms;
+  }
+  
+  /* Hardware acceleration for smoother animations */
+  .hw-accelerate {
+    transform: translateZ(0);
+    backface-visibility: hidden;
+    perspective: 1000px;
+  }
+  
+  /* Page transitions */
+  .page-transition-wrapper {
+    position: relative;
+    width: 100%;
+    min-height: 100vh;
+  }
+  
+  /* Login modal */
+  .login-modal {
+    transform-origin: center;
+  }
+  
+  /* Icon hover animations */
+  .icon-hover-animate {
+    transition: transform 0.3s ease;
+  }
+  
+  .icon-hover-animate:hover {
+    transform: scale(1.15) rotate(5deg);
+  }
+  
+  /* Staggered animation parent */
+  .stagger-parent {
+    position: relative;
+  }
+}
