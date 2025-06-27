@@ -30,7 +30,7 @@ AgroBuizz is a comprehensive web application designed to connect farmers, vendor
 
 1. **Download the code**:
 ```bash
-git clone https://github.com/yourusername/agrobuizz.git
+git clone https://github.com/saksham23467/agrobuizz.git
 cd agrobuizz
 ```
 
