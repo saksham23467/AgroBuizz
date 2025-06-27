@@ -286,9 +286,3 @@ For real-time features, the application uses WebSockets to provide:
 └── package.json - Project dependencies
 ```
 
-## Contributors
-
-- Rahul Agarwal
-- Saksham Bansal
-- Vansh Jain
-- Tanish Bachas
