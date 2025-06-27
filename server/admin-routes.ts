@@ -141,17 +141,26 @@ router.get("/products-by-type/:type", ensureAdmin, async (req: Request, res: Res
     const { type } = req.params;
     console.log(`[ADMIN API] Fetching products of type: ${type}`);
 
-    // Fetch products from the database by type
+    // Use string interpolation for the query, case-insensitive
     const productsQuery = `
       SELECT * FROM products 
-      WHERE type = $1
+      WHERE LOWER(type) = '${type.replace(/'/g, "''").toLowerCase()}'
     `;
-    const fetchedProducts = await executeRawQuery(productsQuery, [type]);
-    console.log(`[ADMIN API] Found ${fetchedProducts.rows?.length || 0} products of type ${type}`);
-    return res.json(fetchedProducts.rows || []);
+    const fetchedProducts = await executeRawQuery(productsQuery);
+    // Map fields to match frontend expectations
+    const mappedProducts = (fetchedProducts || []).map((p: any) => ({
+      id: p.product_id,
+      name: p.name,
+      category: p.type,
+      price: p.price,
+      stock: p.quantity,
+      description: p.description
+    }));
+    console.log(`[ADMIN API] Found ${mappedProducts.length || 0} products of type ${type}`);
+    return res.json(mappedProducts || []);
   } catch (error: unknown) {
     console.error(`[ADMIN API ERROR] Error fetching products of type ${req.params.type}:`, error);
-    res.status(500).json({ success: false, message: "Internal server error" });
+    return res.status(500).json({ success: false, message: (error as Error).message });
   }
 });
 
@@ -204,20 +213,8 @@ router.get("/available-products", ensureAdmin, async (_req: Request, res: Respon
   try {
     console.log("[ADMIN API] Fetching available products (in stock)");
 
-    // Fetch all products from database
-    const allProducts = await db.select().from(products);
-    console.log(`[ADMIN API] Retrieved ${allProducts.length} total products from database`);
-
-    // Filter products with quantity > 0
-    const availableProducts = allProducts.filter(p => {
-      // Safely convert the quantity to a number (handle potential string values)
-      const quantity = typeof p.quantity === 'number' 
-        ? p.quantity 
-        : parseInt(String(p.quantity) || '0');
-
-      return quantity > 0;
-    });
-
+    // Fetch all products from database with quantity > 0
+    const availableProducts = await executeRawQuery(`SELECT * FROM products WHERE quantity > 0`);
     console.log(`[ADMIN API] Found ${availableProducts.length} available products in stock`);
 
     res.json(availableProducts);
@@ -568,7 +565,7 @@ router.get("/orders", ensureAdmin, async (_req: Request, res: Response) => {
     `;
 
     const result = await executeRawQuery(ordersQuery);
-    const orders = result.rows.map(order => ({
+    const orders = result.map((order: any) => ({
       id: order.order_id,
       customer: order.customer_name,
       customerType: order.customer_type,
@@ -640,8 +637,8 @@ router.get("/orders-by-year/:year?", ensureAdmin, async (req: Request, res: Resp
     const vendorFarmerOrdersResult = await executeRawQuery(vendorFarmerOrdersQuery);
 
     // Handle the result safely
-    const farmerCustomerOrders = farmerCustomerOrdersResult && farmerCustomerOrdersResult.rows ? farmerCustomerOrdersResult.rows : [];
-    const vendorFarmerOrders = vendorFarmerOrdersResult && vendorFarmerOrdersResult.rows ? vendorFarmerOrdersResult.rows : [];
+    const farmerCustomerOrders = farmerCustomerOrdersResult && farmerCustomerOrdersResult.length > 0 ? farmerCustomerOrdersResult : [];
+    const vendorFarmerOrders = vendorFarmerOrdersResult && vendorFarmerOrdersResult.length > 0 ? vendorFarmerOrdersResult : [];
 
     console.log(`[ADMIN API] Found ${farmerCustomerOrders.length || 0} farmer-customer orders for year ${year}`);
     console.log(`[ADMIN API] Found ${vendorFarmerOrders.length || 0} vendor-farmer orders for year ${year}`);
@@ -728,12 +725,12 @@ router.post("/update-order-status/:orderId", ensureAdmin, async (req: Request, r
       });
     }
 
-    if (updateResult && updateResult.rows && updateResult.rows.length > 0) {
+    if (updateResult && updateResult.length > 0) {
       console.log(`[ADMIN API] Successfully updated order ${orderId} status to ${status}`);
       return res.json({ 
         success: true, 
         message: "Order status updated successfully",
-        order: updateResult.rows[0]
+        order: updateResult[0]
       });
     } else {
       console.log(`[ADMIN API] Order ${orderId} not found or not updated`);
@@ -889,6 +886,18 @@ router.post("/execute-query", ensureAdmin, async (req: Request, res: Response) =
       message: "Error executing query", 
       error: errorMsg 
     });
+  }
+});
+
+// Crops for sale endpoint
+router.get("/crops-for-sale", ensureAdmin, async (_req, res) => {
+  try {
+    // Query the real crops table
+    const crops = await executeRawQuery(`SELECT * FROM crops WHERE quantity > 0 ORDER BY type, price ASC`);
+    res.json(crops);
+  } catch (error) {
+    console.error("[ADMIN API ERROR] Error fetching crops for sale:", error);
+    res.status(500).json({ success: false, message: "Internal server error" });
   }
 });
 

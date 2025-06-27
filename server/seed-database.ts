@@ -47,7 +47,7 @@ export async function seedDatabase() {
       productsExist = await executeRawQuery(`
         SELECT COUNT(*) as count FROM products
       `);
-      console.log(`Found ${productsExist.rows[0].count} products in database`);
+      console.log(`Found ${productsExist.length > 0 ? productsExist[0].count : '0'} products in database`);
     } catch (err) {
       console.error('Error checking for products:', err);
       console.log('Will attempt to create products table and seed data');
@@ -58,8 +58,8 @@ export async function seedDatabase() {
       console.log('⏭️ Database already has admin user, checking for products...');
       
       // Check if we already have test products
-      if (productsExist && productsExist.rows && productsExist.rows[0] && parseInt(productsExist.rows[0].count) > 0) {
-        console.log(`⏭️ Test products already exist (${productsExist.rows[0].count} products found), skipping seeding`);
+      if (productsExist && productsExist.length > 0 && parseInt(productsExist[0].count) > 0) {
+        console.log(`⏭️ Test products already exist (${productsExist[0].count} products found), skipping seeding`);
         return;
       } else {
         console.log('⚠️ Admin exists but no products found, continuing with data seeding...');
@@ -124,8 +124,8 @@ export async function seedDatabase() {
         SELECT farmer_id FROM farmers LIMIT 1
       `);
       
-      if (anyFarmerProfile && anyFarmerProfile.rows && anyFarmerProfile.rows.length > 0) {
-        farmerId = anyFarmerProfile.rows[0].farmer_id;
+      if (anyFarmerProfile && anyFarmerProfile.length > 0) {
+        farmerId = anyFarmerProfile[0].farmer_id;
         console.log(`🧑‍🌾 Using existing farmer profile with ID: ${farmerId}`);
       } else {
         try {
@@ -154,8 +154,8 @@ export async function seedDatabase() {
               SELECT farmer_id FROM farmers LIMIT 1
             `);
             
-            if (retryFarmerProfile && retryFarmerProfile.rows && retryFarmerProfile.rows.length > 0) {
-              farmerId = retryFarmerProfile.rows[0].farmer_id;
+            if (retryFarmerProfile && retryFarmerProfile.length > 0) {
+              farmerId = retryFarmerProfile[0].farmer_id;
               console.log(`🧑‍🌾 Using existing farmer profile (fallback) with ID: ${farmerId}`);
             }
           } catch (retryError) {
@@ -231,8 +231,8 @@ export async function seedDatabase() {
         SELECT vendor_id FROM vendors LIMIT 1
       `);
       
-      if (anyVendorProfile && anyVendorProfile.rows && anyVendorProfile.rows.length > 0) {
-        vendorId = anyVendorProfile.rows[0].vendor_id;
+      if (anyVendorProfile && anyVendorProfile.length > 0) {
+        vendorId = anyVendorProfile[0].vendor_id;
         console.log(`🏭 Using existing vendor profile with ID: ${vendorId}`);
       } else {
         try {
@@ -260,8 +260,8 @@ export async function seedDatabase() {
               SELECT vendor_id FROM vendors LIMIT 1
             `);
             
-            if (retryVendorProfile && retryVendorProfile.rows && retryVendorProfile.rows.length > 0) {
-              vendorId = retryVendorProfile.rows[0].vendor_id;
+            if (retryVendorProfile && retryVendorProfile.length > 0) {
+              vendorId = retryVendorProfile[0].vendor_id;
               console.log(`🏭 Using existing vendor profile (fallback) with ID: ${vendorId}`);
             }
           } catch (retryError) {
@@ -291,8 +291,8 @@ export async function seedDatabase() {
           WHERE fc.farmer_id = '${farmerId}'
         `);
         
-        if (existingCrops && existingCrops.rows && existingCrops.rows[0] && parseInt(existingCrops.rows[0].count) > 0) {
-          console.log(`🌱 Farmer already has ${existingCrops.rows[0].count} crops, skipping crop creation`);
+        if (existingCrops && existingCrops.length > 0 && parseInt(existingCrops[0].count) > 0) {
+          console.log(`🌱 Farmer already has ${existingCrops[0].count} crops, skipping crop creation`);
         } else {
           const crop1Id = `crop_${uuidv4().substring(0, 8)}`;
           await executeRawQuery(`
@@ -349,8 +349,8 @@ export async function seedDatabase() {
         SELECT COUNT(*) as count FROM products
       `);
       
-      if (existingProducts && existingProducts.rows && existingProducts.rows[0] && parseInt(existingProducts.rows[0].count) > 0) {
-        console.log(`🧰 Database already has ${existingProducts.rows[0].count} products, skipping product creation`);
+      if (existingProducts && existingProducts.length > 0 && parseInt(existingProducts[0].count) > 0) {
+        console.log(`🧰 Database already has ${existingProducts[0].count} products, skipping product creation`);
       } else {
         // Create products in database without vendor relationship
         const product1Id = `prod_${uuidv4().substring(0, 8)}`;
@@ -411,10 +411,7 @@ export async function seedDatabase() {
       `);
       
       // Only proceed with creating orders if none exist
-      const hasExistingOrders = existingOrders && 
-                                existingOrders.rows && 
-                                existingOrders.rows[0] && 
-                                parseInt(existingOrders.rows[0].count) > 0;
+      const hasExistingOrders = existingOrders && existingOrders.length > 0 && parseInt(existingOrders[0].count) > 0;
       
       if (!hasExistingOrders) {
         console.log('📋 No existing orders found, creating sample orders...');
@@ -440,17 +437,17 @@ export async function seedDatabase() {
         `);
         
         // Only proceed if we have all the required data
-        if (vendorResult && vendorResult.rows && vendorResult.rows.length > 0 && 
-            farmerResult && farmerResult.rows && farmerResult.rows.length > 0 && 
-            productsResult && productsResult.rows && productsResult.rows.length > 0 &&
-            cropsResult && cropsResult.rows && cropsResult.rows.length > 0) {
+        if (vendorResult && vendorResult.length > 0 && 
+            farmerResult && farmerResult.length > 0 && 
+            productsResult && productsResult.length > 0 &&
+            cropsResult && cropsResult.length > 0) {
           
-          const vendorId = vendorResult.rows[0].vendor_id;
-          const farmerId = farmerResult.rows[0].farmer_id;
+          const vendorId = vendorResult[0].vendor_id;
+          const farmerId = farmerResult[0].farmer_id;
           
           // Create vendor-farmer orders (vendor selling to farmer)
-          for (let i = 0; i < Math.min(productsResult.rows.length, 3); i++) {
-            const productId = productsResult.rows[i].product_id;
+          for (let i = 0; i < Math.min(productsResult.length, 3); i++) {
+            const productId = productsResult[i].product_id;
             const orderTypes = ['seeds', 'equipment', 'fertilizer'];
             const orderStatuses = ['pending', 'processing', 'shipped', 'delivered', 'cancelled'];
             
@@ -490,8 +487,8 @@ export async function seedDatabase() {
           }
           
           // Create farmer-customer orders (farmer selling to customer)
-          for (let i = 0; i < Math.min(cropsResult.rows.length, 3); i++) {
-            const cropId = cropsResult.rows[i].crop_id;
+          for (let i = 0; i < Math.min(cropsResult.length, 3); i++) {
+            const cropId = cropsResult[i].crop_id;
             const orderTypes = ['grain', 'vegetables', 'fruit'];
             const orderStatuses = ['pending', 'processing', 'shipped', 'delivered', 'cancelled'];
             
@@ -535,10 +532,7 @@ export async function seedDatabase() {
           console.log('⚠️ Missing required data for creating sample orders (vendor, farmer, products, or crops)');
         }
       } else {
-        const orderCount = existingOrders && 
-                        existingOrders.rows && 
-                        existingOrders.rows[0] ? 
-                        existingOrders.rows[0].count : 0;
+        const orderCount = existingOrders && existingOrders.length > 0 ? parseInt(existingOrders[0].count) : 0;
         console.log(`📋 ${orderCount} existing orders found, skipping sample order creation`);
       }
       
@@ -551,8 +545,8 @@ export async function seedDatabase() {
           SELECT order_id FROM vendor_farmer_orders LIMIT 1
         `);
         
-        if (orderResult && orderResult.rows && orderResult.rows.length > 0) {
-          const orderId = orderResult.rows[0].order_id;
+        if (orderResult && orderResult.length > 0) {
+          const orderId = orderResult[0].order_id;
           console.log(`📋 Found order with ID: ${orderId} for dispute creation`);
           
           // Check if disputes already exist
@@ -560,7 +554,7 @@ export async function seedDatabase() {
             SELECT COUNT(*) as count FROM vendor_farmer_disputes
           `);
           
-          if (existingDisputes && existingDisputes.rows && existingDisputes.rows[0] && parseInt(existingDisputes.rows[0].count) > 0) {
+          if (existingDisputes && existingDisputes.length > 0 && parseInt(existingDisputes[0].count) > 0) {
             console.log(`⚠️ Dispute already exists, skipping dispute creation`);
           } else {
             const disputeId = `disp_${uuidv4().substring(0, 8)}`;

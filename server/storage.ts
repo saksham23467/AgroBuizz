@@ -30,7 +30,7 @@ export interface IStorage {
   // Crop related methods
   getCrops(): Promise<Crop[]>;
   getCropById(cropId: string): Promise<Crop | undefined>;
-  getFarmerCrops(farmerId: number): Promise<Crop[]>;
+  getFarmerCrops(farmerId: string): Promise<Crop[]>;
   createCrop(crop: InsertCrop): Promise<Crop>;
   updateCrop(cropId: string, crop: Partial<InsertCrop>): Promise<Crop | undefined>;
   deleteCrop(cropId: string): Promise<boolean>;
@@ -239,39 +239,38 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async getFarmerCrops(farmerId: number): Promise<Crop[]> {
+  async getFarmerCrops(farmerId: string): Promise<Crop[]> {
     try {
       console.log(`[DATABASE] Fetching crops for farmer ID: ${farmerId}`);
-      
-      // Get crops directly associated with the user
-      const farmerCropsList = await db.select()
-        .from(crops)
-        .where(eq(crops.farmerId, farmerId));
-      
+      // Join crops and farmer_crops to get only crops belonging to this farmer
+      const result = await pool.query(`
+        SELECT c.* FROM crops c
+        JOIN farmer_crops fc ON c.crop_id = fc.crop_id
+        WHERE fc.farmer_id = $1
+      `, [farmerId]);
+      const farmerCropsList = result.rows || [];
       console.log(`[DATABASE] Retrieved ${farmerCropsList.length} crops for farmer ID: ${farmerId}`);
       return farmerCropsList;
     } catch (error) {
       console.error(`[DATABASE ERROR] Failed to fetch crops for farmer ID: ${farmerId}`, error);
-      return []; // Return empty array on error
+      return [];
     }
   }
 
   async createCrop(crop: InsertCrop): Promise<Crop> {
     try {
-      console.log(`[DATABASE] Creating new crop: ${crop.name}`);
-      const cropId = `crop_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+      console.log(`[DATABASE] Creating new crop: ${crop.name || crop.type}`);
       const [newCrop] = await db.insert(crops)
         .values({
-          cropId,
-          type: crop.type || 'vegetable',
-          name: crop.name,
+          name: crop.name || crop.type,
+          type: crop.type || 'other',
           quantity: crop.quantity || 0,
           price: crop.price || 0,
           description: crop.description || '',
-          farmerId: crop.farmerId,
-          imagePath: crop.imagePath || null, // Add imagePath with default value
-          createdAt: new Date(),
-          updatedAt: new Date()
+          imagePath: crop.imagePath || null,
+          season: crop.season || null,
+          growthPeriod: crop.growthPeriod || null,
+          farmerId: crop.farmerId
         })
         .returning();
       
@@ -334,20 +333,13 @@ export class DatabaseStorage implements IStorage {
   async searchCrops(query: string): Promise<Crop[]> {
     try {
       console.log(`[DATABASE] Searching for crops with query: "${query}"`);
-      
-      // Convert query to lowercase for case-insensitive search
       const lowercasedQuery = query.toLowerCase();
-      
-      // Get all crops - in a real app, we'd use a more efficient SQL query with LIKE or full-text search
       const allCrops = await this.getCrops();
-      
-      // Filter crops that match the query in name, type, or description
       const results = allCrops.filter(crop => 
-        crop.name.toLowerCase().includes(lowercasedQuery) ||
-        crop.type.toLowerCase().includes(lowercasedQuery) ||
+        (crop.name && crop.name.toLowerCase().includes(lowercasedQuery)) ||
+        (crop.type && crop.type.toLowerCase().includes(lowercasedQuery)) ||
         (crop.description && crop.description.toLowerCase().includes(lowercasedQuery))
       );
-      
       console.log(`[DATABASE] Found ${results.length} crops matching "${query}"`);
       return results;
     } catch (error) {

@@ -87,15 +87,6 @@ export const commonQueries = {
     WHERE price BETWEEN ${min} AND ${max}
   `,
   
-  // 6. View available products
-  getAvailableProducts: `
-    SELECT p.product_id, p.name, v.vendor_id, v.name AS vendor_name, vi.stock_level
-    FROM product p
-    JOIN vendor_inventory vi ON p.product_id = vi.product_id
-    JOIN vendor v ON vi.vendor_id = v.vendor_id
-    WHERE vi.stock_level > 0
-  `,
-  
   // 7. View products by vendor ratings
   getProductsByVendorRatings: (minRating: number = 4) => `
     SELECT p.product_id, p.name, v.vendor_id, v.name AS vendor_name, 
